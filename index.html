@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Čtenářská Mise - Školička pro Prvňáčka</title>
+  
+  <!-- Google Fonts: Nunito & Baloo 2 s explicitním řezem latin-ext pro 100% čistou českou diakritiku -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800;900&family=Nunito:wght@700;800;900&subset=latin,latin-ext&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            nunito: ['Nunito', 'sans-serif'],
+            baloo: ['"Baloo 2"', 'cursive', 'sans-serif'],
+          },
+          boxShadow: {
+            'game-btn': '0 6px 0px rgba(0,0,0,0.18)',
+            'game-card': '0 10px 22px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Nunito', sans-serif;
+      touch-action: manipulation;
+    }
+    .game-font {
+      font-family: 'Nunito', sans-serif;
+      font-feature-settings: "kern" 1, "liga" 1;
+    }
+    .game-button {
+      transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .game-button:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0px rgba(0,0,0,0.2) !important;
+    }
+    .letter-card {
+      transition: transform 0.14s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
+    }
+    .letter-card:active {
+      transform: scale(0.96);
+    }
+    @keyframes gentleWiggle {
+      0%, 100% { transform: rotate(-3deg); }
+      50% { transform: rotate(3deg); }
+    }
+    .wiggle {
+      animation: gentleWiggle 3s ease-in-out infinite;
+    }
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-b from-sky-300 via-sky-100 to-amber-100 min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+
+  <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
+
+  <!-- Top App Navigation -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-4 border-amber-300 shadow-md px-3 sm:px-4 py-2">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
+      <!-- Logo & Title -->
+      <div class="flex items-center gap-2 cursor-pointer" onclick="showView('learn')">
+        <span class="text-3xl sm:text-4xl filter drop-shadow wiggle">🚀</span>
+        <div>
+          <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-amber-500 tracking-wide font-baloo leading-none">ČTENÁŘSKÁ MISE</h1>
+          <p class="text-[11px] text-sky-600 font-extrabold hidden sm:block">1. třída ZŠ • Striktně unikátní dlaždice bez duplicit</p>
+        </div>
+      </div>
+
+      <!-- Action items: Balance, Shop button, Parent Pin -->
+      <div class="flex items-center gap-2">
+        <!-- Balance Pill -->
+        <div onclick="showView('store')" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3 py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+          <span class="text-xl sm:text-2xl animate-pulse">⭐</span>
+          <div class="flex flex-col text-right leading-tight">
+            <span class="text-[9px] uppercase font-black text-amber-900">Můj Čas</span>
+            <span class="text-base sm:text-lg font-black" id="top-balance-display">0 min</span>
+          </div>
+        </div>
+
+        <!-- Store Button -->
+        <button onclick="showView('store')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-pink-700 shadow-sm flex items-center gap-1.5">
+          <span class="text-xl sm:text-2xl">🎁</span>
+          <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Odměny</span>
+        </button>
+
+        <!-- Admin Pin Lock -->
+        <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white p-2 sm:p-2.5 rounded-2xl border-b-4 border-slate-900 shadow-sm flex items-center justify-center">
+          <span class="text-lg sm:text-xl">🔒</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto p-3 sm:p-4 flex-grow flex flex-col">
+
+    <!-- VIEW 1: LEARNING / MISSIONS -->
+    <section id="view-learn" class="flex-grow flex flex-col space-y-2.5">
+      
+      <!-- 7 Level Tabs (1st Grade Elementary Curriculum) -->
+      <div class="bg-white/95 p-1.5 rounded-3xl shadow-sm border-2 border-sky-200 overflow-x-auto">
+        <div class="grid grid-flow-col auto-cols-[145px] sm:auto-cols-[165px] md:grid-cols-4 lg:grid-cols-7 gap-1.5 min-w-max md:min-w-0">
+          <button onclick="switchLevel(1)" id="lvl-btn-1" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700">
+            <span>🔤 1. Písmena</span>
+            <span class="text-[10px] font-semibold opacity-90 truncate max-w-full">A, M, L, S...</span>
+          </button>
+          <button onclick="switchLevel(2)" id="lvl-btn-2" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
+            <span>🧩 2. Slabiky</span>
+            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">MA, MÁ, LE, SE...</span>
+          </button>
+          <button onclick="switchLevel(3)" id="lvl-btn-3" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
+            <span>📦 3. Jednoslabičná</span>
+            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">LES, SÁM, PES...</span>
+          </button>
+          <button onclick="switchLevel(4)" id="lvl-btn-4" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
+            <span>📖 4. Dvouslabičná</span>
+            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">MÁMA, SELE...</span>
+          </button>
+          <button onclick="switchLevel(5)" id="lvl-btn-5" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
+            <span>✨ 5. Shluky/OU</span>
+            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">MOUKA, MRAK...</span>
+          </button>
+          <button onclick="switchLevel(6)" id="lvl-btn-6" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
+            <span>🎯 6. DĚ / TĚ / NĚ</span>
+            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">DĚDA, TĚLO, BĚŽÍ</span>
+          </button>
+          <button onclick="switchLevel(7)" id="lvl-btn-7" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
+            <span>🌟 7. Celé věty</span>
+            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">EMA MÁ SELE...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Control Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-2.5 bg-white/90 px-3 py-2 rounded-2xl border-2 border-amber-200 shadow-sm">
+        
+        <!-- Case switch -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-bold text-slate-600">Písmo:</span>
+          <div class="inline-flex rounded-xl p-1 bg-amber-100">
+            <button id="case-btn-upper" onclick="setLetterCase('upper')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm">VELKÁ</button>
+            <button id="case-btn-lower" onclick="setLetterCase('lower')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200">malá</button>
+          </div>
+        </div>
+
+        <!-- Mode switch -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-xs font-bold text-slate-600">Režim:</span>
+          <div class="inline-flex rounded-xl p-1 bg-sky-100">
+            <button id="mode-btn-grid" onclick="setDisplayMode('grid')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm">Dlaždice</button>
+            <button id="mode-btn-flash" onclick="setDisplayMode('flash')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200">1 Karta</button>
+          </div>
+        </div>
+
+        <!-- Tiles count switch -->
+        <div id="tile-count-control" class="flex items-center gap-1.5">
+          <span class="text-xs font-bold text-slate-600">Dlaždic:</span>
+          <div class="inline-flex rounded-xl p-1 bg-emerald-100">
+            <button id="count-btn-8" onclick="setGridCount(8)" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm">8</button>
+            <button id="count-btn-10" onclick="setGridCount(10)" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200">10</button>
+          </div>
+        </div>
+
+        <!-- Image Toggle -->
+        <div class="flex items-center gap-1.5">
+          <button id="toggle-images-btn" onclick="toggleImages()" class="game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5">
+            <span id="toggle-images-icon">🖼️</span>
+            <span id="toggle-images-text">Obrázky: ZAPNUTO</span>
+          </button>
+        </div>
+
+        <!-- Active Letters indicator -->
+        <div class="text-[11px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl hidden lg:block" id="active-letters-summary">
+        </div>
+      </div>
+
+      <div class="flex-grow flex flex-col justify-center items-center min-h-[300px]">
+        
+        <!-- GRID VIEW -->
+        <div id="content-grid-view" class="w-full grid py-1.5 gap-2.5 sm:gap-3.5">
+          <!-- Dynamically populated cards -->
+        </div>
+
+        <!-- Helper hint when available unique words are fewer than desired tiles -->
+        <div id="limited-pool-hint" class="hidden mt-3 w-full max-w-xl bg-amber-50 border-2 border-amber-300 rounded-2xl p-3 text-center shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div class="flex items-center gap-2 text-left">
+            <span class="text-2xl">💡</span>
+            <p class="text-xs text-amber-900 font-bold" id="limited-pool-text">Zobrazeno X unikátních slov.</p>
+          </div>
+          <button onclick="openParentModal()" class="game-button text-xs font-black bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-xl whitespace-nowrap">
+            Odemknout písmena 🔒
+          </button>
+        </div>
+
+        <!-- Empty State Notice (When 0 words can be formed) -->
+        <div id="content-empty-notice" class="hidden text-center p-6 bg-white/95 border-3 border-amber-300 rounded-3xl max-w-md shadow-md my-4">
+          <span class="text-4xl block mb-2">🔐</span>
+          <h3 class="text-lg font-black text-slate-800">Pro tuto úroveň chybí písmenka</h3>
+          <p class="text-xs text-slate-600 mt-1.5 font-bold" id="empty-notice-desc">V rodičovském nastavení zapni další písmenka z výuky.</p>
+          <button onclick="openParentModal()" class="mt-4 game-button bg-indigo-600 text-white font-black text-xs px-4 py-2.5 rounded-2xl">
+            Otevřít Rodičovskou Správu 🔒
+          </button>
+        </div>
+
+        <!-- FLASHCARD VIEW (Single large card) -->
+        <div id="content-flash-view" class="w-full hidden flex-col items-center justify-center py-2">
+          <div class="w-full max-w-xl bg-white border-4 border-amber-400 rounded-3xl p-6 md:p-10 shadow-game-card flex flex-col items-center justify-center text-center relative overflow-hidden">
+            <div id="flash-badge" class="absolute top-4 left-4 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">Karta 1 / 8</div>
+            <div id="flash-image" class="text-5xl sm:text-6xl mb-3 h-14 flex items-center justify-center select-none"></div>
+            <div id="flash-text" class="text-5xl md:text-7xl font-black text-sky-800 tracking-normal game-font my-2 max-w-full px-4 break-words"></div>
+            <div id="flash-sub" class="text-slate-400 text-sm font-extrabold mt-3">Přečti nahlas a zřetelně! 🗣️</div>
+          </div>
+          <div class="flex items-center gap-4 mt-3">
+            <button onclick="prevFlashcard()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-6 py-2.5 rounded-2xl border-b-4 border-slate-400 text-base sm:text-lg flex items-center gap-2">
+              ⬅️ Předchozí
+            </button>
+            <button onclick="nextFlashcard()" class="game-button bg-sky-500 hover:bg-sky-600 text-white font-black px-6 py-2.5 rounded-2xl border-b-4 border-sky-700 text-base sm:text-lg flex items-center gap-2">
+              Další ➡️
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Parent Review Buttons -->
+      <div class="bg-white/95 rounded-3xl p-3 sm:p-4 border-4 border-emerald-400 shadow-xl mt-1">
+        <div class="text-center mb-2">
+          <p class="text-xs uppercase font-black tracking-wider text-slate-500">Hodnocení rodiče (Poslechni si čtení syna):</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
+          <!-- Try Again Button -->
+          <button onclick="parentReview(false)" class="game-button bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-3 sm:py-3.5 px-6 rounded-2xl border-b-6 border-amber-600 text-base sm:text-xl flex items-center justify-center gap-3 shadow-game-btn">
+            <span class="text-2xl sm:text-3xl">🔄</span>
+            <div class="text-left leading-tight">
+              <div>DALŠÍ POKUS</div>
+              <div class="text-[11px] font-extrabold opacity-80">Nová unikátní slova</div>
+            </div>
+          </button>
+
+          <!-- Correct Button -->
+          <button onclick="parentReview(true)" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 sm:py-3.5 px-6 rounded-2xl border-b-6 border-emerald-700 text-base sm:text-xl flex items-center justify-center gap-3 shadow-game-btn">
+            <span class="text-2xl sm:text-3xl">🎉</span>
+            <div class="text-left leading-tight">
+              <div>PŘEČTENO SPRÁVNĚ!</div>
+              <div class="text-[11px] font-extrabold text-emerald-100">+1 MINUTA NA HRANÍ</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: STORE (TIME SHOP) -->
+    <section id="view-store" class="hidden flex-grow flex flex-col space-y-5">
+      <div class="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white p-5 sm:p-7 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <span class="bg-white/20 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">Herna na tabletu</span>
+          <h2 class="text-3xl sm:text-4xl font-black mt-2 font-baloo leading-tight">Obchod s Herním Časem 🎮</h2>
+          <p class="text-pink-100 mt-1 font-bold text-sm">Vyměň své vyčtené hvězdičky za minuty hraní her na iPadu!</p>
+        </div>
+        <div class="bg-white text-purple-900 rounded-3xl p-4 sm:p-5 border-4 border-yellow-300 shadow-lg text-center min-w-[170px]">
+          <div class="text-xs font-black uppercase text-slate-500">Máš nasbíráno:</div>
+          <div class="text-4xl sm:text-5xl font-black text-amber-500 my-1 font-baloo" id="store-balance-display">0</div>
+          <div class="text-xs font-black text-slate-600">MINUT = BODŮ</div>
+        </div>
+      </div>
+
+      <!-- Packages Grid (5, 10, 15, 20, 25) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        
+        <!-- 5 Min -->
+        <div class="bg-white border-4 border-sky-300 rounded-3xl p-5 shadow-md flex flex-col justify-between text-center relative overflow-hidden">
+          <div>
+            <div class="text-4xl mb-1">⏱️</div>
+            <h3 class="text-2xl font-black text-sky-800">5 MINUT</h3>
+            <p class="text-slate-500 text-xs font-bold mt-1">Rychlá herní pauza nebo video</p>
+          </div>
+          <div class="mt-5">
+            <div class="text-amber-500 font-black text-lg mb-2">Cena: 5 hvězd ⭐</div>
+            <button onclick="buyTimePackage(5)" class="game-button w-full bg-sky-500 hover:bg-sky-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-sky-700 text-base shadow-md">
+              Koupit lístek
+            </button>
+          </div>
+        </div>
+
+        <!-- 10 Min -->
+        <div class="bg-white border-4 border-emerald-300 rounded-3xl p-5 shadow-md flex flex-col justify-between text-center relative overflow-hidden">
+          <div>
+            <div class="text-4xl mb-1">🎮</div>
+            <h3 class="text-2xl font-black text-emerald-800">10 MINUT</h3>
+            <p class="text-slate-500 text-xs font-bold mt-1">Herní level nebo minihra</p>
+          </div>
+          <div class="mt-5">
+            <div class="text-amber-500 font-black text-lg mb-2">Cena: 10 hvězd ⭐</div>
+            <button onclick="buyTimePackage(10)" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-emerald-700 text-base shadow-md">
+              Koupit lístek
+            </button>
+          </div>
+        </div>
+
+        <!-- 15 Min -->
+        <div class="bg-white border-4 border-purple-300 rounded-3xl p-5 shadow-md flex flex-col justify-between text-center relative overflow-hidden">
+          <div class="absolute top-2 left-2 bg-purple-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full">Doporučeno</div>
+          <div>
+            <div class="text-4xl mb-1">🚀</div>
+            <h3 class="text-2xl font-black text-purple-800">15 MINUT</h3>
+            <p class="text-slate-500 text-xs font-bold mt-1">Skvělá odměna po poctivém čtení</p>
+          </div>
+          <div class="mt-5">
+            <div class="text-amber-500 font-black text-lg mb-2">Cena: 15 hvězd ⭐</div>
+            <button onclick="buyTimePackage(15)" class="game-button w-full bg-purple-500 hover:bg-purple-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-purple-700 text-base shadow-md">
+              Koupit lístek
+            </button>
+          </div>
+        </div>
+
+        <!-- 20 Min -->
+        <div class="bg-white border-4 border-amber-300 rounded-3xl p-5 shadow-md flex flex-col justify-between text-center relative overflow-hidden">
+          <div>
+            <div class="text-4xl mb-1">🏆</div>
+            <h3 class="text-2xl font-black text-amber-800">20 MINUT</h3>
+            <p class="text-slate-500 text-xs font-bold mt-1">Pořádná porce herního času</p>
+          </div>
+          <div class="mt-5">
+            <div class="text-amber-500 font-black text-lg mb-2">Cena: 20 hvězd ⭐</div>
+            <button onclick="buyTimePackage(20)" class="game-button w-full bg-amber-500 hover:bg-amber-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-amber-700 text-base shadow-md">
+              Koupit lístek
+            </button>
+          </div>
+        </div>
+
+        <!-- 25 Min -->
+        <div class="bg-white border-4 border-pink-400 rounded-3xl p-5 shadow-md flex flex-col justify-between text-center relative overflow-hidden">
+          <div class="absolute top-2 right-2 bg-pink-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full">MEGA PACK</div>
+          <div>
+            <div class="text-4xl mb-1">👑</div>
+            <h3 class="text-2xl font-black text-pink-800">25 MINUT</h3>
+            <p class="text-slate-500 text-xs font-bold mt-1">Odměna pro velkého čtenáře</p>
+          </div>
+          <div class="mt-5">
+            <div class="text-amber-500 font-black text-lg mb-2">Cena: 25 hvězd ⭐</div>
+            <button onclick="buyTimePackage(25)" class="game-button w-full bg-pink-500 hover:bg-pink-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-pink-700 text-base shadow-md">
+              Koupit lístek
+            </button>
+          </div>
+        </div>
+
+        <!-- Back to Training Card -->
+        <div onclick="showView('learn')" class="cursor-pointer bg-white/80 border-4 border-dashed border-sky-300 rounded-3xl p-5 flex flex-col items-center justify-center text-center hover:bg-white transition-all">
+          <span class="text-4xl mb-1">📚</span>
+          <h3 class="text-xl font-black text-sky-800">Zpět k učení!</h3>
+          <p class="text-slate-500 text-xs font-bold mt-1">Chceš více minut? Přečti další mise!</p>
+          <span class="mt-3 text-sky-600 font-black text-sm flex items-center gap-1">Zpět k lekcím ➡️</span>
+        </div>
+
+      </div>
+
+      <!-- Voucher Ticket -->
+      <div id="voucher-box" class="hidden bg-emerald-100 border-4 border-emerald-500 rounded-3xl p-6 text-center animate-bounce">
+        <span class="text-5xl">🎟️</span>
+        <h3 class="text-2xl font-black text-emerald-900 mt-2" id="voucher-text">LÍSTEK NA HRANÍ JE AKTIVNÍ!</h3>
+        <p class="text-emerald-700 font-bold mt-1">Ukaž tento lístek tátovi nebo mamce a můžeš hrát!</p>
+        <button onclick="closeVoucher()" class="mt-4 bg-emerald-600 text-white font-black px-6 py-2 rounded-xl">Mám to! 👍</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- PARENT PIN MODAL -->
+  <div id="parent-pin-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 border-4 border-slate-700 shadow-2xl text-center">
+      <div class="text-4xl mb-2">🔐</div>
+      <h3 class="text-2xl font-black text-slate-800">Rodičovský Vstup</h3>
+      <p class="text-slate-500 text-xs font-bold mt-1">Vypočítej příklad nebo zadej PIN (1234):</p>
+      
+      <div id="math-challenge" class="my-3 font-black text-xl text-indigo-700 bg-indigo-50 py-2 rounded-xl border border-indigo-200">
+      </div>
+
+      <input type="number" id="pin-input" placeholder="Výsledek nebo PIN" class="w-full text-center text-2xl font-black tracking-widest py-3 px-4 rounded-2xl border-2 border-slate-300 focus:outline-none focus:border-indigo-500 bg-slate-50 mb-3">
+      
+      <div id="pin-error" class="text-red-500 text-xs font-bold mb-3 hidden">Nesprávný kód, zkus to znovu.</div>
+
+      <div class="flex gap-3">
+        <button onclick="closeParentModal()" class="w-1/2 py-3 rounded-2xl bg-slate-200 text-slate-700 font-black">Zrušit</button>
+        <button onclick="verifyParentPin()" class="w-1/2 py-3 rounded-2xl bg-indigo-600 text-white font-black">Otevřít</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN CONTROL PANEL MODAL -->
+  <div id="admin-panel-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 border-4 border-indigo-600 shadow-2xl my-4">
+      
+      <!-- Admin Header -->
+      <div class="flex items-center justify-between border-b pb-4 mb-4">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">⚙️</span>
+          <div>
+            <h2 class="text-2xl font-black text-slate-800">Rodičovská Administrace</h2>
+            <p class="text-xs text-slate-500 font-bold">Přidávání po 1 minutě, nastavení dlaždic a 42 písmen abecedy</p>
+          </div>
+        </div>
+        <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-10 h-10 rounded-full flex items-center justify-center text-xl">✕</button>
+      </div>
+
+      <!-- Minute Adjustments (+1, -1, +5, -5, +10, -10) -->
+      <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <span class="font-black text-indigo-950 text-base sm:text-lg">Kredit na tabletu:</span>
+            <span class="text-xs text-indigo-600 block font-bold">Můžeš přidávat i ubírat přesně po 1 minutě</span>
+          </div>
+          <span class="text-3xl font-black text-indigo-700" id="admin-balance-display">0 min</span>
+        </div>
+
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <!-- +1 MIN -->
+          <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>+1 min</span>
+            <span class="text-[10px] font-normal opacity-90">+1 krok</span>
+          </button>
+          <!-- +5 MIN -->
+          <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>+5 min</span>
+            <span class="text-[10px] font-normal opacity-90">+5 krok</span>
+          </button>
+          <!-- +10 MIN -->
+          <button onclick="adjustMinutes(10, 'Bonus od rodiče (+10 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>+10 min</span>
+            <span class="text-[10px] font-normal opacity-90">+10 krok</span>
+          </button>
+
+          <!-- -1 MIN -->
+          <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>-1 min</span>
+            <span class="text-[10px] font-normal opacity-90">-1 krok</span>
+          </button>
+          <!-- -5 MIN -->
+          <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>-5 min</span>
+            <span class="text-[10px] font-normal opacity-90">-5 krok</span>
+          </button>
+          <!-- -10 MIN -->
+          <button onclick="adjustMinutes(-10, 'Odečet rodičem (-10 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>-10 min</span>
+            <span class="text-[10px] font-normal opacity-90">-10 krok</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Tiles count & Images setting -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+        <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 flex flex-col justify-between gap-3">
+          <div>
+            <h4 class="font-black text-amber-950 text-base">Počet dlaždic na herní ploše:</h4>
+            <p class="text-xs text-amber-800 font-bold">Standardně 8 nebo 10 dlaždic (vždy bez duplicit slov!).</p>
+          </div>
+          <div class="inline-flex rounded-xl p-1 bg-amber-200 gap-1 self-start">
+            <button onclick="setGridCount(8)" id="admin-count-btn-8" class="px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm">8 dlaždic</button>
+            <button onclick="setGridCount(10)" id="admin-count-btn-10" class="px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300">10 dlaždic</button>
+          </div>
+        </div>
+
+        <div class="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4 flex flex-col justify-between gap-3">
+          <div>
+            <h4 class="font-black text-purple-950 text-base">Zobrazování obrázků (emoji) nad slovy:</h4>
+            <p class="text-xs text-purple-800 font-bold">Vypnutí nutí syna číst čistě text bez vizuálního odhadu.</p>
+          </div>
+          <button onclick="toggleImages()" id="admin-toggle-images-btn" class="px-4 py-2 rounded-xl text-sm font-black transition-all bg-purple-600 text-white shadow-sm self-start">
+            Obrázky jsou: ZAPNUTY
+          </button>
+        </div>
+      </div>
+
+      <!-- Letters Config: Full Czech Alphabet with Diacritics -->
+      <div class="mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <div>
+            <h4 class="font-black text-slate-800 text-base">Aktivní písmenka (Kompletní česká abeceda):</h4>
+            <p class="text-xs text-slate-500 font-bold">Každé slovo je kontrolováno písmeno po písmenu!</p>
+          </div>
+
+          <!-- Presets -->
+          <div class="flex flex-wrap gap-2 text-xs">
+            <button onclick="applyPreset('base5')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-black px-3 py-1.5 rounded-xl border border-amber-300">
+              Jen M, L, E, A, S
+            </button>
+            <button onclick="applyPreset('diacritics5')" class="bg-amber-200 hover:bg-amber-300 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400">
+              M, L, E, É, A, Á, S
+            </button>
+            <button onclick="applyPreset('autumn')" class="bg-teal-100 hover:bg-teal-200 text-teal-900 font-black px-3 py-1.5 rounded-xl border border-teal-300">
+              Podzim (+ O, P, T, U)
+            </button>
+            <button onclick="applyPreset('midGrade')" class="bg-sky-100 hover:bg-sky-200 text-sky-900 font-black px-3 py-1.5 rounded-xl border border-sky-300">
+              Pololetí (+ N, J, V, Z, D, K, C, B)
+            </button>
+            <button onclick="applyPreset('all')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-black px-3 py-1.5 rounded-xl border border-indigo-300">
+              Vybrat celou abecedu
+            </button>
+          </div>
+        </div>
+
+        <!-- Full Alphabet 42 Grid -->
+        <div id="alphabet-grid-container" class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-200 max-h-60 overflow-y-auto">
+        </div>
+
+        <div class="flex items-center justify-between mt-2 text-xs text-slate-500 font-bold">
+          <span id="active-count-indicator">Aktivních písmen: 0 / 42</span>
+          <span>Klepnutím písmenko zapneš / vypneš</span>
+        </div>
+      </div>
+
+      <!-- Transaction History Log -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="font-black text-slate-800 text-base">Historie minut (Získané čtením i Utracené na tabletu):</h4>
+          <button onclick="clearHistory()" class="text-xs text-red-500 font-bold hover:underline">Vyčistit historii</button>
+        </div>
+        <div id="history-log-container" class="bg-slate-50 border border-slate-200 rounded-2xl p-3 max-h-40 overflow-y-auto text-sm space-y-2">
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="border-t pt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <span class="text-slate-400 font-bold">Vše je trvale uloženo v paměti Safari na iPadu.</span>
+        <button onclick="resetAllData()" class="bg-red-100 text-red-700 font-black px-4 py-2 rounded-xl hover:bg-red-200">
+          Resetovat celou hru (na nulu a M, L, E, É, A, Á, S)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="py-2 px-4 text-center text-sky-800/80 text-xs font-bold">
+    Čtenářská mise pro 1. třídu ZŠ • Vzdělávací metodika českého slabikáře ❤️
+  </footer>
+
+  <script>
+    const STORAGE_KEY = 'ctenarska_mise_v8_strict';
+
+    // Kompletní česká abeceda včetně veškeré diakritiky (42 písmen)
+    const FULL_CZECH_ALPHABET = [
+      'A', 'Á', 'B', 'C', 'Č', 'D', 'Ď', 'E', 'É', 'Ě', 
+      'F', 'G', 'H', 'CH', 'I', 'Í', 'J', 'K', 'L', 'M', 
+      'N', 'Ň', 'O', 'Ó', 'P', 'Q', 'R', 'Ř', 'S', 'Š', 
+      'T', 'Ť', 'U', 'Ú', 'Ů', 'V', 'W', 'X', 'Y', 'Ý', 
+      'Z', 'Ž'
+    ];
+
+    const PRESETS = {
+      base5: ['M', 'L', 'E', 'A', 'S'],
+      diacritics5: ['M', 'L', 'E', 'É', 'A', 'Á', 'S'],
+      autumn: ['M', 'L', 'S', 'P', 'T', 'A', 'Á', 'E', 'É', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Y', 'Ý'],
+      midGrade: [
+        'A', 'Á', 'E', 'É', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Ů', 'Y', 'Ý',
+        'M', 'L', 'S', 'P', 'T', 'N', 'J', 'V', 'Z', 'D', 'K', 'C', 'B'
+      ],
+      all: [...FULL_CZECH_ALPHABET]
+    };
+
+    const NATURAL_VOWELS = ['A', 'Á', 'E', 'É', 'I', 'Í', 'O', 'U', 'Ú', 'Ů', 'Y', 'Ý'];
+
+    const NATURAL_CONSONANTS = [
+      'M', 'L', 'S', 'Š', 'P', 'T', 'Ť', 'N', 'Ň', 'J', 'V', 'Z', 'Ž', 
+      'D', 'Ď', 'K', 'C', 'Č', 'B', 'H', 'CH', 'R', 'Ř', 'F', 'G'
+    ];
+
+    // Rozklad českého textu na množinu unikátních velkých písmen (s ohledem na spřežku CH)
+    function extractUniqueLetters(text) {
+      const upper = text.toUpperCase();
+      const letters = new Set();
+      let i = 0;
+      while (i < upper.length) {
+        if (i < upper.length - 1 && upper.substring(i, i + 2) === 'CH') {
+          letters.add('CH');
+          i += 2;
+          continue;
+        }
+        const char = upper[i];
+        if (FULL_CZECH_ALPHABET.includes(char)) {
+          letters.add(char);
+        }
+        i++;
+      }
+      return Array.from(letters);
+    }
+
+    /* 
+      LEVEL 3: Masivní databáze jednoslabičných uzavřených slov (CVC)
+      Obsahuje i slova z úplného startu (M, L, E, A, S): LES, SÁM, MEL, SEM, SÁL atd.
+    */
+    const RAW_LEVEL_3_WORDS = [
+      { t: 'LES', e: '🌲' }, { t: 'SÁM', e: '🧍' }, { t: 'MEL', e: '🥣' }, { t: 'SEM', e: '👉' },
+      { t: 'SÁL', e: '🏛️' }, { t: 'PES', e: '🐶' }, { t: 'PAS', e: '🛂' }, { t: 'PÁV', e: '🦚' },
+      { t: 'PUK', e: '🏒' }, { t: 'PEC', e: '🧱' }, { t: 'TOM', e: '👦' }, { t: 'TYP', e: '🏷️' },
+      { t: 'NOS', e: '👃' }, { t: 'NOC', e: '🌙' }, { t: 'KOS', e: '🐦' }, { t: 'KUS', e: '🍰' },
+      { t: 'DŮM', e: '🏠' }, { t: 'DAR', e: '🎁' }, { t: 'DUB', e: '🌳' }, { t: 'SUP', e: '🦅' },
+      { t: 'SŮL', e: '🧂' }, { t: 'SYN', e: '👦' }, { t: 'LEV', e: '🦁' }, { t: 'LÉK', e: '💊' },
+      { t: 'LUK', e: '🏹' }, { t: 'LED', e: '🧊' }, { t: 'MÁK', e: '🌺' }, { t: 'MYŠ', e: '🐭' },
+      { t: 'MŮJ', e: '✋' }, { t: 'ROK', e: '📅' }, { t: 'RAK', e: '🦞' }, { t: 'ROH', e: '📯' },
+      { t: 'HŮL', e: '🦯' }, { t: 'HAD', e: '🐍' }, { t: 'ZUB', e: '🦷' }, { t: 'ZEĎ', e: '🧱' },
+      { t: 'KŮŇ', e: '🐴' }, { t: 'KOŠ', e: '🧺' }, { t: 'MÍČ', e: '⚽' }, { t: 'NŮŽ', e: '🔪' },
+      { t: 'BOK', e: '🧍' }, { t: 'BĚH', e: '🏃' }, { t: 'BOJ', e: '⚔️' }, { t: 'BYT', e: '🏢' },
+      { t: 'BÝK', e: '🐂' }, { t: 'BOD', e: '📍' }, { t: 'CÍL', e: '🎯' }, { t: 'ČAS', e: '⏰' },
+      { t: 'ČAJ', e: '🍵' }, { t: 'ČÁP', e: '🪶' }, { t: 'DEN', e: '☀️' }, { t: 'DÝM', e: '💨' },
+      { t: 'HRA', e: '🎮' }, { t: 'KEŘ', e: '🌿' }, { t: 'KOV', e: '⚙️' }, { t: 'LET', e: '✈️' },
+      { t: 'LOĎ', e: '🚢' }, { t: 'LOV', e: '🏹' }, { t: 'MEČ', e: '⚔️' }, { t: 'MED', e: '🍯' },
+      { t: 'MOL', e: '🦋' }, { t: 'PÁR', e: '👫' }, { t: 'PÍT', e: '🥛' }, { t: 'PĚT', e: '🖐️' },
+      { t: 'POT', e: '💦' }, { t: 'RÝČ', e: '⛏️' }, { t: 'SÝR', e: '🧀' }, { t: 'SUD', e: '🛢️' },
+      { t: 'ŠÍP', e: '🏹' }, { t: 'ŠÁL', e: '🧣' }, { t: 'TAK', e: '👌' }, { t: 'TÓN', e: '🎵' },
+      { t: 'VĚC', e: '📦' }, { t: 'VÝR', e: '🦉' }, { t: 'VŮZ', e: '🚗' }, { t: 'ŽÁR', e: '🔥' }
+    ];
+
+    /* 
+      LEVEL 4: Masivní databáze dvouslabičných slov
+      Obsahuje i veškerá kombinovatelná slova pro start (M, L, E, A, S):
+      MÁMA, MELE, SELE, LAMA, MASO, LASO, MÁSLO, SAMA, MÁME, MELA, LEMU, LÁME...
+    */
+    const RAW_LEVEL_4_WORDS = [
+      { t: 'MÁMA', e: '👩' }, { t: 'MELE', e: '⚙️' }, { t: 'SELE', e: '🐷' }, { t: 'LAMA', e: '🦙' },
+      { t: 'MASO', e: '🍖' }, { t: 'LASO', e: '🪢' }, { t: 'MÁSLO', e: '🧈' }, { t: 'SAMA', e: '🧍‍♀️' },
+      { t: 'MÁME', e: '🤝' }, { t: 'MELA', e: '🌀' }, { t: 'LÁME', e: '🥖' }, { t: 'EMA', e: '👧' },
+      { t: 'ÁLA', e: '👧' }, { t: 'MÍSA', e: '🥣' }, { t: 'MÍLA', e: '👦' }, { t: 'TÁTA', e: '👨' },
+      { t: 'TETA', e: '👩' }, { t: 'POLE', e: '🌾' }, { t: 'PUSA', e: '💋' }, { t: 'PÍŠE', e: '✍️' },
+      { t: 'KOLO', e: '🚲' }, { t: 'LÍPA', e: '🌳' }, { t: 'LÉTO', e: '☀️' }, { t: 'VODA', e: '💧' },
+      { t: 'VÁZA', e: '🏺' }, { t: 'ZIMA', e: '❄️' }, { t: 'ŽÁBA', e: '🐸' }, { t: 'RYBA', e: '🐟' },
+      { t: 'SOVA', e: '🦉' }, { t: 'RŮŽE', e: '🌹' }, { t: 'KOZA', e: '🐐' }, { t: 'KÁVA', e: '☕' },
+      { t: 'OKO', e: '👁️' }, { t: 'UCHO', e: '👂' }, { t: 'BOTA', e: '👞' }, { t: 'BÁBA', e: '👵' },
+      { t: 'BÁRA', e: '👧' }, { t: 'BÍLÁ', e: '⚪' }, { t: 'CENA', e: '🏷️' }, { t: 'DÍRA', e: '🕳️' },
+      { t: 'DOMA', e: '🏡' }, { t: 'HUSA', e: '🪿' }, { t: 'HORA', e: '⛰️' }, { t: 'JÁMA', e: '🕳️' },
+      { t: 'JARO', e: '🌱' }, { t: 'KOSA', e: '🌾' }, { t: 'KŮRA', e: '🌲' }, { t: 'LANO', e: '🪢' },
+      { t: 'LUPA', e: '🔍' }, { t: 'MAPA', e: '🗺️' }, { t: 'MÍRA', e: '📏' }, { t: 'NOHA', e: '🦵' },
+      { t: 'NULA', e: '0️⃣' }, { t: 'PATA', e: '🦶' }, { t: 'PILA', e: '🪚' }, { t: 'PIVO', e: '🍺' },
+      { t: 'RUKA', e: '✋' }, { t: 'RÁNO', e: '🌅' }, { t: 'ŘEKA', e: '🌊' }, { t: 'SÁRA', e: '👧' },
+      { t: 'SENO', e: '🌾' }, { t: 'SÍLA', e: '💪' }, { t: 'ŠÁLA', e: '🧣' }, { t: 'VANA', e: '🛁' },
+      { t: 'VÁHA', e: '⚖️' }, { t: 'VATA', e: '☁️' }, { t: 'VÍLA', e: '🧚' }, { t: 'VOSA', e: '🐝' },
+      { t: 'ŽENA', e: '👩' }, { t: 'ŽITO', e: '🌾' }
+    ];
+
+    /* 
+      LEVEL 5: Shluky souhlásek & Dvojhlásky OU / AU
+    */
+    const RAW_LEVEL_5_WORDS = [
+      { t: 'MÁSLO', e: '🧈' }, { t: 'AUTO', e: '🚗' }, { t: 'MOUKA', e: '🌾' }, { t: 'KOULE', e: '⚪' },
+      { t: 'BOUDA', e: '🐶' }, { t: 'MOUCHA', e: '🪰' }, { t: 'FOUKÁ', e: '💨' }, { t: 'LOUKA', e: '🌼' },
+      { t: 'MRAK', e: '☁️' }, { t: 'STŮL', e: '🪑' }, { t: 'VLAK', e: '🚂' }, { t: 'PLAVE', e: '🏊' },
+      { t: 'SLOVO', e: '💬' }, { t: 'KROK', e: '👟' }, { t: 'BRATR', e: '👦' }, { t: 'ŠKOLA', e: '🏫' },
+      { t: 'ZVON', e: '🔔' }, { t: 'VLK', e: '🐺' }, { t: 'PRST', e: '☝️' }, { t: 'KRK', e: '🦒' },
+      { t: 'SMRK', e: '🌲' }, { t: 'HRAD', e: '🏰' }, { t: 'MOST', e: '🌉' }, { t: 'PLOT', e: '🪵' },
+      { t: 'DRÁT', e: '🪢' }, { t: 'PTÁK', e: '🐦' }, { t: 'SKLO', e: '🥛' }, { t: 'KLUK', e: '👦' },
+      { t: 'PARK', e: '🌳' }, { t: 'BLESK', e: '⚡' }, { t: 'KLÍČ', e: '🔑' }, { t: 'HOUBA', e: '🍄' },
+      { t: 'LOUŽE', e: '🌧️' }, { t: 'KOUŘ', e: '💨' }, { t: 'BOUŘE', e: '⛈️' }, { t: 'STROUHA', e: '🌊' },
+      { t: 'SVETR', e: '🧶' }, { t: 'ŠVESTKA', e: '🫐' }, { t: 'STOPA', e: '🐾' }, { t: 'TRÁVA', e: '🌱' },
+      { t: 'DROZD', e: '🐦' }, { t: 'STROM', e: '🌳' }, { t: 'PŠTROS', e: '🪶' }, { t: 'PLÁŠŤ', e: '🧥' }
+    ];
+
+    /* 
+      LEVEL 6: Měkké slabiky a DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ
+    */
+    const RAW_LEVEL_6_WORDS = [
+      { t: 'DĚDA', e: '👴' }, { t: 'DĚTI', e: '🧒' }, { t: 'TĚLO', e: '🧍' }, { t: 'KOTĚ', e: '🐱' },
+      { t: 'KONĚ', e: '🐎' }, { t: 'VĚTEV', e: '🌿' }, { t: 'MĚSTO', e: '🏙️' }, { t: 'BĚŽÍ', e: '🏃' },
+      { t: 'PĚT', e: '5️⃣' }, { t: 'PĚJE', e: '🎤' }, { t: 'KŮZLE', e: '🐐' }, { t: 'KVĚT', e: '🌸' },
+      { t: 'PĚNA', e: '🧼' }, { t: 'MEDVĚD', e: '🐻' }, { t: 'OBĚD', e: '🍲' }, { t: 'POUPĚ', e: '🌷' },
+      { t: 'DEVĚT', e: '9️⃣' }, { t: 'SVĚTLO', e: '💡' }, { t: 'MĚSÍC', e: '🌙' }, { t: 'PAMĚŤ', e: '🧠' },
+      { t: 'TĚSTO', e: '🥐' }, { t: 'ŠTĚNĚ', e: '🐶' }, { t: 'KUŘE', e: '🐥' }, { t: 'DOUPĚ', e: '🕳️' },
+      { t: 'ZEMĚ', e: '🌍' }, { t: 'HNÍZDO', e: '🪹' }, { t: 'ŠIŠKA', e: '🌲' }, { t: 'ŽIDLE', e: '🪑' },
+      { t: 'CIBULE', e: '🧅' }, { t: 'ČISTÝ', e: '✨' }, { t: 'TICHO', e: '🤫' }, { t: 'NIT', e: '🧵' }
+    ];
+
+    /* 
+      LEVEL 7: Smysluplné české věty pro 1. třídu ZŠ
+      Všechny nesmyslné fráze typu "ÁLA MÁ LESA" byly trvale odstraněny!
+    */
+    const RAW_LEVEL_7_SENTENCES = [
+      { t: 'EMA MÁ SELE.', e: '👧🐷' },
+      { t: 'MÁMA MELE SELE.', e: '👩🥩' },
+      { t: 'ÁLA MÁ SELE.', e: '👧🐷' },
+      { t: 'MÁMA MELE MASO.', e: '👩⚙️' },
+      { t: 'EMA MÁ MASO.', e: '👧🥩' },
+      { t: 'ÁLA MELE MASO.', e: '👧🥣' },
+      { t: 'MÁMA MÁ MÁSLO.', e: '👩🧈' },
+      { t: 'EMA SOLÍ MASO.', e: '👧🧂' },
+      { t: 'MÁMA SOLÍ MASO.', e: '👩🧂' },
+      { t: 'ÁLA MÁ LASO.', e: '👧🪢' },
+      { t: 'EMA MÁ MÁSLO.', e: '👧🧈' },
+      { t: 'ÁLA SOLÍ MASO.', e: '👧🧂' },
+      { t: 'LAMA MÁ SENO.', e: '🦙🌾' },
+      { t: 'MÁMA MÁ MÍSU.', e: '👩🥣' },
+      { t: 'TÁTA MÁ KOLO.', e: '👨🚲' },
+      { t: 'TÁTA SOLÍ MASO.', e: '👨🧂' },
+      { t: 'TETA MÁ KOLO.', e: '👩🚲' },
+      { t: 'PES JE V LESE.', e: '🐶🌲' },
+      { t: 'PES LESEM BĚŽÍ.', e: '🐕🌲' },
+      { t: 'OTA MÁ PSA.', e: '👦🐶' },
+      { t: 'MÍLA MÁ PSA.', e: '👦🐕' },
+      { t: 'PES SE JMENUJE ALÍK.', e: '🐕✨' },
+      { t: 'TÁTA SEKÁ TRÁVU.', e: '👨🌾' },
+      { t: 'NA LOUCE JE SELE.', e: '🌼🐷' },
+      { t: 'EMA MELE KÁVU.', e: '👧☕' },
+      { t: 'MÁMA MÁ ČAJ.', e: '👩🍵' },
+      { t: 'BABIČKA PEČE KOLÁČ.', e: '👵🥧' },
+      { t: 'DĚDEČEK ČTE KNIHU.', e: '👴📖' },
+      { t: 'NA VĚTVI SEDÍ KOS.', e: '🐦🌿' },
+      { t: 'PETR MÁ NOVÝ MÍČ.', e: '👦⚽' },
+      { t: 'NA OBLOZE PLUJE MRAK.', e: '☁️🌤️' },
+      { t: 'VLAK JEDE DO MĚSTA.', e: '🚂🏙️' },
+      { t: 'KOTĚ SPÍ V KOŠÍKU.', e: '🐱🧺' },
+      { t: 'JANA PIJE TEPLÝ ČAJ.', e: '👧🍵' },
+      { t: 'PES HLÍDÁ NÁŠ DŮM.', e: '🐕🏡' },
+      { t: 'AUTO TROUBÍ NA CESTĚ.', e: '🚗📢' },
+      { t: 'V POTOCE PLAVE RYBA.', e: '🐟🌊' },
+      { t: 'MALÉ KŮZLE SKÁČE.', e: '🐐🪨' },
+      { t: 'MÁMA NESE NÁKUP.', e: '👩🛍️' },
+      { t: 'DĚTI SI HRAJÍ.', e: '🧒🎈' },
+      { t: 'V ZIMĚ PADÁ SNÍH.', e: '❄️⛄' },
+      { t: 'HONZA STAVÍ HRAD.', e: '👦🏰' },
+      { t: 'SOVA HOUKÁ V NOCI.', e: '🦉🌙' },
+      { t: 'MEDVĚD MÁ RÁD MED.', e: '🐻🍯' },
+      { t: 'LUCKA KRESLÍ DŮM.', e: '👧🎨' },
+      { t: 'V ZAHRADĚ KVETE RŮŽE.', e: '🌹🪴' },
+      { t: 'HUSA CHODÍ PO DVORKU.', e: '🪿🏡' },
+      { t: 'DĚDA PRACUJE V DÍLNĚ.', e: '👴🔨' },
+      { t: 'TÁTA OPRAVUJE AUTO.', e: '👨🔧' },
+      { t: 'MYŠKA ŽVÝKÁ SÝR.', e: '🐭🧀' },
+      { t: 'ŽÁBA SKOČILA DO VODY.', e: '🐸🌊' }
+    ];
+
+    // Předzpracování pro bleskurychlou kontrolu písmen
+    const LEVEL_3_CVC_WORDS = RAW_LEVEL_3_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
+    const LEVEL_4_TWO_SYLLABLE_WORDS = RAW_LEVEL_4_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
+    const LEVEL_5_CLUSTERS_AND_DIPHTHONGS = RAW_LEVEL_5_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
+    const LEVEL_6_SOFT_SYLLABLES = RAW_LEVEL_6_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
+    const LEVEL_7_SENTENCES = RAW_LEVEL_7_SENTENCES.map(s => ({ text: s.t, emoji: s.e, letters: extractUniqueLetters(s.t) }));
+
+    let state = {
+      minutesBalance: 0,
+      activeLetters: ['M', 'L', 'E', 'É', 'A', 'Á', 'S'],
+      currentLevel: 1,
+      letterCase: 'upper',
+      displayMode: 'grid',
+      gridCardCount: 8,
+      showImages: true,
+      currentItems: [],
+      flashcardIndex: 0,
+      history: []
+    };
+
+    // Paměť pro eliminaci opakování napříč koly
+    const recentHistoryPerLevel = {
+      1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []
+    };
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          state = { ...state, ...parsed };
+        }
+      } catch (err) {
+        console.warn('LocalStorage error', err);
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      } catch (err) {
+        console.warn('LocalStorage save error', err);
+      }
+      updateBalanceUI();
+    }
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playTone(freq, duration, type = 'sine', gainVal = 0.2) {
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function soundSuccess() {
+      playTone(523.25, 0.2, 'triangle', 0.25);
+      setTimeout(() => playTone(659.25, 0.2, 'triangle', 0.25), 100);
+      setTimeout(() => playTone(783.99, 0.2, 'triangle', 0.25), 200);
+      setTimeout(() => playTone(1046.50, 0.45, 'triangle', 0.3), 300);
+    }
+
+    function soundShuffle() {
+      playTone(320, 0.08, 'sine', 0.15);
+      setTimeout(() => playTone(440, 0.08, 'sine', 0.15), 60);
+      setTimeout(() => playTone(360, 0.12, 'sine', 0.15), 120);
+    }
+
+    function soundPurchase() {
+      playTone(880, 0.12, 'sine', 0.25);
+      setTimeout(() => playTone(1320, 0.35, 'sine', 0.25), 100);
+    }
+
+    function soundError() {
+      playTone(220, 0.3, 'sawtooth', 0.2);
+    }
+
+    // Confetti Engine
+    const canvas = document.getElementById('confetti-canvas');
+    const ctx = canvas.getContext('2d');
+    let confettiParticles = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function triggerConfetti() {
+      confettiParticles = [];
+      const colors = ['#F59E0B', '#EF4444', '#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#FBBF24'];
+      for (let i = 0; i < 90; i++) {
+        confettiParticles.push({
+          x: canvas.width / 2 + (Math.random() * 240 - 120),
+          y: canvas.height * 0.4,
+          w: Math.random() * 12 + 8,
+          h: Math.random() * 8 + 6,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 16,
+          vy: (Math.random() * -14) - 8,
+          rotation: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 12,
+          gravity: 0.45,
+          opacity: 1
+        });
+      }
+      requestAnimationFrame(renderConfetti);
+    }
+
+    function renderConfetti() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      let alive = false;
+      confettiParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += p.gravity;
+        p.rotation += p.rotSpeed;
+        p.opacity -= 0.007;
+
+        if (p.opacity > 0 && p.y < canvas.height) {
+          alive = true;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rotation * Math.PI) / 180);
+          ctx.globalAlpha = Math.max(0, p.opacity);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+      });
+      if (alive) {
+        requestAnimationFrame(renderConfetti);
+      } else {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    function isItemFormedByActive(itemLetters) {
+      const active = state.activeLetters;
+      return itemLetters.every(char => active.includes(char));
+    }
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    // Striktně otevřené smysluplné slabiky (CV: souhláska + samohláska)
+    function generatePedagogicalOpenSyllables() {
+      const activeCons = state.activeLetters.filter(l => NATURAL_CONSONANTS.includes(l));
+      const activeVow = state.activeLetters.filter(l => NATURAL_VOWELS.includes(l));
+      const syllables = [];
+
+      activeCons.forEach(c => {
+        activeVow.forEach(v => {
+          if (v === 'Ó') return;
+          if (v === 'Ů' && ['J', 'C', 'Č'].includes(c)) return;
+          syllables.push({ text: `${c}${v}`, emoji: '' });
+        });
+      });
+
+      return syllables;
+    }
+
+    /* 
+      KLÍČOVÁ OPRAVA: VÝBĚR BEZ DUPLICIT (STRICT ZERO DUPLICATE LOGIC)
+      - V úrovních 2 až 7 se NIKDY nesmí zobrazit stejné slovo/slabika na obrazovce dvakrát!
+      - Pokud je unikátních slov méně než požadovaných 8 nebo 10, zobrazí se pouze všechna
+        dostupná unikátní slova a pod nimi hezká nápovědná bublina pro rodiče.
+      - Pouze v úrovni 1 (Písmena) se může písmeno zopakovat, pokud je celkový počet písmen < count.
+    */
+    function selectStrictBatch(pool, desiredCount, level) {
+      if (!pool || pool.length === 0) return { items: [], totalAvailable: 0 };
+
+      // Odstranění jakýchkoli potenciálních duplicit ze zdrojového poolu
+      const uniqueMap = new Map();
+      pool.forEach(item => {
+        if (!uniqueMap.has(item.text)) {
+          uniqueMap.set(item.text, item);
+        }
+      });
+      const uniquePool = Array.from(uniqueMap.values());
+      const totalAvailable = uniquePool.length;
+
+      // ÚROVEŇ 1 (PÍSMENA): Pokud je písmen méně než dlaždic (např. 7), doplní rotaci, ale promíchá
+      if (level === 1 && totalAvailable < desiredCount) {
+        let picked = shuffleArray([...uniquePool]);
+        while (picked.length < desiredCount) {
+          const needed = desiredCount - picked.length;
+          const extra = shuffleArray([...uniquePool]).slice(0, needed);
+          picked.push(...extra);
+        }
+        return { items: shuffleArray(picked), totalAvailable };
+      }
+
+      // ÚROVNĚ 2–7: 100% ZÁKAZ DUPLICIT NA OBRAZOVCE!
+      // Pokud máme méně slov než desiredCount, vrátíme VŠECHNA unikátní slova bez duplikace
+      if (totalAvailable <= desiredCount) {
+        return { items: shuffleArray(uniquePool), totalAvailable };
+      }
+
+      // Pokud máme více slov než desiredCount: vybereme podle historie, aby se slova neopakovala napříč koly
+      if (!recentHistoryPerLevel[level]) {
+        recentHistoryPerLevel[level] = [];
+      }
+      const recent = recentHistoryPerLevel[level];
+
+      const freshItems = uniquePool.filter(item => !recent.includes(item.text));
+      const recentItems = uniquePool.filter(item => recent.includes(item.text));
+
+      let chosen = [];
+      const shuffledFresh = shuffleArray(freshItems);
+      chosen.push(...shuffledFresh.slice(0, desiredCount));
+
+      if (chosen.length < desiredCount) {
+        const needed = desiredCount - chosen.length;
+        const shuffledRecent = shuffleArray(recentItems);
+        chosen.push(...shuffledRecent.slice(0, needed));
+      }
+
+      // Zápis do historie nepoužitých pro další kola
+      chosen.forEach(c => recent.push(c.text));
+      const maxMemory = Math.max(desiredCount * 2, Math.floor(uniquePool.length * 0.6));
+      while (recent.length > maxMemory) {
+        recent.shift();
+      }
+
+      return { items: shuffleArray(chosen), totalAvailable };
+    }
+
+    function generateLessonItems() {
+      let pool = [];
+      const lvl = state.currentLevel;
+      const emptyNotice = document.getElementById('content-empty-notice');
+      const emptyDesc = document.getElementById('empty-notice-desc');
+      const gridView = document.getElementById('content-grid-view');
+      const flashView = document.getElementById('content-flash-view');
+      const limitedPoolHint = document.getElementById('limited-pool-hint');
+      const limitedPoolText = document.getElementById('limited-pool-text');
+
+      if (lvl === 1) {
+        pool = state.activeLetters.map(letter => ({ text: letter, emoji: '' }));
+      } 
+      else if (lvl === 2) {
+        pool = generatePedagogicalOpenSyllables();
+      } 
+      else if (lvl === 3) {
+        pool = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters));
+      } 
+      else if (lvl === 4) {
+        pool = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters));
+      } 
+      else if (lvl === 5) {
+        pool = LEVEL_5_CLUSTERS_AND_DIPHTHONGS.filter(w => isItemFormedByActive(w.letters));
+      } 
+      else if (lvl === 6) {
+        pool = LEVEL_6_SOFT_SYLLABLES.filter(w => isItemFormedByActive(w.letters));
+      } 
+      else if (lvl === 7) {
+        pool = LEVEL_7_SENTENCES.filter(sen => isItemFormedByActive(sen.letters));
+      }
+
+      if (!pool || pool.length === 0) {
+        gridView.classList.add('hidden');
+        flashView.classList.add('hidden');
+        limitedPoolHint.classList.add('hidden');
+        emptyNotice.classList.remove('hidden');
+
+        const catNames = [
+          'Písmena', 'Otevřené slabiky', 'Jednoslabičná slova', 
+          'Dvouslabičná slova', 'Dvojhlásky & Shluky', 'Měkké slabiky (DĚ/TĚ/NĚ)', 'Celé věty'
+        ];
+        emptyDesc.textContent = `Pro úroveň "${catNames[lvl - 1]}" zatím syn nemá odemčena potřebná písmenka. Otevři zámek (🔒) a zaškrtni další písmenka, která se učí ve škole!`;
+        state.currentItems = [];
+        return;
+      } else {
+        emptyNotice.classList.add('hidden');
+      }
+
+      const desiredCount = state.gridCardCount || 8;
+      const { items, totalAvailable } = selectStrictBatch(pool, desiredCount, lvl);
+
+      state.currentItems = items;
+      state.flashcardIndex = 0;
+
+      // Zobrazení nápovědné bubliny, pokud je unikátních slov méně než požadovaných dlaždic
+      if (lvl > 1 && totalAvailable < desiredCount) {
+        limitedPoolHint.classList.remove('hidden');
+        limitedPoolText.textContent = `Nalezeno ${totalAvailable} unikátních slov pro odemčená písmena. Chceš-li více slov, odemkni v Administraci další písmenka!`;
+      } else {
+        limitedPoolHint.classList.add('hidden');
+      }
+
+      renderCurrentContent();
+      updateActiveSummaryBadge();
+    }
+
+    function formatCase(text) {
+      if (!text) return '';
+      if (state.letterCase === 'lower') {
+        return text.toLowerCase();
+      }
+      return text.toUpperCase();
+    }
+
+    function updateActiveSummaryBadge() {
+      const summaryEl = document.getElementById('active-letters-summary');
+      if (summaryEl) {
+        summaryEl.textContent = `Aktivní: ${state.activeLetters.join(', ')}`;
+      }
+    }
+
+    function getCardTypographyStyle(text, level, cardCount) {
+      const len = text.length;
+
+      // Celé věty
+      if (level === 7) {
+        if (len > 22) {
+          return 'text-sm sm:text-base md:text-lg font-black text-slate-800 tracking-normal';
+        }
+        return 'text-base sm:text-lg md:text-xl font-black text-slate-800 tracking-normal';
+      }
+
+      // Písmena
+      if (level === 1) {
+        return (cardCount === 10)
+          ? 'text-5xl sm:text-6xl md:text-7xl font-black text-sky-700 tracking-normal'
+          : 'text-6xl sm:text-7xl md:text-8xl font-black text-sky-700 tracking-normal';
+      }
+
+      // Slabiky (2 znaky)
+      if (level === 2 || len <= 2) {
+        return (cardCount === 10)
+          ? 'text-4xl sm:text-5xl md:text-6xl font-black text-sky-700 tracking-normal'
+          : 'text-5xl sm:text-6xl md:text-7xl font-black text-sky-700 tracking-normal';
+      }
+
+      // 3 znaky (LES, PES, SÁM)
+      if (len === 3) {
+        return (cardCount === 10)
+          ? 'text-3xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-normal'
+          : 'text-4xl sm:text-5xl md:text-6xl font-black text-sky-800 tracking-normal';
+      }
+
+      // 4 znaky (MÁMA, SELE, VODA)
+      if (len === 4) {
+        return (cardCount === 10)
+          ? 'text-2xl sm:text-3xl md:text-4xl font-black text-sky-800 tracking-tight'
+          : 'text-3xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-tight';
+      }
+
+      // 5 znaků (MÁSLO, BOUDA, PLAVE)
+      if (len === 5) {
+        return (cardCount === 10)
+          ? 'text-xl sm:text-2xl md:text-3xl font-black text-sky-850 tracking-tight'
+          : 'text-2xl sm:text-3xl md:text-4xl font-black text-sky-850 tracking-tight';
+      }
+
+      // 6 a více znaků (MOUCHA, KŮZLE)
+      return (cardCount === 10)
+        ? 'text-lg sm:text-xl md:text-2xl font-black text-sky-900 tracking-tighter'
+        : 'text-xl sm:text-2xl md:text-3xl font-black text-sky-900 tracking-tight';
+    }
+
+    function toggleImages() {
+      state.showImages = !state.showImages;
+      saveState();
+      updateImageToggleUI();
+      renderCurrentContent();
+      playTone(520, 0.09, 'sine', 0.15);
+    }
+
+    function updateImageToggleUI() {
+      const btn = document.getElementById('toggle-images-btn');
+      const text = document.getElementById('toggle-images-text');
+      const icon = document.getElementById('toggle-images-icon');
+      const adminBtn = document.getElementById('admin-toggle-images-btn');
+
+      if (state.showImages) {
+        btn.className = 'game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5';
+        text.textContent = 'Obrázky: ZAPNUTO';
+        icon.textContent = '🖼️';
+        if (adminBtn) {
+          adminBtn.className = 'px-4 py-2 rounded-xl text-sm font-black transition-all bg-purple-600 text-white shadow-sm self-start';
+          adminBtn.textContent = 'Obrázky jsou: ZAPNUTY';
+        }
+      } else {
+        btn.className = 'game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-slate-300 hover:bg-slate-400 text-slate-700 shadow-sm flex items-center gap-1.5';
+        text.textContent = 'Obrázky: VYPNUTO';
+        icon.textContent = '🚫';
+        if (adminBtn) {
+          adminBtn.className = 'px-4 py-2 rounded-xl text-sm font-black transition-all bg-slate-300 text-slate-700 shadow-sm self-start';
+          adminBtn.textContent = 'Obrázky jsou: VYPNUTY';
+        }
+      }
+    }
+
+    function renderCurrentContent() {
+      const gridContainer = document.getElementById('content-grid-view');
+      const flashContainer = document.getElementById('content-flash-view');
+
+      if (!state.currentItems || state.currentItems.length === 0) return;
+
+      if (state.displayMode === 'grid') {
+        gridContainer.classList.remove('hidden');
+        flashContainer.classList.add('hidden');
+        gridContainer.innerHTML = '';
+
+        const isSentence = state.currentLevel === 7;
+
+        if (isSentence) {
+          gridContainer.className = 'w-full grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-3.5 py-1.5';
+        } else {
+          if (state.gridCardCount === 10) {
+            gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-3 py-1';
+          } else {
+            gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5 py-1';
+          }
+        }
+
+        state.currentItems.forEach((item, index) => {
+          const card = document.createElement('div');
+          
+          let padClass = (state.gridCardCount === 10) 
+            ? 'p-2 sm:p-3 min-h-[105px] sm:min-h-[120px]' 
+            : 'p-3 sm:p-4 min-h-[115px] sm:min-h-[135px]';
+
+          if (isSentence) {
+            padClass = 'p-3.5 sm:p-4 min-h-[75px] sm:min-h-[85px]';
+          }
+          
+          card.className = `letter-card bg-white rounded-2xl sm:rounded-3xl ${padClass} border-4 border-amber-300 shadow-game-card flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-amber-400 relative`;
+
+          const textDisplay = formatCase(item.text);
+          const fontClass = getCardTypographyStyle(item.text, state.currentLevel, state.gridCardCount);
+
+          let emojiHtml = '';
+          if (state.showImages && item.emoji) {
+            const emojiHeight = isSentence ? 'h-6 sm:h-7' : 'h-7 sm:h-8';
+            emojiHtml = `<div class="${emojiHeight} flex items-center justify-center mb-1 text-2xl sm:text-3xl select-none leading-none">${item.emoji}</div>`;
+          } else if (!isSentence) {
+            emojiHtml = '<div class="h-2"></div>';
+          }
+
+          card.innerHTML = `
+            ${emojiHtml}
+            <div class="w-full flex items-center justify-center px-1">
+              <span class="${fontClass} game-font leading-tight select-none break-keep text-center">
+                ${textDisplay}
+              </span>
+            </div>
+          `;
+
+          card.addEventListener('click', () => {
+            playTone(400 + (index % 8) * 45, 0.09, 'sine', 0.15);
+            card.classList.add('scale-105', 'border-emerald-400', 'bg-emerald-50/50');
+            setTimeout(() => card.classList.remove('scale-105', 'border-emerald-400', 'bg-emerald-50/50'), 220);
+          });
+
+          gridContainer.appendChild(card);
+        });
+      } else {
+        gridContainer.classList.add('hidden');
+        flashContainer.classList.remove('hidden');
+        updateFlashcardDisplay();
+      }
+    }
+
+    function updateFlashcardDisplay() {
+      if (!state.currentItems.length) return;
+      const current = state.currentItems[state.flashcardIndex];
+      const badge = document.getElementById('flash-badge');
+      const text = document.getElementById('flash-text');
+      const img = document.getElementById('flash-image');
+
+      badge.textContent = `Karta ${state.flashcardIndex + 1} z ${state.currentItems.length}`;
+      text.textContent = formatCase(current.text);
+      img.textContent = (state.showImages && current.emoji) ? current.emoji : '';
+
+      if (state.currentLevel === 7) {
+        text.className = 'text-2xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-normal game-font my-3 leading-relaxed break-words';
+      } else {
+        const len = current.text.length;
+        if (len <= 2) {
+          text.className = 'text-6xl sm:text-8xl font-black text-sky-700 tracking-normal game-font my-3';
+        } else if (len <= 4) {
+          text.className = 'text-5xl sm:text-7xl font-black text-sky-700 tracking-normal game-font my-3';
+        } else {
+          text.className = 'text-4xl sm:text-6xl font-black text-sky-700 tracking-tight game-font my-3';
+        }
+      }
+    }
+
+    function prevFlashcard() {
+      if (state.flashcardIndex > 0) {
+        state.flashcardIndex--;
+        playTone(380, 0.08, 'sine', 0.1);
+        updateFlashcardDisplay();
+      }
+    }
+
+    function nextFlashcard() {
+      if (state.flashcardIndex < state.currentItems.length - 1) {
+        state.flashcardIndex++;
+        playTone(480, 0.08, 'sine', 0.1);
+        updateFlashcardDisplay();
+      }
+    }
+
+    function setGridCount(count) {
+      state.gridCardCount = count;
+      saveState();
+
+      const btn8 = document.getElementById('count-btn-8');
+      const btn10 = document.getElementById('count-btn-10');
+      if (count === 8) {
+        btn8.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
+        btn10.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
+      } else {
+        btn10.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
+        btn8.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
+      }
+
+      const adminBtn8 = document.getElementById('admin-count-btn-8');
+      const adminBtn10 = document.getElementById('admin-count-btn-10');
+      if (adminBtn8 && adminBtn10) {
+        if (count === 8) {
+          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
+          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
+        } else {
+          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
+          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
+        }
+      }
+
+      playTone(550, 0.08, 'sine', 0.15);
+      generateLessonItems();
+    }
+
+    function parentReview(isSuccess) {
+      if (isSuccess) {
+        state.minutesBalance += 1;
+        const levelNames = [
+          'Písmena', 'Otevřené slabiky', 'Jednoslabičná slova', 
+          'Dvouslabičná slova', 'Dvojhlásky & Shluky', 'Měkké slabiky', 'Celé věty'
+        ];
+        state.history.unshift({
+          id: Date.now(),
+          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString('cs-CZ'),
+          type: 'earned',
+          minutes: 1,
+          note: `Úspěšné čtení: ${levelNames[state.currentLevel - 1]}`
+        });
+        saveState();
+        soundSuccess();
+        triggerConfetti();
+
+        setTimeout(() => {
+          generateLessonItems();
+        }, 500);
+      } else {
+        soundShuffle();
+        generateLessonItems();
+      }
+    }
+
+    function showView(viewName) {
+      const learnView = document.getElementById('view-learn');
+      const storeView = document.getElementById('view-store');
+      if (viewName === 'store') {
+        learnView.classList.add('hidden');
+        storeView.classList.remove('hidden');
+        document.getElementById('store-balance-display').textContent = state.minutesBalance;
+      } else {
+        storeView.classList.add('hidden');
+        learnView.classList.remove('hidden');
+      }
+    }
+
+    function switchLevel(lvl) {
+      state.currentLevel = lvl;
+      [1, 2, 3, 4, 5, 6, 7].forEach(i => {
+        const btn = document.getElementById(`lvl-btn-${i}`);
+        if (btn) {
+          if (i === lvl) {
+            btn.className = 'lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700';
+          } else {
+            btn.className = 'lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200';
+          }
+        }
+      });
+
+      playTone(500, 0.1, 'sine', 0.15);
+      generateLessonItems();
+    }
+
+    function setLetterCase(caseMode) {
+      state.letterCase = caseMode;
+      const upperBtn = document.getElementById('case-btn-upper');
+      const lowerBtn = document.getElementById('case-btn-lower');
+
+      if (caseMode === 'upper') {
+        upperBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
+        lowerBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
+      } else {
+        lowerBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
+        upperBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
+      }
+      renderCurrentContent();
+    }
+
+    function setDisplayMode(mode) {
+      state.displayMode = mode;
+      const gridBtn = document.getElementById('mode-btn-grid');
+      const flashBtn = document.getElementById('mode-btn-flash');
+
+      if (mode === 'grid') {
+        gridBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm';
+        flashBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200';
+      } else {
+        flashBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm';
+        gridBtn.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200';
+      }
+      renderCurrentContent();
+    }
+
+    function buyTimePackage(minutes) {
+      if (state.minutesBalance < minutes) {
+        soundError();
+        const voucherBox = document.getElementById('voucher-box');
+        voucherBox.className = 'bg-rose-100 border-4 border-rose-500 rounded-3xl p-6 text-center';
+        document.getElementById('voucher-text').textContent = `Máš ${state.minutesBalance} min. Potřebuješ ${minutes} hvězdiček ⭐!`;
+        voucherBox.classList.remove('hidden');
+        return;
+      }
+
+      state.minutesBalance -= minutes;
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'spent',
+        minutes: -minutes,
+        note: `Vyzvednut poukaz: ${minutes} min na tabletu`
+      });
+
+      saveState();
+      soundPurchase();
+      triggerConfetti();
+
+      const voucherBox = document.getElementById('voucher-box');
+      voucherBox.className = 'bg-emerald-100 border-4 border-emerald-500 rounded-3xl p-6 text-center animate-bounce';
+      document.getElementById('voucher-text').textContent = `LÍSTEK NA ${minutes} MINUT HRANÍ JE TVŮJ! 🎮`;
+      voucherBox.classList.remove('hidden');
+    }
+
+    function closeVoucher() {
+      document.getElementById('voucher-box').classList.add('hidden');
+    }
+
+    function updateBalanceUI() {
+      const displayTop = document.getElementById('top-balance-display');
+      const displayStore = document.getElementById('store-balance-display');
+      const displayAdmin = document.getElementById('admin-balance-display');
+
+      if (displayTop) displayTop.textContent = `${state.minutesBalance} min`;
+      if (displayStore) displayStore.textContent = state.minutesBalance;
+      if (displayAdmin) displayAdmin.textContent = `${state.minutesBalance} min`;
+    }
+
+    let currentMathAnswer = null;
+
+    function openParentModal() {
+      const modal = document.getElementById('parent-pin-modal');
+      const challenge = document.getElementById('math-challenge');
+      const err = document.getElementById('pin-error');
+      const input = document.getElementById('pin-input');
+      err.classList.add('hidden');
+      input.value = '';
+
+      const n1 = Math.floor(Math.random() * 5) + 6;
+      const n2 = Math.floor(Math.random() * 6) + 4;
+      currentMathAnswer = n1 * n2;
+      challenge.textContent = `Kolik je: ${n1} × ${n2} ?`;
+
+      modal.classList.remove('hidden');
+      setTimeout(() => input.focus(), 150);
+    }
+
+    function closeParentModal() {
+      document.getElementById('parent-pin-modal').classList.add('hidden');
+    }
+
+    function verifyParentPin() {
+      const input = document.getElementById('pin-input').value.trim();
+      const err = document.getElementById('pin-error');
+
+      if (parseInt(input) === currentMathAnswer || input === '1234') {
+        closeParentModal();
+        openAdminPanel();
+      } else {
+        err.classList.remove('hidden');
+        soundError();
+      }
+    }
+
+    function openAdminPanel() {
+      const panel = document.getElementById('admin-panel-modal');
+      updateBalanceUI();
+      renderAlphabetGrid();
+      renderHistoryLog();
+      updateImageToggleUI();
+
+      const count = state.gridCardCount || 8;
+      const adminBtn8 = document.getElementById('admin-count-btn-8');
+      const adminBtn10 = document.getElementById('admin-count-btn-10');
+      if (adminBtn8 && adminBtn10) {
+        if (count === 8) {
+          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
+          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
+        } else {
+          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
+          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
+        }
+      }
+
+      panel.classList.remove('hidden');
+    }
+
+    function closeAdminPanel() {
+      document.getElementById('admin-panel-modal').classList.add('hidden');
+      generateLessonItems();
+    }
+
+    function renderAlphabetGrid() {
+      const container = document.getElementById('alphabet-grid-container');
+      container.innerHTML = '';
+
+      FULL_CZECH_ALPHABET.forEach(char => {
+        const isChecked = state.activeLetters.includes(char);
+        const item = document.createElement('div');
+        item.className = `p-2 rounded-xl border text-center font-black cursor-pointer transition-all select-none ${
+          isChecked 
+            ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm scale-100' 
+            : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100 opacity-60'
+        }`;
+        item.innerHTML = `<span class="text-base sm:text-lg block game-font">${char}</span>`;
+
+        item.addEventListener('click', () => {
+          if (state.activeLetters.includes(char)) {
+            if (state.activeLetters.length > 2) {
+              state.activeLetters = state.activeLetters.filter(l => l !== char);
+            }
+          } else {
+            state.activeLetters.push(char);
+          }
+          saveState();
+          renderAlphabetGrid();
+        });
+
+        container.appendChild(item);
+      });
+
+      const countIndicator = document.getElementById('active-count-indicator');
+      if (countIndicator) {
+        countIndicator.textContent = `Aktivních písmen: ${state.activeLetters.length} / ${FULL_CZECH_ALPHABET.length}`;
+      }
+    }
+
+    function applyPreset(presetKey) {
+      if (PRESETS[presetKey]) {
+        state.activeLetters = [...PRESETS[presetKey]];
+        saveState();
+        renderAlphabetGrid();
+        playTone(600, 0.1, 'sine', 0.2);
+      }
+    }
+
+    function adjustMinutes(delta, note) {
+      state.minutesBalance = Math.max(0, state.minutesBalance + delta);
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: delta >= 0 ? 'admin_add' : 'admin_deduct',
+        minutes: delta,
+        note: note || (delta > 0 ? `Přidáno +${delta} min` : `Odečteno ${delta} min`)
+      });
+      saveState();
+      renderHistoryLog();
+      playTone(550, 0.1, 'sine', 0.2);
+    }
+
+    function renderHistoryLog() {
+      const log = document.getElementById('history-log-container');
+      if (!state.history || state.history.length === 0) {
+        log.innerHTML = '<p class="text-slate-400 italic text-center py-2 font-bold">Zatím žádná historie minut.</p>';
+        return;
+      }
+      log.innerHTML = state.history.slice(0, 30).map(h => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200">
+          <div>
+            <div class="font-bold text-slate-800 text-xs">${h.note}</div>
+            <div class="text-[10px] text-slate-400 font-bold">${h.date} v ${h.time}</div>
+          </div>
+          <div class="font-black text-sm ${h.minutes > 0 ? 'text-emerald-600' : 'text-rose-600'}">
+            ${h.minutes > 0 ? `+${h.minutes}` : h.minutes} min
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function clearHistory() {
+      state.history = [];
+      saveState();
+      renderHistoryLog();
+    }
+
+    function resetAllData() {
+      state = {
+        minutesBalance: 0,
+        activeLetters: ['M', 'L', 'E', 'É', 'A', 'Á', 'S'],
+        currentLevel: 1,
+        letterCase: 'upper',
+        displayMode: 'grid',
+        gridCardCount: 8,
+        showImages: true,
+        currentItems: [],
+        flashcardIndex: 0,
+        history: []
+      };
+      saveState();
+      closeAdminPanel();
+      setGridCount(8);
+      switchLevel(1);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadState();
+      updateBalanceUI();
+      if (!state.gridCardCount) state.gridCardCount = 8;
+      if (state.showImages === undefined) state.showImages = true;
+      
+      updateImageToggleUI();
+      setGridCount(state.gridCardCount);
+      switchLevel(state.currentLevel || 1);
+
+      document.getElementById('pin-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          verifyParentPin();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
