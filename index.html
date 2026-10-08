@@ -64,6 +64,23 @@
     .wiggle {
       animation: gentleWiggle 3s ease-in-out infinite;
     }
+    @keyframes chestShake {
+      0%, 100% { transform: rotate(0deg) scale(1); }
+      20% { transform: rotate(-8deg) scale(1.08); }
+      40% { transform: rotate(8deg) scale(1.12); }
+      60% { transform: rotate(-6deg) scale(1.15); }
+      80% { transform: rotate(6deg) scale(1.1); }
+    }
+    .chest-shaking {
+      animation: chestShake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6)); }
+      50% { filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.95)); }
+    }
+    .chest-ready {
+      animation: pulseGlow 2.2s infinite ease-in-out;
+    }
     ::-webkit-scrollbar {
       width: 7px;
       height: 7px;
@@ -90,12 +107,26 @@
         <span class="text-3xl sm:text-4xl filter drop-shadow wiggle">🚀</span>
         <div>
           <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-amber-500 tracking-wide font-baloo leading-none">ČTENÁŘSKÁ MISE</h1>
-          <p class="text-[11px] text-sky-600 font-extrabold hidden sm:block">1. třída ZŠ • Striktně unikátní dlaždice bez duplicit</p>
+          <p class="text-[11px] text-sky-600 font-extrabold hidden sm:block">1. třída ZŠ • Denní úkoly, truhla & čtení</p>
         </div>
       </div>
 
-      <!-- Action items: Balance, Shop button, Parent Pin -->
-      <div class="flex items-center gap-2">
+      <!-- Action items: Balance, Daily Box, Quests, Shop button, Parent Pin -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Daily Box Mini Trigger -->
+        <button onclick="openDailyBoxModal()" id="top-box-btn" title="Denní Truhla" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-amber-700 shadow-sm flex items-center gap-1.5">
+          <span class="text-xl sm:text-2xl" id="top-box-icon">🎁</span>
+          <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Truhla</span>
+          <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
+        </button>
+
+        <!-- Daily Quests Button -->
+        <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-indigo-700 shadow-sm flex items-center gap-1.5">
+          <span class="text-xl sm:text-2xl">📋</span>
+          <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Úkoly</span>
+          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/5</span>
+        </button>
+
         <!-- Balance Pill -->
         <div onclick="showView('store')" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3 py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
           <span class="text-xl sm:text-2xl animate-pulse">⭐</span>
@@ -107,8 +138,8 @@
 
         <!-- Store Button -->
         <button onclick="showView('store')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-pink-700 shadow-sm flex items-center gap-1.5">
-          <span class="text-xl sm:text-2xl">🎁</span>
-          <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Odměny</span>
+          <span class="text-xl sm:text-2xl">🎟️</span>
+          <span class="hidden lg:inline font-black text-xs uppercase tracking-wider">Odměny</span>
         </button>
 
         <!-- Admin Pin Lock -->
@@ -124,36 +155,36 @@
     <!-- VIEW 1: LEARNING / MISSIONS -->
     <section id="view-learn" class="flex-grow flex flex-col space-y-2.5">
       
-      <!-- 7 Level Tabs (1st Grade Elementary Curriculum) -->
+      <!-- 7 Level Tabs (1st Grade Elementary Curriculum) with Tier Rewards labeled -->
       <div class="bg-white/95 p-1.5 rounded-3xl shadow-sm border-2 border-sky-200 overflow-x-auto">
         <div class="grid grid-flow-col auto-cols-[145px] sm:auto-cols-[165px] md:grid-cols-4 lg:grid-cols-7 gap-1.5 min-w-max md:min-w-0">
           <button onclick="switchLevel(1)" id="lvl-btn-1" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700">
             <span>🔤 1. Písmena</span>
-            <span class="text-[10px] font-semibold opacity-90 truncate max-w-full">A, M, L, S...</span>
+            <span class="text-[10px] font-bold text-amber-200">+0,25 min</span>
           </button>
           <button onclick="switchLevel(2)" id="lvl-btn-2" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>🧩 2. Slabiky</span>
-            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">MA, MÁ, LE, SE...</span>
+            <span class="text-[10px] font-bold text-amber-600">+0,25 min</span>
           </button>
           <button onclick="switchLevel(3)" id="lvl-btn-3" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>📦 3. Jednoslabičná</span>
-            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">LES, SÁM, PES...</span>
+            <span class="text-[10px] font-bold text-amber-600">+0,25 min</span>
           </button>
           <button onclick="switchLevel(4)" id="lvl-btn-4" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>📖 4. Dvouslabičná</span>
-            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">MÁMA, SELE...</span>
+            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
           </button>
           <button onclick="switchLevel(5)" id="lvl-btn-5" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>✨ 5. Shluky/OU</span>
-            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">MOUKA, MRAK...</span>
+            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
           </button>
           <button onclick="switchLevel(6)" id="lvl-btn-6" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>🎯 6. DĚ / TĚ / NĚ</span>
-            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">DĚDA, TĚLO, BĚŽÍ</span>
+            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
           </button>
           <button onclick="switchLevel(7)" id="lvl-btn-7" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>🌟 7. Celé věty</span>
-            <span class="text-[10px] font-semibold text-slate-500 truncate max-w-full">EMA MÁ SELE...</span>
+            <span class="text-[10px] font-bold text-purple-600">+1,00 min</span>
           </button>
         </div>
       </div>
@@ -248,7 +279,7 @@
         </div>
       </div>
 
-      <!-- Parent Review Buttons -->
+      <!-- Parent Review Buttons with Dynamic Tier Reward Display -->
       <div class="bg-white/95 rounded-3xl p-3 sm:p-4 border-4 border-emerald-400 shadow-xl mt-1">
         <div class="text-center mb-2">
           <p class="text-xs uppercase font-black tracking-wider text-slate-500">Hodnocení rodiče (Poslechni si čtení syna):</p>
@@ -263,19 +294,41 @@
             </div>
           </button>
 
-          <!-- Correct Button -->
-          <button onclick="parentReview(true)" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 sm:py-3.5 px-6 rounded-2xl border-b-6 border-emerald-700 text-base sm:text-xl flex items-center justify-center gap-3 shadow-game-btn">
+          <!-- Correct Button with dynamic reward badge -->
+          <button onclick="parentReview(true)" id="btn-review-success" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 sm:py-3.5 px-6 rounded-2xl border-b-6 border-emerald-700 text-base sm:text-xl flex items-center justify-center gap-3 shadow-game-btn">
             <span class="text-2xl sm:text-3xl">🎉</span>
             <div class="text-left leading-tight">
               <div>PŘEČTENO SPRÁVNĚ!</div>
-              <div class="text-[11px] font-extrabold text-emerald-100">+1 MINUTA NA HRANÍ</div>
+              <div class="text-[11px] font-extrabold text-emerald-100" id="btn-review-reward-label">+0,25 MINUTY NA HRANÍ</div>
             </div>
           </button>
         </div>
       </div>
     </section>
 
-    <!-- VIEW 2: STORE (TIME SHOP) -->
+    <!-- VIEW 2: DAILY QUESTS (DENNÍ ÚKOLY) -->
+    <section id="view-quests" class="hidden flex-grow flex flex-col space-y-4">
+      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white p-5 sm:p-6 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="bg-white/20 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">Každý den nové</span>
+            <span class="text-xs bg-amber-400 text-indigo-950 font-black px-2.5 py-0.5 rounded-full" id="quests-date-display">Dnes</span>
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-black mt-2 font-baloo leading-tight">Denní Úkoly 📋</h2>
+          <p class="text-purple-100 mt-1 font-bold text-sm">Splň úkoly a získej za každý celý 1 bonusovou minutu k tabletu navíc!</p>
+        </div>
+        <button onclick="showView('learn')" class="game-button bg-white text-indigo-700 font-black px-4 py-2.5 rounded-2xl shadow-md border-b-4 border-slate-200 flex items-center gap-2 text-sm whitespace-nowrap">
+          <span>🎮</span> Zpět do Tréninku
+        </button>
+      </div>
+
+      <!-- Quests list container -->
+      <div class="space-y-3" id="quests-list-container">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- VIEW 3: STORE (TIME SHOP) -->
     <section id="view-store" class="hidden flex-grow flex flex-col space-y-5">
       <div class="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white p-5 sm:p-7 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
         <div>
@@ -391,6 +444,43 @@
 
   </main>
 
+  <!-- DAILY BOX MODAL (ANIMATED CHEST) -->
+  <div id="daily-box-modal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-gradient-to-b from-amber-100 via-white to-amber-50 rounded-3xl max-w-sm w-full p-6 sm:p-7 border-4 border-amber-400 shadow-2xl text-center relative overflow-hidden">
+      
+      <button onclick="closeDailyBoxModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 font-black text-xl w-8 h-8 rounded-full flex items-center justify-center">✕</button>
+
+      <span class="bg-amber-400 text-amber-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Kouzelná Truhla</span>
+      <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1 font-baloo">Denní Box Odměn 🎁</h3>
+      <p class="text-xs text-slate-600 font-bold mt-1">Klepni na truhlu a získej 0,5 až 2 minuty zdarma každý den!</p>
+
+      <!-- Chest Interactive Container -->
+      <div class="my-6 flex flex-col items-center justify-center min-h-[160px]">
+        <div id="chest-graphic" onclick="openChestAction()" class="cursor-pointer text-7xl sm:text-8xl select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95">
+          🎁
+        </div>
+        
+        <div id="chest-status-text" class="text-sm font-black text-amber-800 mt-3">
+          Klepni pro otevření! 👆
+        </div>
+      </div>
+
+      <!-- Result Reveal Panel -->
+      <div id="chest-reward-reveal" class="hidden bg-gradient-to-r from-amber-300 to-yellow-300 border-2 border-amber-500 rounded-2xl p-4 text-center my-3 animate-pulse">
+        <span class="text-3xl">⭐</span>
+        <div class="text-xs font-black uppercase text-amber-900 mt-0.5">Vyhráváš do pokladnice:</div>
+        <div class="text-3xl font-black text-amber-950 font-baloo my-1" id="chest-reward-amount">+1,5 minuty!</div>
+        <p class="text-[11px] text-amber-900 font-bold">Připsáno na tvůj účet tabletu.</p>
+      </div>
+
+      <div class="mt-4">
+        <button onclick="closeDailyBoxModal()" class="game-button w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm shadow-md">
+          Zavřít
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- PARENT PIN MODAL -->
   <div id="parent-pin-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 border-4 border-slate-700 shadow-2xl text-center">
@@ -422,53 +512,68 @@
           <span class="text-3xl">⚙️</span>
           <div>
             <h2 class="text-2xl font-black text-slate-800">Rodičovská Administrace</h2>
-            <p class="text-xs text-slate-500 font-bold">Přidávání po 1 minutě, nastavení dlaždic a 42 písmen abecedy</p>
+            <p class="text-xs text-slate-500 font-bold">Přidávání minut, manuální reset úkolů/truhly a písmenka abecedy</p>
           </div>
         </div>
         <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-10 h-10 rounded-full flex items-center justify-center text-xl">✕</button>
       </div>
 
-      <!-- Minute Adjustments (+1, -1, +5, -5, +10, -10) -->
+      <!-- Minute Adjustments (+0.5, +1, +5, -0.5, -1, -5) -->
       <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 mb-5">
         <div class="flex items-center justify-between mb-3">
           <div>
             <span class="font-black text-indigo-950 text-base sm:text-lg">Kredit na tabletu:</span>
-            <span class="text-xs text-indigo-600 block font-bold">Můžeš přidávat i ubírat přesně po 1 minutě</span>
+            <span class="text-xs text-indigo-600 block font-bold">Přidávání a ubírání minut (i po půlminutách)</span>
           </div>
           <span class="text-3xl font-black text-indigo-700" id="admin-balance-display">0 min</span>
         </div>
 
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+          <!-- +0.5 MIN -->
+          <button onclick="adjustMinutes(0.5, 'Bonus od rodiče (+0.5 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>+0.5 min</span>
+            <span class="text-[10px] font-normal opacity-90">+30 sek</span>
+          </button>
           <!-- +1 MIN -->
-          <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+          <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
             <span>+1 min</span>
-            <span class="text-[10px] font-normal opacity-90">+1 krok</span>
+            <span class="text-[10px] font-normal opacity-90">+1 celá</span>
           </button>
           <!-- +5 MIN -->
-          <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+          <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
             <span>+5 min</span>
-            <span class="text-[10px] font-normal opacity-90">+5 krok</span>
-          </button>
-          <!-- +10 MIN -->
-          <button onclick="adjustMinutes(10, 'Bonus od rodiče (+10 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>+10 min</span>
-            <span class="text-[10px] font-normal opacity-90">+10 krok</span>
+            <span class="text-[10px] font-normal opacity-90">+5 balíček</span>
           </button>
 
+          <!-- -0.5 MIN -->
+          <button onclick="adjustMinutes(-0.5, 'Odečet rodičem (-0.5 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+            <span>-0.5 min</span>
+            <span class="text-[10px] font-normal opacity-90">-30 sek</span>
+          </button>
           <!-- -1 MIN -->
-          <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+          <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
             <span>-1 min</span>
-            <span class="text-[10px] font-normal opacity-90">-1 krok</span>
+            <span class="text-[10px] font-normal opacity-90">-1 celá</span>
           </button>
           <!-- -5 MIN -->
-          <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+          <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
             <span>-5 min</span>
-            <span class="text-[10px] font-normal opacity-90">-5 krok</span>
+            <span class="text-[10px] font-normal opacity-90">-5 balíček</span>
           </button>
-          <!-- -10 MIN -->
-          <button onclick="adjustMinutes(-10, 'Odečet rodičem (-10 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>-10 min</span>
-            <span class="text-[10px] font-normal opacity-90">-10 krok</span>
+        </div>
+      </div>
+
+      <!-- DAILY RESETS SECTION (ADMIN) -->
+      <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-4 mb-5">
+        <h4 class="font-black text-purple-950 text-base mb-1">Správa Denních Bonusů (Ruční reset):</h4>
+        <p class="text-xs text-purple-800 font-bold mb-3">Automaticky se resetují po půlnoci. Zde je můžeš synovi obnovit kdykoli znovu ručně.</p>
+        
+        <div class="flex flex-wrap gap-2.5">
+          <button onclick="adminResetQuests()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+            <span>🔄</span> Resetovat Denní Úkoly (5 úkolů)
+          </button>
+          <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+            <span>🎁</span> Resetovat Denní Truhlu (Daily Box)
           </button>
         </div>
       </div>
@@ -538,7 +643,7 @@
       <!-- Transaction History Log -->
       <div class="mb-6">
         <div class="flex items-center justify-between mb-2">
-          <h4 class="font-black text-slate-800 text-base">Historie minut (Získané čtením i Utracené na tabletu):</h4>
+          <h4 class="font-black text-slate-800 text-base">Historie minut (Získané čtením, úkoly i Utracené na tabletu):</h4>
           <button onclick="clearHistory()" class="text-xs text-red-500 font-bold hover:underline">Vyčistit historii</button>
         </div>
         <div id="history-log-container" class="bg-slate-50 border border-slate-200 rounded-2xl p-3 max-h-40 overflow-y-auto text-sm space-y-2">
@@ -560,7 +665,7 @@
   </footer>
 
   <script>
-    const STORAGE_KEY = 'ctenarska_mise_v8_strict';
+    const STORAGE_KEY = 'ctenarska_mise_v9_daily';
 
     // Kompletní česká abeceda včetně veškeré diakritiky (42 písmen)
     const FULL_CZECH_ALPHABET = [
@@ -589,6 +694,26 @@
       'D', 'Ď', 'K', 'C', 'Č', 'B', 'H', 'CH', 'R', 'Ř', 'F', 'G'
     ];
 
+    // DEFINICE ODMĚN PODLE OBTÍŽNOSTI (ÚROVNĚ 1 AŽ 7)
+    const LEVEL_REWARDS = {
+      1: 0.25, // Písmena
+      2: 0.25, // Slabiky
+      3: 0.25, // Jednoslabičná
+      4: 0.50, // Dvouslabičná
+      5: 0.50, // Shluky/OU
+      6: 0.50, // DĚ / TĚ / NĚ / BĚ / PĚ / VĚ / MĚ
+      7: 1.00  // Celé věty
+    };
+
+    // FORMÁTOVÁNÍ MINUT (žádné zbytečné nuly, např. 1 min, 0.25 min, 1.5 min)
+    function formatMinutes(val) {
+      const num = Number(val);
+      if (isNaN(num)) return '0 min';
+      const rounded = Math.round(num * 100) / 100;
+      const formatted = rounded.toString().replace('.', ',');
+      return `${formatted} min`;
+    }
+
     // Rozklad českého textu na množinu unikátních velkých písmen (s ohledem na spřežku CH)
     function extractUniqueLetters(text) {
       const upper = text.toUpperCase();
@@ -609,10 +734,7 @@
       return Array.from(letters);
     }
 
-    /* 
-      LEVEL 3: Masivní databáze jednoslabičných uzavřených slov (CVC)
-      Obsahuje i slova z úplného startu (M, L, E, A, S): LES, SÁM, MEL, SEM, SÁL atd.
-    */
+    /* LEVEL 3: Masivní databáze jednoslabičných uzavřených slov (CVC) */
     const RAW_LEVEL_3_WORDS = [
       { t: 'LES', e: '🌲' }, { t: 'SÁM', e: '🧍' }, { t: 'MEL', e: '🥣' }, { t: 'SEM', e: '👉' },
       { t: 'SÁL', e: '🏛️' }, { t: 'PES', e: '🐶' }, { t: 'PAS', e: '🛂' }, { t: 'PÁV', e: '🦚' },
@@ -635,11 +757,7 @@
       { t: 'VĚC', e: '📦' }, { t: 'VÝR', e: '🦉' }, { t: 'VŮZ', e: '🚗' }, { t: 'ŽÁR', e: '🔥' }
     ];
 
-    /* 
-      LEVEL 4: Masivní databáze dvouslabičných slov
-      Obsahuje i veškerá kombinovatelná slova pro start (M, L, E, A, S):
-      MÁMA, MELE, SELE, LAMA, MASO, LASO, MÁSLO, SAMA, MÁME, MELA, LEMU, LÁME...
-    */
+    /* LEVEL 4: Masivní databáze dvouslabičných slov */
     const RAW_LEVEL_4_WORDS = [
       { t: 'MÁMA', e: '👩' }, { t: 'MELE', e: '⚙️' }, { t: 'SELE', e: '🐷' }, { t: 'LAMA', e: '🦙' },
       { t: 'MASO', e: '🍖' }, { t: 'LASO', e: '🪢' }, { t: 'MÁSLO', e: '🧈' }, { t: 'SAMA', e: '🧍‍♀️' },
@@ -661,9 +779,7 @@
       { t: 'ŽENA', e: '👩' }, { t: 'ŽITO', e: '🌾' }
     ];
 
-    /* 
-      LEVEL 5: Shluky souhlásek & Dvojhlásky OU / AU
-    */
+    /* LEVEL 5: Shluky souhlásek & Dvojhlásky OU / AU */
     const RAW_LEVEL_5_WORDS = [
       { t: 'MÁSLO', e: '🧈' }, { t: 'AUTO', e: '🚗' }, { t: 'MOUKA', e: '🌾' }, { t: 'KOULE', e: '⚪' },
       { t: 'BOUDA', e: '🐶' }, { t: 'MOUCHA', e: '🪰' }, { t: 'FOUKÁ', e: '💨' }, { t: 'LOUKA', e: '🌼' },
@@ -678,9 +794,7 @@
       { t: 'DROZD', e: '🐦' }, { t: 'STROM', e: '🌳' }, { t: 'PŠTROS', e: '🪶' }, { t: 'PLÁŠŤ', e: '🧥' }
     ];
 
-    /* 
-      LEVEL 6: Měkké slabiky a DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ
-    */
+    /* LEVEL 6: Měkké slabiky a DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ */
     const RAW_LEVEL_6_WORDS = [
       { t: 'DĚDA', e: '👴' }, { t: 'DĚTI', e: '🧒' }, { t: 'TĚLO', e: '🧍' }, { t: 'KOTĚ', e: '🐱' },
       { t: 'KONĚ', e: '🐎' }, { t: 'VĚTEV', e: '🌿' }, { t: 'MĚSTO', e: '🏙️' }, { t: 'BĚŽÍ', e: '🏃' },
@@ -692,10 +806,7 @@
       { t: 'CIBULE', e: '🧅' }, { t: 'ČISTÝ', e: '✨' }, { t: 'TICHO', e: '🤫' }, { t: 'NIT', e: '🧵' }
     ];
 
-    /* 
-      LEVEL 7: Smysluplné české věty pro 1. třídu ZŠ
-      Všechny nesmyslné fráze typu "ÁLA MÁ LESA" byly trvale odstraněny!
-    */
+    /* LEVEL 7: Smysluplné české věty pro 1. třídu ZŠ */
     const RAW_LEVEL_7_SENTENCES = [
       { t: 'EMA MÁ SELE.', e: '👧🐷' },
       { t: 'MÁMA MELE SELE.', e: '👩🥩' },
@@ -750,15 +861,83 @@
       { t: 'ŽÁBA SKOČILA DO VODY.', e: '🐸🌊' }
     ];
 
-    // Předzpracování pro bleskurychlou kontrolu písmen
     const LEVEL_3_CVC_WORDS = RAW_LEVEL_3_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
     const LEVEL_4_TWO_SYLLABLE_WORDS = RAW_LEVEL_4_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
     const LEVEL_5_CLUSTERS_AND_DIPHTHONGS = RAW_LEVEL_5_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
     const LEVEL_6_SOFT_SYLLABLES = RAW_LEVEL_6_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
     const LEVEL_7_SENTENCES = RAW_LEVEL_7_SENTENCES.map(s => ({ text: s.t, emoji: s.e, letters: extractUniqueLetters(s.t) }));
 
+    function getTodayDateString() {
+      const d = new Date();
+      const yr = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const da = String(d.getDate()).padStart(2, '0');
+      return `${yr}-${mo}-${da}`;
+    }
+
+    // Default 5 Daily Quests setup
+    function createDefaultDailyQuests() {
+      return [
+        {
+          id: 'q1',
+          title: 'Písmenkový mistr',
+          desc: 'Přečti 3 sady písmenek',
+          target: 3,
+          progress: 0,
+          claimed: false,
+          reward: 1.0,
+          icon: '🔤',
+          levelMatches: (lvl) => lvl === 1
+        },
+        {
+          id: 'q2',
+          title: 'Slabikový šikula',
+          desc: 'Přečti 3 sady otevřených slabik',
+          target: 3,
+          progress: 0,
+          claimed: false,
+          reward: 1.0,
+          icon: '🧩',
+          levelMatches: (lvl) => lvl === 2
+        },
+        {
+          id: 'q3',
+          title: 'Průzkumník slov',
+          desc: 'Přečti 2 sady jednoslabičných či dvouslabičných slov',
+          target: 2,
+          progress: 0,
+          claimed: false,
+          reward: 1.0,
+          icon: '📦',
+          levelMatches: (lvl) => lvl === 3 || lvl === 4
+        },
+        {
+          id: 'q4',
+          title: 'Velký čtenář',
+          desc: 'Přečti 1 celou sadu českých vět',
+          target: 1,
+          progress: 0,
+          claimed: false,
+          reward: 1.0,
+          icon: '🌟',
+          levelMatches: (lvl) => lvl === 7
+        },
+        {
+          id: 'q5',
+          title: 'Tréninkový šampion',
+          desc: 'Splň celkem 10 libovolných tréninkových kol',
+          target: 10,
+          progress: 0,
+          claimed: false,
+          reward: 1.0,
+          icon: '🏆',
+          levelMatches: () => true
+        }
+      ];
+    }
+
     let state = {
-      minutesBalance: 0,
+      minutesBalance: 0.0,
       activeLetters: ['M', 'L', 'E', 'É', 'A', 'Á', 'S'],
       currentLevel: 1,
       letterCase: 'upper',
@@ -767,13 +946,47 @@
       showImages: true,
       currentItems: [],
       flashcardIndex: 0,
-      history: []
+      history: [],
+      
+      // Daily Quests State
+      questsDate: '',
+      quests: createDefaultDailyQuests(),
+
+      // Daily Box State
+      boxDate: '',
+      boxClaimed: false,
+      lastBoxReward: 0.0
     };
 
-    // Paměť pro eliminaci opakování napříč koly
     const recentHistoryPerLevel = {
       1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: []
     };
+
+    function checkAndHandleDailyResets() {
+      const today = getTodayDateString();
+
+      // Check Daily Quests reset
+      if (state.questsDate !== today) {
+        state.questsDate = today;
+        state.quests = createDefaultDailyQuests();
+      } else {
+        const defaults = createDefaultDailyQuests();
+        if (!state.quests || state.quests.length !== 5) {
+          state.quests = defaults;
+        } else {
+          state.quests.forEach((q, idx) => {
+            q.levelMatches = defaults[idx].levelMatches;
+          });
+        }
+      }
+
+      // Check Daily Box reset
+      if (state.boxDate !== today) {
+        state.boxDate = today;
+        state.boxClaimed = false;
+        state.lastBoxReward = 0.0;
+      }
+    }
 
     function loadState() {
       try {
@@ -785,6 +998,7 @@
       } catch (err) {
         console.warn('LocalStorage error', err);
       }
+      checkAndHandleDailyResets();
     }
 
     function saveState() {
@@ -794,6 +1008,7 @@
         console.warn('LocalStorage save error', err);
       }
       updateBalanceUI();
+      updateTopBadges();
     }
 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -838,6 +1053,14 @@
 
     function soundError() {
       playTone(220, 0.3, 'sawtooth', 0.2);
+    }
+
+    function soundChestOpening() {
+      playTone(392.00, 0.15, 'sine', 0.2);
+      setTimeout(() => playTone(523.25, 0.18, 'triangle', 0.25), 120);
+      setTimeout(() => playTone(659.25, 0.2, 'triangle', 0.25), 260);
+      setTimeout(() => playTone(783.99, 0.25, 'triangle', 0.3), 420);
+      setTimeout(() => playTone(1046.50, 0.5, 'triangle', 0.35), 600);
     }
 
     // Confetti Engine
@@ -932,17 +1155,9 @@
       return syllables;
     }
 
-    /* 
-      KLÍČOVÁ OPRAVA: VÝBĚR BEZ DUPLICIT (STRICT ZERO DUPLICATE LOGIC)
-      - V úrovních 2 až 7 se NIKDY nesmí zobrazit stejné slovo/slabika na obrazovce dvakrát!
-      - Pokud je unikátních slov méně než požadovaných 8 nebo 10, zobrazí se pouze všechna
-        dostupná unikátní slova a pod nimi hezká nápovědná bublina pro rodiče.
-      - Pouze v úrovni 1 (Písmena) se může písmeno zopakovat, pokud je celkový počet písmen < count.
-    */
     function selectStrictBatch(pool, desiredCount, level) {
       if (!pool || pool.length === 0) return { items: [], totalAvailable: 0 };
 
-      // Odstranění jakýchkoli potenciálních duplicit ze zdrojového poolu
       const uniqueMap = new Map();
       pool.forEach(item => {
         if (!uniqueMap.has(item.text)) {
@@ -952,7 +1167,7 @@
       const uniquePool = Array.from(uniqueMap.values());
       const totalAvailable = uniquePool.length;
 
-      // ÚROVEŇ 1 (PÍSMENA): Pokud je písmen méně než dlaždic (např. 7), doplní rotaci, ale promíchá
+      // ÚROVEŇ 1 (PÍSMENA): Pokud je písmen méně než dlaždic, doplní rotaci, ale promíchá
       if (level === 1 && totalAvailable < desiredCount) {
         let picked = shuffleArray([...uniquePool]);
         while (picked.length < desiredCount) {
@@ -964,12 +1179,10 @@
       }
 
       // ÚROVNĚ 2–7: 100% ZÁKAZ DUPLICIT NA OBRAZOVCE!
-      // Pokud máme méně slov než desiredCount, vrátíme VŠECHNA unikátní slova bez duplikace
       if (totalAvailable <= desiredCount) {
         return { items: shuffleArray(uniquePool), totalAvailable };
       }
 
-      // Pokud máme více slov než desiredCount: vybereme podle historie, aby se slova neopakovala napříč koly
       if (!recentHistoryPerLevel[level]) {
         recentHistoryPerLevel[level] = [];
       }
@@ -988,7 +1201,6 @@
         chosen.push(...shuffledRecent.slice(0, needed));
       }
 
-      // Zápis do historie nepoužitých pro další kola
       chosen.forEach(c => recent.push(c.text));
       const maxMemory = Math.max(desiredCount * 2, Math.floor(uniquePool.length * 0.6));
       while (recent.length > maxMemory) {
@@ -1053,7 +1265,6 @@
       state.currentItems = items;
       state.flashcardIndex = 0;
 
-      // Zobrazení nápovědné bubliny, pokud je unikátních slov méně než požadovaných dlaždic
       if (lvl > 1 && totalAvailable < desiredCount) {
         limitedPoolHint.classList.remove('hidden');
         limitedPoolText.textContent = `Nalezeno ${totalAvailable} unikátních slov pro odemčená písmena. Chceš-li více slov, odemkni v Administraci další písmenka!`;
@@ -1063,6 +1274,15 @@
 
       renderCurrentContent();
       updateActiveSummaryBadge();
+      updateReviewButtonLabel();
+    }
+
+    function updateReviewButtonLabel() {
+      const reward = LEVEL_REWARDS[state.currentLevel] || 0.25;
+      const label = document.getElementById('btn-review-reward-label');
+      if (label) {
+        label.textContent = `+${reward.toString().replace('.', ',')} MINUTY NA HRANÍ`;
+      }
     }
 
     function formatCase(text) {
@@ -1083,7 +1303,6 @@
     function getCardTypographyStyle(text, level, cardCount) {
       const len = text.length;
 
-      // Celé věty
       if (level === 7) {
         if (len > 22) {
           return 'text-sm sm:text-base md:text-lg font-black text-slate-800 tracking-normal';
@@ -1091,42 +1310,36 @@
         return 'text-base sm:text-lg md:text-xl font-black text-slate-800 tracking-normal';
       }
 
-      // Písmena
       if (level === 1) {
         return (cardCount === 10)
           ? 'text-5xl sm:text-6xl md:text-7xl font-black text-sky-700 tracking-normal'
           : 'text-6xl sm:text-7xl md:text-8xl font-black text-sky-700 tracking-normal';
       }
 
-      // Slabiky (2 znaky)
       if (level === 2 || len <= 2) {
         return (cardCount === 10)
           ? 'text-4xl sm:text-5xl md:text-6xl font-black text-sky-700 tracking-normal'
           : 'text-5xl sm:text-6xl md:text-7xl font-black text-sky-700 tracking-normal';
       }
 
-      // 3 znaky (LES, PES, SÁM)
       if (len === 3) {
         return (cardCount === 10)
           ? 'text-3xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-normal'
           : 'text-4xl sm:text-5xl md:text-6xl font-black text-sky-800 tracking-normal';
       }
 
-      // 4 znaky (MÁMA, SELE, VODA)
       if (len === 4) {
         return (cardCount === 10)
           ? 'text-2xl sm:text-3xl md:text-4xl font-black text-sky-800 tracking-tight'
           : 'text-3xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-tight';
       }
 
-      // 5 znaků (MÁSLO, BOUDA, PLAVE)
       if (len === 5) {
         return (cardCount === 10)
           ? 'text-xl sm:text-2xl md:text-3xl font-black text-sky-850 tracking-tight'
           : 'text-2xl sm:text-3xl md:text-4xl font-black text-sky-850 tracking-tight';
       }
 
-      // 6 a více znaků (MOUCHA, KŮZLE)
       return (cardCount === 10)
         ? 'text-lg sm:text-xl md:text-2xl font-black text-sky-900 tracking-tighter'
         : 'text-xl sm:text-2xl md:text-3xl font-black text-sky-900 tracking-tight';
@@ -1307,21 +1520,55 @@
       generateLessonItems();
     }
 
+    // UPDATE PROGRESS OF DAILY QUESTS WHEN LESSON IS COMPLETED
+    function updateDailyQuestsProgress(completedLevel) {
+      checkAndHandleDailyResets();
+      let questCompletedNow = false;
+
+      state.quests.forEach(q => {
+        if (!q.claimed && q.progress < q.target) {
+          let matches = false;
+          if (q.id === 'q1' && completedLevel === 1) matches = true;
+          if (q.id === 'q2' && completedLevel === 2) matches = true;
+          if (q.id === 'q3' && (completedLevel === 3 || completedLevel === 4)) matches = true;
+          if (q.id === 'q4' && completedLevel === 7) matches = true;
+          if (q.id === 'q5') matches = true;
+
+          if (matches) {
+            q.progress++;
+            if (q.progress >= q.target) {
+              questCompletedNow = true;
+            }
+          }
+        }
+      });
+
+      if (questCompletedNow) {
+        playTone(900, 0.25, 'triangle', 0.3);
+      }
+    }
+
     function parentReview(isSuccess) {
       if (isSuccess) {
-        state.minutesBalance += 1;
+        const reward = LEVEL_REWARDS[state.currentLevel] || 0.25;
+        state.minutesBalance = Math.round((state.minutesBalance + reward) * 100) / 100;
+
         const levelNames = [
           'Písmena', 'Otevřené slabiky', 'Jednoslabičná slova', 
           'Dvouslabičná slova', 'Dvojhlásky & Shluky', 'Měkké slabiky', 'Celé věty'
         ];
+
         state.history.unshift({
           id: Date.now(),
           time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
           date: new Date().toLocaleDateString('cs-CZ'),
           type: 'earned',
-          minutes: 1,
-          note: `Úspěšné čtení: ${levelNames[state.currentLevel - 1]}`
+          minutes: reward,
+          note: `Čtení: ${levelNames[state.currentLevel - 1]} (+${formatMinutes(reward)})`
         });
+
+        updateDailyQuestsProgress(state.currentLevel);
+
         saveState();
         soundSuccess();
         triggerConfetti();
@@ -1338,14 +1585,22 @@
     function showView(viewName) {
       const learnView = document.getElementById('view-learn');
       const storeView = document.getElementById('view-store');
+      const questsView = document.getElementById('view-quests');
+
+      learnView.classList.add('hidden');
+      storeView.classList.add('hidden');
+      questsView.classList.add('hidden');
+
       if (viewName === 'store') {
-        learnView.classList.add('hidden');
         storeView.classList.remove('hidden');
-        document.getElementById('store-balance-display').textContent = state.minutesBalance;
+        document.getElementById('store-balance-display').textContent = formatMinutes(state.minutesBalance).replace(' min', '');
+      } else if (viewName === 'quests') {
+        questsView.classList.remove('hidden');
+        renderDailyQuests();
       } else {
-        storeView.classList.add('hidden');
         learnView.classList.remove('hidden');
       }
+      updateBalanceUI();
     }
 
     function switchLevel(lvl) {
@@ -1353,10 +1608,13 @@
       [1, 2, 3, 4, 5, 6, 7].forEach(i => {
         const btn = document.getElementById(`lvl-btn-${i}`);
         if (btn) {
+          const rewardText = `+${(LEVEL_REWARDS[i] || 0.25).toString().replace('.', ',')} min`;
           if (i === lvl) {
             btn.className = 'lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700';
+            btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-amber-200';
           } else {
             btn.className = 'lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200';
+            btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-amber-600';
           }
         }
       });
@@ -1400,12 +1658,12 @@
         soundError();
         const voucherBox = document.getElementById('voucher-box');
         voucherBox.className = 'bg-rose-100 border-4 border-rose-500 rounded-3xl p-6 text-center';
-        document.getElementById('voucher-text').textContent = `Máš ${state.minutesBalance} min. Potřebuješ ${minutes} hvězdiček ⭐!`;
+        document.getElementById('voucher-text').textContent = `Máš ${formatMinutes(state.minutesBalance)}. Potřebuješ ${minutes} minut ⭐!`;
         voucherBox.classList.remove('hidden');
         return;
       }
 
-      state.minutesBalance -= minutes;
+      state.minutesBalance = Math.round((state.minutesBalance - minutes) * 100) / 100;
       state.history.unshift({
         id: Date.now(),
         time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
@@ -1434,9 +1692,251 @@
       const displayStore = document.getElementById('store-balance-display');
       const displayAdmin = document.getElementById('admin-balance-display');
 
-      if (displayTop) displayTop.textContent = `${state.minutesBalance} min`;
-      if (displayStore) displayStore.textContent = state.minutesBalance;
-      if (displayAdmin) displayAdmin.textContent = `${state.minutesBalance} min`;
+      if (displayTop) displayTop.textContent = formatMinutes(state.minutesBalance);
+      if (displayStore) displayStore.textContent = formatMinutes(state.minutesBalance).replace(' min', '');
+      if (displayAdmin) displayAdmin.textContent = formatMinutes(state.minutesBalance);
+    }
+
+    function updateTopBadges() {
+      checkAndHandleDailyResets();
+      
+      // Daily Box badge
+      const boxBadge = document.getElementById('top-box-badge');
+      const boxBtn = document.getElementById('top-box-btn');
+      if (state.boxClaimed) {
+        boxBadge.classList.add('hidden');
+        boxBtn.classList.remove('chest-ready');
+      } else {
+        boxBadge.classList.remove('hidden');
+        boxBtn.classList.add('chest-ready');
+      }
+
+      // Quests badge
+      const questsBadge = document.getElementById('top-quests-badge');
+      const completedCount = state.quests.filter(q => q.claimed || q.progress >= q.target).length;
+      const readyToClaimCount = state.quests.filter(q => !q.claimed && q.progress >= q.target).length;
+      
+      questsBadge.textContent = `${completedCount}/5`;
+      if (readyToClaimCount > 0) {
+        questsBadge.className = 'absolute -top-1.5 -right-1.5 bg-emerald-500 text-white text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce';
+      } else {
+        questsBadge.className = 'absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white';
+      }
+    }
+
+    /* DAILY BOX (CHEST) LOGIC */
+    function openDailyBoxModal() {
+      checkAndHandleDailyResets();
+      const modal = document.getElementById('daily-box-modal');
+      const chest = document.getElementById('chest-graphic');
+      const statusText = document.getElementById('chest-status-text');
+      const rewardReveal = document.getElementById('chest-reward-reveal');
+
+      rewardReveal.classList.add('hidden');
+
+      if (state.boxClaimed) {
+        chest.textContent = '📭';
+        chest.className = 'text-7xl sm:text-8xl select-none opacity-80';
+        statusText.innerHTML = `Truhla už byla dnes otevřena! 🌟<br><span class="text-xs text-slate-500">Získal jsi: +${formatMinutes(state.lastBoxReward)}. Další zítra po půlnoci.</span>`;
+      } else {
+        chest.textContent = '🎁';
+        chest.className = 'cursor-pointer text-7xl sm:text-8xl select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95';
+        statusText.textContent = 'Klepni pro otevření! 👆';
+      }
+
+      modal.classList.remove('hidden');
+      playTone(600, 0.08, 'sine', 0.15);
+    }
+
+    function closeDailyBoxModal() {
+      document.getElementById('daily-box-modal').classList.add('hidden');
+    }
+
+    function openChestAction() {
+      checkAndHandleDailyResets();
+      if (state.boxClaimed) return;
+
+      const chest = document.getElementById('chest-graphic');
+      const statusText = document.getElementById('chest-status-text');
+      const rewardReveal = document.getElementById('chest-reward-reveal');
+      const rewardAmount = document.getElementById('chest-reward-amount');
+
+      chest.classList.remove('chest-ready');
+      chest.classList.add('chest-shaking');
+      statusText.textContent = 'Otevírám truhlu... ✨';
+      soundChestOpening();
+
+      setTimeout(() => {
+        chest.classList.remove('chest-shaking');
+        chest.textContent = '💎';
+        chest.classList.add('scale-125');
+
+        const rewardsPool = [0.5, 1.0, 1.5, 2.0];
+        const chosenReward = rewardsPool[Math.floor(Math.random() * rewardsPool.length)];
+
+        state.boxClaimed = true;
+        state.lastBoxReward = chosenReward;
+        state.minutesBalance = Math.round((state.minutesBalance + chosenReward) * 100) / 100;
+
+        state.history.unshift({
+          id: Date.now(),
+          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString('cs-CZ'),
+          type: 'daily_box',
+          minutes: chosenReward,
+          note: `Denní Truhla: +${formatMinutes(chosenReward)}`
+        });
+
+        rewardAmount.textContent = `+${formatMinutes(chosenReward)}!`;
+        rewardReveal.classList.remove('hidden');
+        statusText.textContent = 'Skvělá trefa! 🎉';
+
+        saveState();
+        triggerConfetti();
+        soundSuccess();
+      }, 1000);
+    }
+
+    /* PŘÍMÁ NAVIGACE Z ÚKOLŮ DO TRÉNINKU */
+    function goToQuestLevel(questId) {
+      if (questId === 'q1') switchLevel(1);
+      else if (questId === 'q2') switchLevel(2);
+      else if (questId === 'q3') switchLevel(3);
+      else if (questId === 'q4') switchLevel(7);
+      // q5 je volný trénink libovolné úrovně
+      showView('learn');
+      playTone(500, 0.1, 'sine', 0.15);
+    }
+
+    /* DAILY QUESTS RENDERING & CLAIMING */
+    function renderDailyQuests() {
+      checkAndHandleDailyResets();
+      const container = document.getElementById('quests-list-container');
+      const dateDisplay = document.getElementById('quests-date-display');
+      
+      const todayFormatted = new Date().toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'numeric' });
+      dateDisplay.textContent = todayFormatted;
+
+      container.innerHTML = '';
+
+      state.quests.forEach(quest => {
+        const isDone = quest.progress >= quest.target;
+        const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+
+        const card = document.createElement('div');
+        card.className = `p-4 sm:p-5 rounded-3xl border-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+          quest.claimed 
+            ? 'bg-slate-50 border-slate-300 opacity-80' 
+            : isDone 
+              ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-400 ring-2 ring-emerald-300 shadow-lg' 
+              : 'bg-white border-indigo-200 hover:border-indigo-400 hover:shadow-lg cursor-pointer'
+        }`;
+
+        // Kliknutím na nesplněnou kartu skočí syn rovnou do cvičení
+        if (!quest.claimed && !isDone) {
+          card.onclick = () => goToQuestLevel(quest.id);
+        }
+
+        let actionHtml = '';
+        if (quest.claimed) {
+          actionHtml = `
+            <div class="flex items-center gap-1.5 text-emerald-700 font-black text-sm bg-emerald-100 px-4 py-2 rounded-2xl self-start sm:self-auto">
+              <span>✅</span> VYZVEDNUTO (+1 min)
+            </div>
+          `;
+        } else if (isDone) {
+          actionHtml = `
+            <button onclick="event.stopPropagation(); claimQuestReward('${quest.id}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-2.5 rounded-2xl border-b-4 border-emerald-700 text-sm shadow-game-btn flex items-center gap-2 self-start sm:self-auto animate-bounce">
+              <span>🎁</span> VYZVEDNOUT +1 MINUTU!
+            </button>
+          `;
+        } else {
+          actionHtml = `
+            <div class="flex flex-col sm:items-end gap-1.5 self-start sm:self-auto">
+              <span class="text-xs font-black text-indigo-900 bg-indigo-100 px-3 py-1 rounded-xl block">
+                Odměna: +1 min ⭐
+              </span>
+              <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl shadow-sm flex items-center gap-1">
+                Trénovat ➡️
+              </button>
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-start gap-3.5 flex-grow">
+            <span class="text-3xl sm:text-4xl bg-indigo-50 p-2 rounded-2xl border border-indigo-100">${quest.icon}</span>
+            <div class="flex-grow">
+              <div class="flex items-center gap-2">
+                <h4 class="font-black text-slate-800 text-base sm:text-lg">${quest.title}</h4>
+                ${isDone && !quest.claimed ? '<span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Splněno!</span>' : ''}
+              </div>
+              <p class="text-xs text-slate-600 font-bold mt-0.5">${quest.desc}</p>
+              
+              <!-- Progress Bar -->
+              <div class="mt-2 w-full max-w-md bg-slate-200 rounded-full h-3 overflow-hidden border border-slate-300">
+                <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
+              </div>
+              <div class="text-[11px] font-extrabold text-slate-500 mt-1">
+                Postup: <span class="text-indigo-700">${quest.progress} / ${quest.target}</span> (${percent}%)
+              </div>
+            </div>
+          </div>
+          ${actionHtml}
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function claimQuestReward(questId) {
+      checkAndHandleDailyResets();
+      const quest = state.quests.find(q => q.id === questId);
+      if (!quest || quest.claimed || quest.progress < quest.target) return;
+
+      quest.claimed = true;
+      state.minutesBalance = Math.round((state.minutesBalance + 1.0) * 100) / 100;
+
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'quest_claimed',
+        minutes: 1.0,
+        note: `Denní úkol splněn: ${quest.title} (+1 min)`
+      });
+
+      saveState();
+      soundSuccess();
+      triggerConfetti();
+      renderDailyQuests();
+    }
+
+    // ADMIN RESETS
+    function adminResetQuests() {
+      state.quests = createDefaultDailyQuests();
+      state.questsDate = getTodayDateString();
+      saveState();
+      playTone(700, 0.15, 'sine', 0.2);
+      renderDailyQuests();
+      alertUserFeedback('Denní úkoly byly resetovány na 0/5!');
+    }
+
+    function adminResetChest() {
+      state.boxClaimed = false;
+      state.boxDate = getTodayDateString();
+      state.lastBoxReward = 0.0;
+      saveState();
+      playTone(700, 0.15, 'sine', 0.2);
+      alertUserFeedback('Denní truhla (Daily Box) byla znovu připravena k otevření!');
+    }
+
+    function alertUserFeedback(msg) {
+      const el = document.createElement('div');
+      el.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-black text-sm px-5 py-3 rounded-2xl shadow-2xl z-50 animate-bounce';
+      el.textContent = `✅ ${msg}`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2500);
     }
 
     let currentMathAnswer = null;
@@ -1548,14 +2048,14 @@
     }
 
     function adjustMinutes(delta, note) {
-      state.minutesBalance = Math.max(0, state.minutesBalance + delta);
+      state.minutesBalance = Math.max(0, Math.round((state.minutesBalance + delta) * 100) / 100);
       state.history.unshift({
         id: Date.now(),
         time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
         date: new Date().toLocaleDateString('cs-CZ'),
         type: delta >= 0 ? 'admin_add' : 'admin_deduct',
         minutes: delta,
-        note: note || (delta > 0 ? `Přidáno +${delta} min` : `Odečteno ${delta} min`)
+        note: note || (delta > 0 ? `Přidáno +${formatMinutes(delta)}` : `Odečteno ${formatMinutes(delta)}`)
       });
       saveState();
       renderHistoryLog();
@@ -1575,7 +2075,7 @@
             <div class="text-[10px] text-slate-400 font-bold">${h.date} v ${h.time}</div>
           </div>
           <div class="font-black text-sm ${h.minutes > 0 ? 'text-emerald-600' : 'text-rose-600'}">
-            ${h.minutes > 0 ? `+${h.minutes}` : h.minutes} min
+            ${h.minutes > 0 ? `+${formatMinutes(h.minutes)}` : formatMinutes(h.minutes)}
           </div>
         </div>
       `).join('');
@@ -1589,7 +2089,7 @@
 
     function resetAllData() {
       state = {
-        minutesBalance: 0,
+        minutesBalance: 0.0,
         activeLetters: ['M', 'L', 'E', 'É', 'A', 'Á', 'S'],
         currentLevel: 1,
         letterCase: 'upper',
@@ -1598,7 +2098,12 @@
         showImages: true,
         currentItems: [],
         flashcardIndex: 0,
-        history: []
+        history: [],
+        questsDate: getTodayDateString(),
+        quests: createDefaultDailyQuests(),
+        boxDate: getTodayDateString(),
+        boxClaimed: false,
+        lastBoxReward: 0.0
       };
       saveState();
       closeAdminPanel();
@@ -1609,6 +2114,7 @@
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
       updateBalanceUI();
+      updateTopBadges();
       if (!state.gridCardCount) state.gridCardCount = 8;
       if (state.showImages === undefined) state.showImages = true;
       
