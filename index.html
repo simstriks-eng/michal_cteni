@@ -125,42 +125,42 @@
       <!-- Action items -->
       <div class="flex items-center gap-1.5 sm:gap-2">
         <!-- Truhla -->
-        <button onclick="openDailyBoxModal()" id="top-box-btn" title="Denní Truhla" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-amber-700 shadow-sm flex items-center gap-1.5">
+        <button onclick="openDailyBoxModal()" id="top-box-btn" title="Denní Truhla" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-amber-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl" id="top-box-icon">🎁</span>
           <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Truhla</span>
           <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
         </button>
 
         <!-- Úkoly -->
-        <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-indigo-700 shadow-sm flex items-center gap-1.5">
+        <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-indigo-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl">📋</span>
           <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Úkoly</span>
           <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/8</span>
         </button>
 
         <!-- Zlaté Diamanty Pill -->
-        <div onclick="showView('store')" title="Zlaté diamanty z Pokémonů" class="cursor-pointer bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-2.5 sm:px-3 py-1.5 rounded-2xl border-2 border-cyan-300 shadow-sm flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform">
+        <div onclick="showView('store')" title="Zlaté diamanty z Pokémonů" class="cursor-pointer bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-2.5 sm:px-3 py-1.5 rounded-2xl border-2 border-cyan-300 shadow-sm flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform h-[42px] sm:h-[46px]">
           <span class="text-lg sm:text-xl">💎</span>
           <span class="text-xs sm:text-sm font-black" id="top-diamonds-display">0/50</span>
         </div>
 
-        <!-- Balance Pill -->
-        <div onclick="showView('store')" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3 py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
-          <span class="text-xl sm:text-2xl animate-pulse">⭐</span>
-          <div class="flex flex-col text-right leading-tight">
-            <span class="text-[9px] uppercase font-black text-amber-900">Můj Čas</span>
-            <span class="text-base sm:text-lg font-black" id="top-balance-display">0 min</span>
+        <!-- Balance Pill (Můj Čas) - Symetrický elegantní obdélníkový pill -->
+        <div onclick="showView('store')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 sm:px-3 py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px] sm:h-[46px]">
+          <span class="text-lg sm:text-xl animate-pulse">⭐</span>
+          <div class="flex items-baseline gap-1">
+            <span class="text-[10px] font-black text-amber-900 uppercase hidden sm:inline">Čas:</span>
+            <span class="text-xs sm:text-sm font-black whitespace-nowrap" id="top-balance-display">0 min</span>
           </div>
         </div>
 
         <!-- Store Button -->
-        <button onclick="showView('store')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-pink-700 shadow-sm flex items-center gap-1.5">
+        <button onclick="showView('store')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-pink-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl">🎟️</span>
           <span class="hidden lg:inline font-black text-xs uppercase tracking-wider">Odměny</span>
         </button>
 
         <!-- Admin Lock -->
-        <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white p-2 sm:p-2.5 rounded-2xl border-b-4 border-slate-900 shadow-sm flex items-center justify-center">
+        <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white p-2 sm:p-2.5 rounded-2xl border-b-4 border-slate-900 shadow-sm flex items-center justify-center h-[42px] sm:h-[46px]">
           <span class="text-lg sm:text-xl">🔒</span>
         </button>
       </div>
@@ -633,6 +633,34 @@
         </div>
       </div>
 
+      <!-- PŘESUN Z TREZORU DO ÚČTU (CELÝ NEBO ČÁSTEČNÝ) -->
+      <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 mb-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+          <div>
+            <h4 class="font-black text-amber-950 text-base">Zlatý Noční Trezor (Převod do Můj čas):</h4>
+            <p class="text-xs text-amber-800 font-bold">Přesuň vybraný počet minut nebo celý obsah trezoru ihned k použití.</p>
+          </div>
+          <div class="bg-white px-3 py-1.5 rounded-xl border border-amber-400 self-start sm:self-auto">
+            <span class="text-xs text-slate-500 font-bold">V trezoru je: </span>
+            <span class="font-black text-amber-600 text-base" id="admin-vault-indicator">0 min</span>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <div class="flex items-center gap-1.5 bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 shadow-inner">
+            <span class="text-xs font-bold text-slate-600">Počet minut:</span>
+            <input type="number" id="vault-transfer-input" step="0.5" min="0.5" placeholder="např. 2" class="w-20 text-center font-black text-indigo-900 border-b-2 border-amber-500 focus:outline-none">
+            <span class="text-xs font-bold text-slate-600">min</span>
+          </div>
+          <button onclick="adminTransferCustomVault()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+            <span>📥</span> Převést do Můj čas
+          </button>
+          <button onclick="adminUnlockVaultNow()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+            <span>⚡</span> Převést VŠECHNO z trezoru
+          </button>
+        </div>
+      </div>
+
       <!-- PŘESNÝ POSUVNÍK ROZSAHU MATEMATIKY -->
       <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 mb-5">
         <div class="flex items-center justify-between mb-2">
@@ -686,8 +714,8 @@
           <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
             <span>🎁</span> Resetovat Denní Truhlu
           </button>
-          <button onclick="adminUnlockVaultNow()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-            <span>🏦</span> Odemknout trezor do kreditu teď
+          <button onclick="adminResetDailyDirectLimit()" class="game-button bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+            <span>⏱️</span> Vynulovat dnešní vyčerpaný limit 15 min
           </button>
         </div>
       </div>
@@ -1001,6 +1029,7 @@
       subject: 'reading',
       minutesBalance: 0.0,
       dailyEarnedToday: 0.0,
+      dailyEarnedDate: getTodayDateString(),
       vaultBalance: 0.0,
       goldDiamonds: 0,
       pokemonSegmentsCount: 12,
@@ -1051,16 +1080,28 @@
       checkAndHandleDailyResets();
     }
 
+    /* PŘESNÉ DENNÍ RESETOVÁNÍ (PO PŮLNOCI) */
     function checkAndHandleDailyResets() {
       const today = getTodayDateString();
+
+      // Reset denních úkolů
       if (state.questsDate !== today) {
         state.questsDate = today;
         state.quests = createDefaultDailyQuests();
       }
+
+      // Reset denní truhly
       if (state.boxDate !== today) {
         state.boxDate = today;
         state.boxClaimed = false;
         state.lastBoxReward = 0.0;
+      }
+
+      // Samostatný a spolehlivý reset limitu 15 min pro nový den + odemčení trezoru
+      if (state.dailyEarnedDate !== today) {
+        state.dailyEarnedDate = today;
+        state.dailyEarnedToday = 0.0;
+
         if ((state.vaultBalance || 0) > 0) {
           const unlocked = state.vaultBalance;
           state.minutesBalance = Math.round((state.minutesBalance + unlocked) * 100) / 100;
@@ -1074,7 +1115,6 @@
             note: `Noční trezor odemčen novým dnem (+${formatMinutes(unlocked)})`
           });
         }
-        state.dailyEarnedToday = 0.0;
       }
     }
 
@@ -2154,14 +2194,14 @@
       playTone(520, 0.08, 'sine', 0.15);
     }
 
-    /* PŘIPISOVÁNÍ MINUT S LIMITEM 15 MIN/DEN A ZLATÝM TREZOREM */
+    /* PŘIPISOVÁNÍ MINUT S GARANCÍ 15 MIN/DEN PŘÍMO DO KREDITU A PŘETOKEM DO TREZORU */
     function creditRewardMinutes(amount, note) {
       checkAndHandleDailyResets();
-      const currentEarned = state.dailyEarnedToday || 0;
+      const currentEarnedToday = state.dailyEarnedToday || 0;
       const maxDailyDirect = 15.0;
 
-      if (currentEarned + amount <= maxDailyDirect) {
-        state.dailyEarnedToday = Math.round((currentEarned + amount) * 100) / 100;
+      if (currentEarnedToday + amount <= maxDailyDirect) {
+        state.dailyEarnedToday = Math.round((currentEarnedToday + amount) * 100) / 100;
         state.minutesBalance = Math.round((state.minutesBalance + amount) * 100) / 100;
         state.history.unshift({
           id: Date.now(),
@@ -2172,26 +2212,35 @@
           note: `${note} (+${formatMinutes(amount)})`
         });
       } else {
-        const directPart = Math.max(0, maxDailyDirect - currentEarned);
+        const directPart = Math.max(0, maxDailyDirect - currentEarnedToday);
         const vaultPart = Math.round((amount - directPart) * 100) / 100;
 
         if (directPart > 0) {
           state.dailyEarnedToday = maxDailyDirect;
           state.minutesBalance = Math.round((state.minutesBalance + directPart) * 100) / 100;
+          state.history.unshift({
+            id: Date.now(),
+            time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+            date: new Date().toLocaleDateString('cs-CZ'),
+            type: 'earned',
+            minutes: directPart,
+            note: `${note} (+${formatMinutes(directPart)})`
+          });
         }
 
+        state.dailyEarnedToday = maxDailyDirect;
         state.vaultBalance = Math.round(((state.vaultBalance || 0) + vaultPart) * 100) / 100;
 
         state.history.unshift({
-          id: Date.now(),
+          id: Date.now() + 1,
           time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
           date: new Date().toLocaleDateString('cs-CZ'),
           type: 'vault_saved',
           minutes: vaultPart,
-          note: `Denní limit 15 min dosažen. Uloženo do Trezoru na zítra (+${formatMinutes(vaultPart)})`
+          note: `Dnešní limit 15 min dosažen. Uloženo do Trezoru na zítra (+${formatMinutes(vaultPart)})`
         });
 
-        alertUserFeedback(`Denní limit 15 min dosažen! +${formatMinutes(vaultPart)} uloženo do Zlatého Trezoru na zítra! 🏦`);
+        alertUserFeedback(`Dnešní limit 15 min dosažen! +${formatMinutes(vaultPart)} uloženo do Zlatého Trezoru na zítra! 🏦`);
       }
       updateBalanceUI();
     }
@@ -2410,11 +2459,13 @@
       const displayStore = document.getElementById('store-balance-display');
       const displayAdmin = document.getElementById('admin-balance-display');
       const vaultStore = document.getElementById('vault-display');
+      const vaultAdmin = document.getElementById('admin-vault-indicator');
 
       if (displayTop) displayTop.textContent = formatMinutes(state.minutesBalance);
       if (displayStore) displayStore.textContent = formatMinutes(state.minutesBalance).replace(' min', '');
       if (displayAdmin) displayAdmin.textContent = formatMinutes(state.minutesBalance);
       if (vaultStore) vaultStore.textContent = formatMinutes(state.vaultBalance || 0);
+      if (vaultAdmin) vaultAdmin.textContent = formatMinutes(state.vaultBalance || 0);
 
       const diamondsTop = document.getElementById('top-diamonds-display');
       if (diamondsTop) diamondsTop.textContent = `${state.goldDiamonds || 0}/50`;
@@ -2457,10 +2508,12 @@
       if (state.boxClaimed) {
         chest.textContent = '📭';
         chest.className = 'text-7xl sm:text-8xl select-none opacity-80';
+        chest.style.pointerEvents = 'none';
         statusText.innerHTML = `Truhla už byla dnes otevřena! 🌟<br><span class="text-xs text-slate-500">Získal jsi: +${formatMinutes(state.lastBoxReward)}. Další zítra po půlnoci.</span>`;
       } else {
         chest.textContent = '🎁';
         chest.className = 'cursor-pointer text-7xl sm:text-8xl select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95';
+        chest.style.pointerEvents = 'auto';
         statusText.textContent = 'Klepni pro otevření! 👆';
       }
 
@@ -2472,15 +2525,22 @@
       document.getElementById('daily-box-modal').classList.add('hidden');
     }
 
+    /* ZAMEZENÍ MULTI-KLIKU NA TRUHLU (ANTI-SPAM GUARD) */
+    let isOpeningChest = false;
+
     function openChestAction() {
       checkAndHandleDailyResets();
-      if (state.boxClaimed) return;
+      if (state.boxClaimed || isOpeningChest) return;
+
+      isOpeningChest = true;
 
       const chest = document.getElementById('chest-graphic');
       const statusText = document.getElementById('chest-status-text');
       const rewardReveal = document.getElementById('chest-reward-reveal');
       const rewardAmount = document.getElementById('chest-reward-amount');
 
+      // Okamžitá deaktivace klikání
+      chest.style.pointerEvents = 'none';
       chest.classList.remove('chest-ready');
       chest.classList.add('chest-shaking');
       statusText.textContent = 'Otevírám truhlu... ✨';
@@ -2507,6 +2567,7 @@
         triggerConfetti();
         soundSuccess();
         updateTopBadges();
+        isOpeningChest = false;
       }, 1000);
     }
 
@@ -2646,10 +2707,54 @@
       state.boxClaimed = false;
       state.boxDate = getTodayDateString();
       state.lastBoxReward = 0.0;
+      isOpeningChest = false;
       saveState();
       playTone(700, 0.15, 'sine', 0.2);
       updateTopBadges();
       alertUserFeedback('Denní truhla byla znovu připravena k otevření!');
+    }
+
+    function adminResetDailyDirectLimit() {
+      state.dailyEarnedToday = 0.0;
+      state.dailyEarnedDate = getTodayDateString();
+      saveState();
+      playTone(700, 0.15, 'sine', 0.2);
+      alertUserFeedback('Dnešní počítadlo 15 min vynulováno. Dalších 15 min půjde přímo na účet!');
+    }
+
+    /* PŘEVOD ČÁSTI NEBO VŠEHO Z TREZORU */
+    function adminTransferCustomVault() {
+      const input = document.getElementById('vault-transfer-input');
+      const val = parseFloat(input.value.replace(',', '.'));
+      const available = state.vaultBalance || 0;
+
+      if (isNaN(val) || val <= 0) {
+        alertUserFeedback('Zadej platný počet minut k převodu.');
+        return;
+      }
+      if (val > available) {
+        alertUserFeedback(`V trezoru je pouze ${formatMinutes(available)}.`);
+        return;
+      }
+
+      state.vaultBalance = Math.round((available - val) * 100) / 100;
+      state.minutesBalance = Math.round((state.minutesBalance + val) * 100) / 100;
+
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'admin_transfer',
+        minutes: val,
+        note: `Převod z trezoru do Můj čas (+${formatMinutes(val)})`
+      });
+
+      input.value = '';
+      saveState();
+      updateBalanceUI();
+      renderHistoryLog();
+      playTone(620, 0.12, 'triangle', 0.2);
+      alertUserFeedback(`Z trezoru převedeno +${formatMinutes(val)} do kreditu!`);
     }
 
     function adminUnlockVaultNow() {
@@ -2660,9 +2765,21 @@
       const val = state.vaultBalance;
       state.minutesBalance = Math.round((state.minutesBalance + val) * 100) / 100;
       state.vaultBalance = 0.0;
+      
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'admin_transfer_all',
+        minutes: val,
+        note: `Kompletní převod z trezoru do kreditu (+${formatMinutes(val)})`
+      });
+
       saveState();
       updateBalanceUI();
-      alertUserFeedback(`Trezor odemčen! +${formatMinutes(val)} připsáno ihned.`);
+      renderHistoryLog();
+      playTone(650, 0.15, 'triangle', 0.25);
+      alertUserFeedback(`Celý trezor převeden! +${formatMinutes(val)} připsáno do Můj čas.`);
     }
 
     function alertUserFeedback(msg) {
@@ -2890,6 +3007,7 @@
         subject: 'reading',
         minutesBalance: 0.0,
         dailyEarnedToday: 0.0,
+        dailyEarnedDate: getTodayDateString(),
         vaultBalance: 0.0,
         goldDiamonds: 0,
         pokemonSegmentsCount: 12,
