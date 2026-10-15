@@ -6,7 +6,7 @@
   <title>Školácká Mise - Čtení a Matematika pro 1. třídu ZŠ</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800;900&family=Nunito:wght@700;800;900&subset=latin,latin-ext&display=swap" rel="stylesheet">
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -34,7 +34,7 @@
       -webkit-user-select: none;
       box-sizing: border-box;
     }
-    input {
+    input, select {
       user-select: auto !important;
       -webkit-user-select: auto !important;
     }
@@ -85,13 +85,13 @@
       cursor: pointer;
     }
     .poly-segment:hover {
-      filter: brightness(1.1);
       stroke-width: 4px;
+      stroke: #3b82f6;
     }
     .poly-segment.selected {
       stroke: #d97706 !important;
       stroke-width: 5px !important;
-      filter: drop-shadow(0 0 8px #f59e0b) brightness(1.15);
+      filter: drop-shadow(0 0 8px #f59e0b);
     }
   </style>
 </head>
@@ -135,7 +135,7 @@
         <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-indigo-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl">📋</span>
           <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Úkoly</span>
-          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/8</span>
+          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/9</span>
         </button>
 
         <!-- Zlaté Diamanty Pill -->
@@ -144,7 +144,7 @@
           <span class="text-xs sm:text-sm font-black" id="top-diamonds-display">0/50</span>
         </div>
 
-        <!-- Balance Pill (Můj Čas) - Symetrický elegantní obdélníkový pill -->
+        <!-- Balance Pill (Můj Čas) -->
         <div onclick="showView('store')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 sm:px-3 py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px] sm:h-[46px]">
           <span class="text-lg sm:text-xl animate-pulse">⭐</span>
           <div class="flex items-baseline gap-1">
@@ -299,10 +299,10 @@
             </div>
           </div>
 
-          <!-- SVG Plátno Pokémona -->
-          <div class="relative w-full max-w-[380px] aspect-square bg-slate-50 border-4 border-amber-200 rounded-3xl shadow-inner flex items-center justify-center p-2 overflow-hidden">
+          <!-- SVG Plátno Pokémona (s jemně šedým pozadím a plnobarevným odkrýváním) -->
+          <div class="relative w-full max-w-[380px] aspect-square bg-slate-100 border-4 border-amber-300 rounded-3xl shadow-inner flex items-center justify-center p-2 overflow-hidden">
             <svg id="pokemon-svg" class="w-full h-full select-none" viewBox="0 0 400 400"></svg>
-            <div id="coloring-complete-overlay" class="hidden absolute inset-0 bg-slate-900/85 backdrop-blur-sm flex-col items-center justify-center text-center p-4">
+            <div id="coloring-complete-overlay" class="hidden absolute inset-0 bg-slate-900/85 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
               <span class="text-6xl animate-bounce">💎</span>
               <h4 class="text-2xl sm:text-3xl font-black text-yellow-300 font-baloo mt-2">NÁDHERNĚ VYBARVENO!</h4>
               <p class="text-white text-xs sm:text-sm font-bold mt-1">Získal jsi 1 Zlatý Diamant k odemčení PINu!</p>
@@ -592,7 +592,11 @@
             <p class="text-xs text-slate-500 font-bold">Nastavení rozsahu matematiky po desítkách, Pokémon omalovánky a PINu</p>
           </div>
         </div>
-        <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-10 h-10 rounded-full flex items-center justify-center text-xl">✕</button>
+        <div class="flex items-center gap-3">
+          <!-- Bod 3: Verze hry -->
+          <span class="bg-indigo-100 text-indigo-800 font-black text-xs px-3 py-1 rounded-xl border border-indigo-300 shadow-sm" id="admin-version-tag">Verze: 1</span>
+          <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-10 h-10 rounded-full flex items-center justify-center text-xl">✕</button>
+        </div>
       </div>
 
       <!-- Minute Adjustments -->
@@ -709,7 +713,7 @@
         
         <div class="flex flex-wrap gap-2.5">
           <button onclick="adminResetQuests()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-            <span>🔄</span> Resetovat Denní Úkoly (8 úkolů)
+            <span>🔄</span> Resetovat Denní Úkoly (9 úkolů)
           </button>
           <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
             <span>🎁</span> Resetovat Denní Truhlu
@@ -793,6 +797,8 @@
   </footer>
 
   <script>
+    // TRACKOVÁNÍ VERZE (BOD 3)
+    const APP_VERSION = 1;
     const STORAGE_KEY = 'ctenarska_mise_v15_pokemon';
 
     const FULL_CZECH_ALPHABET = [
@@ -851,9 +857,7 @@
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + duration);
-      } catch (e) {
-        // Ignorujeme omezení audia
-      }
+      } catch (e) {}
     }
 
     function soundSuccess() {
@@ -940,7 +944,8 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    function createDefaultDailyQuests() {
+    // DENNÍ ÚKOLY – VČETNĚ VOLITELNÉHO ÚKOLU (BOD 2)
+    function createDefaultDailyQuests(chosenCustomLvl = 4) {
       return [
         {
           id: 'q1',
@@ -964,13 +969,28 @@
         },
         {
           id: 'q3',
-          title: 'Slovní Zásoba',
-          desc: 'Správně přečti 3 sady celých slov (3. až 6. úroveň).',
+          title: 'Slovní Zásoba (3. úroveň)',
+          desc: 'Správně přečti 3 sady jednoslabičných slov.',
           icon: '📦',
           target: 3,
           progress: 0,
           claimed: false,
-          matches: (s, l) => s === 'reading' && l >= 3 && l <= 6
+          matches: (s, l) => s === 'reading' && l === 3
+        },
+        // NOVÝ VOLITELNÝ DENNÍ ÚKOL S ROLOVACÍM SEZNAMEM (BOD 2)
+        {
+          id: 'q_custom_reading',
+          isCustom: true,
+          selectedTargetLevel: chosenCustomLvl,
+          title: 'Volitelná čtenářská výzva',
+          desc: 'Vyber si kategorii níže a přečti 3 sady.',
+          icon: '🎯',
+          target: 3,
+          progress: 0,
+          claimed: false,
+          matches: function(s, l) {
+            return s === 'reading' && l === (this.selectedTargetLevel || 4);
+          }
         },
         {
           id: 'q4',
@@ -1026,6 +1046,7 @@
     }
 
     let state = {
+      appVersion: APP_VERSION,
       subject: 'reading',
       minutesBalance: 0.0,
       dailyEarnedToday: 0.0,
@@ -1046,7 +1067,8 @@
       flashcardIndex: 0,
       history: [],
       questsDate: getTodayDateString(),
-      quests: createDefaultDailyQuests(),
+      quests: createDefaultDailyQuests(4),
+      customDailyLevelChoice: 4,
       boxDate: getTodayDateString(),
       boxClaimed: false,
       lastBoxReward: 0.0
@@ -1054,6 +1076,7 @@
 
     function saveState() {
       try {
+        state.appVersion = APP_VERSION;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       } catch (e) {
         console.error('Chyba při ukládání stavu:', e);
@@ -1065,11 +1088,21 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          const defaultQuests = createDefaultDailyQuests();
+          const chosenLvl = parsed.customDailyLevelChoice || 4;
+          const defaultQuests = createDefaultDailyQuests(chosenLvl);
+
           if (parsed.quests && Array.isArray(parsed.quests)) {
-            parsed.quests = parsed.quests.map(pq => {
-              const dq = defaultQuests.find(q => q.id === pq.id) || defaultQuests[0];
-              return { ...dq, ...pq, matches: dq.matches };
+            parsed.quests = defaultQuests.map(dq => {
+              const saved = parsed.quests.find(q => q.id === dq.id);
+              if (saved) {
+                return { 
+                  ...dq, 
+                  ...saved, 
+                  selectedTargetLevel: (dq.id === 'q_custom_reading') ? (saved.selectedTargetLevel || chosenLvl) : undefined,
+                  matches: dq.matches 
+                };
+              }
+              return dq;
             });
           }
           state = { ...state, ...parsed };
@@ -1080,24 +1113,20 @@
       checkAndHandleDailyResets();
     }
 
-    /* PŘESNÉ DENNÍ RESETOVÁNÍ (PO PŮLNOCI) */
     function checkAndHandleDailyResets() {
       const today = getTodayDateString();
 
-      // Reset denních úkolů
       if (state.questsDate !== today) {
         state.questsDate = today;
-        state.quests = createDefaultDailyQuests();
+        state.quests = createDefaultDailyQuests(state.customDailyLevelChoice || 4);
       }
 
-      // Reset denní truhly
       if (state.boxDate !== today) {
         state.boxDate = today;
         state.boxClaimed = false;
         state.lastBoxReward = 0.0;
       }
 
-      // Samostatný a spolehlivý reset limitu 15 min pro nový den + odemčení trezoru
       if (state.dailyEarnedDate !== today) {
         state.dailyEarnedDate = today;
         state.dailyEarnedToday = 0.0;
@@ -1182,7 +1211,6 @@
       return Array.from(letters);
     }
 
-    /* ČESKÁ SLOVNÍ ZÁSOBA ZE SLABIKÁŘE */
     const RAW_LEVEL_3_WORDS = [
       { t: 'LES', e: '🌲' }, { t: 'SÁM', e: '🧍' }, { t: 'SEM', e: '👉' }, { t: 'SÁL', e: '🏛️' },
       { t: 'MEL', e: '🥣' }, { t: 'LOM', e: '🪨' }, { t: 'LOS', e: '🦌' }, { t: 'PES', e: '🐶' },
@@ -1310,7 +1338,6 @@
     const LEVEL_6_SOFT = RAW_LEVEL_6_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
     const LEVEL_7_SENTENCES = RAW_LEVEL_7_SENTENCES.map(s => ({ text: s.t, emoji: s.e, letters: extractUniqueLetters(s.t) }));
 
-    /* 24 POKÉMONŮ S TYPICKÝMI BARVAMI */
     const POKEMON_ROSTER = [
       { id: 25, name: 'Pikachu', color: '#FACC15', stroke: '#CA8A04' },
       { id: 4, name: 'Charmander', color: '#FB923C', stroke: '#C2410C' },
@@ -1569,7 +1596,7 @@
       return pool;
     }
 
-    /* POKÉMON OMALOVÁNKA – GENERÁTOR DÍLKŮ */
+    /* POKÉMON OMALOVÁNKA – REÁLNÉ BARVY POKÉMONA & JEMNĚ ŠEDÉ POZADÍ (BOD 1) */
     function generateSingleMathTask() {
       const maxVal = state.mathMax || 10;
       const isPlus = Math.random() > 0.45;
@@ -1593,9 +1620,6 @@
       document.getElementById('coloring-pokemon-name').textContent = poke.name;
 
       const segCount = state.pokemonSegmentsCount || 12;
-      const svgEl = document.getElementById('pokemon-svg');
-      svgEl.innerHTML = '';
-
       coloringState.segments = [];
       coloringState.selectedSegmentIndex = null;
 
@@ -1616,11 +1640,14 @@
 
           coloringState.segments.push({
             index: idx,
+            x: x,
+            y: y,
+            w: w,
+            h: h,
             points: polyPoints,
             colored: false,
             taskText: task.text,
-            taskAns: task.ans,
-            fillColor: poke.color
+            taskAns: task.ans
           });
           idx++;
         }
@@ -1635,38 +1662,84 @@
       const svgEl = document.getElementById('pokemon-svg');
       svgEl.innerHTML = '';
 
+      const pokeImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${coloringState.pokemon.id}.png`;
+
+      // Definice <defs> a ořezových masek <clipPath>
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      
+      const clipAll = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+      clipAll.setAttribute('id', 'colored-segments-clip');
+
+      coloringState.segments.forEach(seg => {
+        if (seg.colored) {
+          const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+          rect.setAttribute('x', seg.x);
+          rect.setAttribute('y', seg.y);
+          rect.setAttribute('width', seg.w);
+          rect.setAttribute('height', seg.h);
+          clipAll.appendChild(rect);
+        }
+      });
+      defs.appendChild(clipAll);
+      svgEl.appendChild(defs);
+
+      // Vrstva 0: Podklad jednotlivých políček (Bílá = nevymalováno, Jemně šedá #F1F5F9 = vymalováno)
+      coloringState.segments.forEach((seg) => {
+        const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bgRect.setAttribute('x', seg.x);
+        bgRect.setAttribute('y', seg.y);
+        bgRect.setAttribute('width', seg.w);
+        bgRect.setAttribute('height', seg.h);
+        bgRect.setAttribute('fill', seg.colored ? '#F1F5F9' : '#FFFFFF');
+        svgEl.appendChild(bgRect);
+      });
+
+      // Vrstva 1: Základní obrysová ilustrace pokémona (slabě viditelná jako předloha)
+      const baseGhostImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      baseGhostImg.setAttribute('href', pokeImgUrl);
+      baseGhostImg.setAttribute('x', '30');
+      baseGhostImg.setAttribute('y', '30');
+      baseGhostImg.setAttribute('width', '340');
+      baseGhostImg.setAttribute('height', '340');
+      baseGhostImg.setAttribute('style', 'filter: grayscale(100%) contrast(150%); opacity: 0.18;');
+      baseGhostImg.setAttribute('pointer-events', 'none');
+      svgEl.appendChild(baseGhostImg);
+
+      // Vrstva 2: Plnobarevný oficiální Pokémon v jeho skutečných barvách, odmaskovaný pouze pro vyřešené segmenty
+      const coloredPokeImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+      coloredPokeImg.setAttribute('href', pokeImgUrl);
+      coloredPokeImg.setAttribute('x', '30');
+      coloredPokeImg.setAttribute('y', '30');
+      coloredPokeImg.setAttribute('width', '340');
+      coloredPokeImg.setAttribute('height', '340');
+      coloredPokeImg.setAttribute('clip-path', 'url(#colored-segments-clip)');
+      coloredPokeImg.setAttribute('pointer-events', 'none');
+      svgEl.appendChild(coloredPokeImg);
+
+      // Vrstva 3: Interaktivní mřížka s čísly a hranicemi
       coloringState.segments.forEach((seg, i) => {
         const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         poly.setAttribute('points', seg.points);
         poly.setAttribute('class', `poly-segment ${coloringState.selectedSegmentIndex === i ? 'selected' : ''}`);
-        poly.setAttribute('fill', seg.colored ? seg.fillColor : '#FFFFFF');
+        poly.setAttribute('fill', 'transparent');
         poly.setAttribute('stroke', '#CBD5E1');
         poly.setAttribute('stroke-width', '2.5');
 
         poly.onclick = () => selectColoringSegment(i);
         svgEl.appendChild(poly);
 
+        // Číslo políčka
         const coords = seg.points.split(' ')[0].split(',');
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', parseFloat(coords[0]) + 15);
         text.setAttribute('y', parseFloat(coords[1]) + 25);
         text.setAttribute('font-size', '14');
         text.setAttribute('font-weight', '900');
-        text.setAttribute('fill', seg.colored ? '#0F172A' : '#94A3B8');
+        text.setAttribute('fill', seg.colored ? '#94A3B8' : '#475569');
         text.setAttribute('pointer-events', 'none');
         text.textContent = (i + 1).toString();
         svgEl.appendChild(text);
       });
-
-      const centerImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
-      centerImg.setAttribute('href', `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${coloringState.pokemon.id}.png`);
-      centerImg.setAttribute('x', '40');
-      centerImg.setAttribute('y', '40');
-      centerImg.setAttribute('width', '320');
-      centerImg.setAttribute('height', '320');
-      centerImg.setAttribute('opacity', '0.22');
-      centerImg.setAttribute('pointer-events', 'none');
-      svgEl.appendChild(centerImg);
     }
 
     function selectColoringSegment(idx) {
@@ -1703,7 +1776,7 @@
         inputEl.value = '';
         inputEl.disabled = true;
         document.getElementById('coloring-task-submit').disabled = true;
-        document.getElementById('coloring-task-math').textContent = '✅ Správně! Vyber další bílé políčko.';
+        document.getElementById('coloring-task-math').textContent = '✅ Správně! Pokémon se vybarvuje.';
 
         playTone(660, 0.12, 'triangle', 0.25);
         renderPokemonSvg();
@@ -2194,7 +2267,6 @@
       playTone(520, 0.08, 'sine', 0.15);
     }
 
-    /* PŘIPISOVÁNÍ MINUT S GARANCÍ 15 MIN/DEN PŘÍMO DO KREDITU A PŘETOKEM DO TREZORU */
     function creditRewardMinutes(amount, note) {
       checkAndHandleDailyResets();
       const currentEarnedToday = state.dailyEarnedToday || 0;
@@ -2245,7 +2317,6 @@
       updateBalanceUI();
     }
 
-    /* AUTOMATICKÉ VYHODNOCENÍ BĚŽNÉ MATEMATIKY */
     function evaluateMathTasks() {
       let allFilled = true;
       let allCorrect = true;
@@ -2485,10 +2556,11 @@
       }
 
       const questsBadge = document.getElementById('top-quests-badge');
+      const totalQuests = state.quests.length;
       const completedCount = state.quests.filter(q => q.claimed || q.progress >= q.target).length;
       const readyToClaimCount = state.quests.filter(q => !q.claimed && q.progress >= q.target).length;
       
-      questsBadge.textContent = `${completedCount}/8`;
+      questsBadge.textContent = `${completedCount}/${totalQuests}`;
       if (readyToClaimCount > 0) {
         questsBadge.className = 'absolute -top-1.5 -right-1.5 bg-emerald-500 text-white text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce';
       } else {
@@ -2525,7 +2597,6 @@
       document.getElementById('daily-box-modal').classList.add('hidden');
     }
 
-    /* ZAMEZENÍ MULTI-KLIKU NA TRUHLU (ANTI-SPAM GUARD) */
     let isOpeningChest = false;
 
     function openChestAction() {
@@ -2539,7 +2610,6 @@
       const rewardReveal = document.getElementById('chest-reward-reveal');
       const rewardAmount = document.getElementById('chest-reward-amount');
 
-      // Okamžitá deaktivace klikání
       chest.style.pointerEvents = 'none';
       chest.classList.remove('chest-ready');
       chest.classList.add('chest-shaking');
@@ -2580,6 +2650,11 @@
       } else if (questId === 'q3') {
         setSubject('reading');
         switchLevel(3);
+      } else if (questId === 'q_custom_reading') {
+        setSubject('reading');
+        const customQ = state.quests.find(q => q.id === 'q_custom_reading');
+        const targetLvl = (customQ && customQ.selectedTargetLevel) ? customQ.selectedTargetLevel : 4;
+        switchLevel(targetLvl);
       } else if (questId === 'q4') {
         setSubject('reading');
         switchLevel(7);
@@ -2598,6 +2673,22 @@
       }
       showView('learn');
       playTone(500, 0.1, 'sine', 0.15);
+    }
+
+    // Změna výběru volitelného úkolu z rozevíracího seznamu (bod 2)
+    function onCustomQuestLevelChange(newLvlStr) {
+      const newLvl = parseInt(newLvlStr, 10);
+      state.customDailyLevelChoice = newLvl;
+      const q = state.quests.find(item => item.id === 'q_custom_reading');
+      if (q) {
+        q.selectedTargetLevel = newLvl;
+        if (!q.claimed) {
+          q.progress = 0;
+        }
+      }
+      saveState();
+      renderDailyQuests();
+      playTone(520, 0.08, 'sine', 0.15);
     }
 
     function renderDailyQuests() {
@@ -2653,6 +2744,22 @@
           `;
         }
 
+        // Speciální rolovací seznam pro volitelný úkol (bod 2)
+        let customSelectorHtml = '';
+        if (quest.isCustom) {
+          const curLvl = quest.selectedTargetLevel || 4;
+          customSelectorHtml = `
+            <div class="mt-2.5 flex items-center gap-2" onclick="event.stopPropagation()">
+              <label class="text-xs font-bold text-slate-600">Dnešní kategorie:</label>
+              <select onchange="onCustomQuestLevelChange(this.value)" class="bg-amber-50 text-indigo-950 font-black text-xs px-2.5 py-1.5 rounded-xl border-2 border-amber-300 focus:outline-none focus:border-indigo-600 shadow-sm cursor-pointer" ${quest.claimed ? 'disabled' : ''}>
+                <option value="4" ${curLvl === 4 ? 'selected' : ''}>📖 4. Dvouslabičná slova</option>
+                <option value="5" ${curLvl === 5 ? 'selected' : ''}>✨ 5. Shluky / OU</option>
+                <option value="6" ${curLvl === 6 ? 'selected' : ''}>🎯 6. DĚ / TĚ / NĚ</option>
+              </select>
+            </div>
+          `;
+        }
+
         card.innerHTML = `
           <div class="flex items-start gap-3.5 flex-grow">
             <span class="text-3xl sm:text-4xl bg-indigo-50 p-2 rounded-2xl border border-indigo-100">${quest.icon}</span>
@@ -2662,7 +2769,7 @@
                 ${isDone && !quest.claimed ? '<span class="bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Splněno!</span>' : ''}
               </div>
               <p class="text-xs text-slate-600 font-bold mt-0.5">${quest.desc}</p>
-              
+              ${customSelectorHtml}
               <div class="mt-2 w-full max-w-md bg-slate-200 rounded-full h-3 overflow-hidden border border-slate-300">
                 <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
               </div>
@@ -2694,13 +2801,13 @@
     }
 
     function adminResetQuests() {
-      state.quests = createDefaultDailyQuests();
+      state.quests = createDefaultDailyQuests(state.customDailyLevelChoice || 4);
       state.questsDate = getTodayDateString();
       saveState();
       playTone(700, 0.15, 'sine', 0.2);
       renderDailyQuests();
       updateTopBadges();
-      alertUserFeedback('Denní úkoly byly resetovány na 0/8!');
+      alertUserFeedback('Denní úkoly byly resetovány na 0/9!');
     }
 
     function adminResetChest() {
@@ -2722,7 +2829,6 @@
       alertUserFeedback('Dnešní počítadlo 15 min vynulováno. Dalších 15 min půjde přímo na účet!');
     }
 
-    /* PŘEVOD ČÁSTI NEBO VŠEHO Z TREZORU */
     function adminTransferCustomVault() {
       const input = document.getElementById('vault-transfer-input');
       const val = parseFloat(input.value.replace(',', '.'));
@@ -2834,6 +2940,10 @@
       renderAdminMathSteps();
       updateAdminMathUI();
 
+      // Zobrazení verze (bod 3)
+      const verTag = document.getElementById('admin-version-tag');
+      if (verTag) verTag.textContent = `Verze: ${APP_VERSION}`;
+
       const count = state.gridCardCount || 8;
       const adminBtn8 = document.getElementById('admin-count-btn-8');
       const adminBtn10 = document.getElementById('admin-count-btn-10');
@@ -2860,7 +2970,6 @@
       generateLessonItems();
     }
 
-    /* PŘESNÝ PŘEPÍNAČ ROZSAHU MATEMATIKY (10 AŽ 100 PO DESÍTKÁCH) */
     const MATH_STEP_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
 
     function renderAdminMathSteps() {
@@ -3004,6 +3113,7 @@
 
     function resetAllData() {
       state = {
+        appVersion: APP_VERSION,
         subject: 'reading',
         minutesBalance: 0.0,
         dailyEarnedToday: 0.0,
@@ -3024,7 +3134,8 @@
         flashcardIndex: 0,
         history: [],
         questsDate: getTodayDateString(),
-        quests: createDefaultDailyQuests(),
+        quests: createDefaultDailyQuests(4),
+        customDailyLevelChoice: 4,
         boxDate: getTodayDateString(),
         boxClaimed: false,
         lastBoxReward: 0.0
@@ -3048,6 +3159,7 @@
       if (!state.goldDiamonds) state.goldDiamonds = 0;
       if (!state.pokemonSegmentsCount) state.pokemonSegmentsCount = 12;
       if (!state.tabletSecretPin) state.tabletSecretPin = '2580';
+      if (!state.customDailyLevelChoice) state.customDailyLevelChoice = 4;
       
       updateImageToggleUI();
       setSubject(state.subject || 'reading');
