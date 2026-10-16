@@ -93,6 +93,15 @@
       stroke-width: 5px !important;
       filter: drop-shadow(0 0 8px #f59e0b);
     }
+    #spelling-progress-bar {
+      transition: width 0.15s linear;
+      transform-origin: left center;
+    }
+    .bench-icon-svg {
+      width: 72px;
+      height: 72px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-sky-300 via-sky-100 to-amber-100 min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
@@ -108,7 +117,7 @@
         <span class="text-3xl sm:text-4xl filter drop-shadow wiggle">🚀</span>
         <div>
           <h1 class="text-xl sm:text-2xl md:text-3xl font-black text-amber-500 tracking-wide font-baloo leading-none">ŠKOLÁCKÁ MISE</h1>
-          <p class="text-[11px] text-sky-600 font-extrabold hidden sm:block">1. třída ZŠ • Čtení & Matematika</p>
+          <p class="text-[11px] text-sky-600 font-extrabold hidden sm:block">1. třída ZŠ • Čtení, Hláskování & Matematika</p>
         </div>
       </div>
 
@@ -124,27 +133,23 @@
 
       <!-- Action items -->
       <div class="flex items-center gap-1.5 sm:gap-2">
-        <!-- Truhla -->
         <button onclick="openDailyBoxModal()" id="top-box-btn" title="Denní Truhla" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-amber-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl" id="top-box-icon">🎁</span>
           <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Truhla</span>
           <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
         </button>
 
-        <!-- Úkoly -->
         <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-indigo-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl">📋</span>
           <span class="hidden md:inline font-black text-xs uppercase tracking-wider">Úkoly</span>
-          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/9</span>
+          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/10</span>
         </button>
 
-        <!-- Zlaté Diamanty Pill -->
         <div onclick="showView('store')" title="Zlaté diamanty z Pokémonů" class="cursor-pointer bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-2.5 sm:px-3 py-1.5 rounded-2xl border-2 border-cyan-300 shadow-sm flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform h-[42px] sm:h-[46px]">
           <span class="text-lg sm:text-xl">💎</span>
           <span class="text-xs sm:text-sm font-black" id="top-diamonds-display">0/50</span>
         </div>
 
-        <!-- Balance Pill (Můj Čas) -->
         <div onclick="showView('store')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 sm:px-3 py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px] sm:h-[46px]">
           <span class="text-lg sm:text-xl animate-pulse">⭐</span>
           <div class="flex items-baseline gap-1">
@@ -153,13 +158,11 @@
           </div>
         </div>
 
-        <!-- Store Button -->
         <button onclick="showView('store')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold p-2 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-pink-700 shadow-sm flex items-center gap-1.5 h-[42px] sm:h-[46px]">
           <span class="text-xl sm:text-2xl">🎟️</span>
           <span class="hidden lg:inline font-black text-xs uppercase tracking-wider">Odměny</span>
         </button>
 
-        <!-- Admin Lock -->
         <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white p-2 sm:p-2.5 rounded-2xl border-b-4 border-slate-900 shadow-sm flex items-center justify-center h-[42px] sm:h-[46px]">
           <span class="text-lg sm:text-xl">🔒</span>
         </button>
@@ -174,34 +177,38 @@
       
       <!-- SUB-NAV 1: ČTENÍ -->
       <div id="reading-tabs-container" class="bg-white/95 p-1.5 rounded-3xl shadow-sm border-2 border-sky-200 overflow-x-auto">
-        <div class="grid grid-flow-col auto-cols-[145px] sm:auto-cols-[165px] md:grid-cols-4 lg:grid-cols-7 gap-1.5 min-w-max md:min-w-0">
+        <div class="grid grid-flow-col auto-cols-[140px] sm:auto-cols-[155px] md:grid-cols-4 lg:grid-cols-8 gap-1.5 min-w-max md:min-w-0">
           <button onclick="switchLevel(1)" id="lvl-btn-1" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700">
             <span>🔤 1. Písmena</span>
-            <span class="text-[10px] font-bold text-amber-200">+0,25 min</span>
+            <span class="text-[10px] font-bold text-amber-200" id="reading-lvl-badge-1">+0,25 min</span>
           </button>
           <button onclick="switchLevel(2)" id="lvl-btn-2" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>🧩 2. Slabiky</span>
-            <span class="text-[10px] font-bold text-amber-600">+0,25 min</span>
+            <span class="text-[10px] font-bold text-amber-600" id="reading-lvl-badge-2">+0,25 min</span>
           </button>
           <button onclick="switchLevel(3)" id="lvl-btn-3" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>📦 3. Jednoslabičná</span>
-            <span class="text-[10px] font-bold text-amber-600">+0,25 min</span>
+            <span class="text-[10px] font-bold text-amber-600" id="reading-lvl-badge-3">+0,25 min</span>
           </button>
           <button onclick="switchLevel(4)" id="lvl-btn-4" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>📖 4. Dvouslabičná</span>
-            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
+            <span class="text-[10px] font-bold text-emerald-600" id="reading-lvl-badge-4">+0,50 min</span>
           </button>
           <button onclick="switchLevel(5)" id="lvl-btn-5" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>✨ 5. Shluky/OU</span>
-            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
+            <span class="text-[10px] font-bold text-emerald-600" id="reading-lvl-badge-5">+0,50 min</span>
           </button>
           <button onclick="switchLevel(6)" id="lvl-btn-6" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
-            <span>🎯 6. DĚ / TĚ / NĚ</span>
-            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
+            <span>🎯 6. DĚ/TĚ/NĚ</span>
+            <span class="text-[10px] font-bold text-emerald-600" id="reading-lvl-badge-6">+0,50 min</span>
           </button>
           <button onclick="switchLevel(7)" id="lvl-btn-7" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200">
             <span>🌟 7. Celé věty</span>
-            <span class="text-[10px] font-bold text-purple-600">+1,00 min</span>
+            <span class="text-[10px] font-bold text-purple-600" id="reading-lvl-badge-7">+1,00 min</span>
+          </button>
+          <button onclick="switchLevel(8)" id="lvl-btn-8" class="lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-purple-300">
+            <span>🗣️ 8. Hláskování</span>
+            <span class="text-[10px] font-bold text-purple-600" id="reading-lvl-badge-8">+0,25 min</span>
           </button>
         </div>
       </div>
@@ -211,27 +218,27 @@
         <div class="grid grid-flow-col auto-cols-[145px] sm:auto-cols-[165px] md:grid-cols-4 lg:grid-cols-7 gap-1.5 min-w-max md:min-w-0">
           <button onclick="switchMathLevel(1)" id="math-lvl-btn-1" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-amber-500 text-white shadow-game-btn border-b-4 border-amber-700">
             <span id="math-tab-1-title">🍎 1. Obrázkové počty</span>
-            <span class="text-[10px] font-bold text-amber-200">+0,25 min</span>
+            <span class="text-[10px] font-bold text-amber-200" id="math-lvl-badge-1">+0,25 min</span>
           </button>
           <button onclick="switchMathLevel(2)" id="math-lvl-btn-2" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200">
             <span>⚖️ 2. Porovnávání</span>
-            <span class="text-[10px] font-bold text-amber-600">+0,25 min</span>
+            <span class="text-[10px] font-bold text-amber-600" id="math-lvl-badge-2">+0,25 min</span>
           </button>
           <button onclick="switchMathLevel(3)" id="math-lvl-btn-3" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200">
             <span>🔢 3. Číselná řada</span>
-            <span class="text-[10px] font-bold text-amber-600">+0,25 min</span>
+            <span class="text-[10px] font-bold text-amber-600" id="math-lvl-badge-3">+0,25 min</span>
           </button>
           <button onclick="switchMathLevel(4)" id="math-lvl-btn-4" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200">
             <span>➕ 4. Počítadlo (+/-)</span>
-            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
+            <span class="text-[10px] font-bold text-emerald-600" id="math-lvl-badge-4">+0,50 min</span>
           </button>
           <button onclick="switchMathLevel(5)" id="math-lvl-btn-5" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200">
             <span>🌿 5. Rozklad čísel</span>
-            <span class="text-[10px] font-bold text-emerald-600">+0,50 min</span>
+            <span class="text-[10px] font-bold text-emerald-600" id="math-lvl-badge-5">+0,50 min</span>
           </button>
           <button onclick="switchMathLevel(6)" id="math-lvl-btn-6" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200">
             <span>📖 6. Slovní úlohy</span>
-            <span class="text-[10px] font-bold text-purple-600">+1,00 min</span>
+            <span class="text-[10px] font-bold text-purple-600" id="math-lvl-badge-6">+1,00 min</span>
           </button>
           <button onclick="switchMathLevel(7)" id="math-lvl-btn-7" class="math-lvl-btn py-2 px-2 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200">
             <span>🎨 7. Omalovánka</span>
@@ -267,11 +274,21 @@
           </div>
         </div>
 
-        <div id="control-images-wrapper" class="flex items-center gap-1.5">
-          <button id="toggle-images-btn" onclick="toggleImages()" class="game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5">
-            <span id="toggle-images-icon">🖼️</span>
-            <span id="toggle-images-text">Obrázky: ZAPNUTO</span>
-          </button>
+        <!-- Přepínače Obrázků a Zvuku Výslovnosti -->
+        <div class="flex items-center gap-2">
+          <div id="control-images-wrapper" class="flex items-center gap-1.5">
+            <button id="toggle-images-btn" onclick="toggleImages()" class="game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5">
+              <span id="toggle-images-icon">🖼️</span>
+              <span id="toggle-images-text">Obrázky: ZAP</span>
+            </button>
+          </div>
+
+          <div id="control-speech-wrapper" class="flex items-center gap-1.5">
+            <button id="toggle-speech-btn" onclick="toggleSpeech()" class="game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-teal-600 hover:bg-teal-700 text-white shadow-sm flex items-center gap-1.5">
+              <span id="toggle-speech-icon">🔊</span>
+              <span id="toggle-speech-text">Výslovnost: ZAP</span>
+            </button>
+          </div>
         </div>
 
         <div class="text-[11px] font-black text-indigo-700 bg-indigo-50 border border-indigo-200 px-2.5 py-1 rounded-xl hidden lg:block" id="active-summary-badge">
@@ -285,9 +302,85 @@
         <div id="content-grid-view" class="w-full py-1.5">
         </div>
 
-        <!-- POKÉMON COLORING VIEW (7. ZÁLOŽKA) -->
-        <div id="content-coloring-view" class="hidden w-full max-w-3xl flex-col items-center bg-white/95 rounded-3xl p-4 sm:p-6 border-4 border-amber-300 shadow-xl my-2">
+        <!-- SPECIAL VIEW: HLÁSKOVÁNÍ A ROZKLAD SLOV (8. ZÁLOŽKA ČTENÍ) -->
+        <div id="content-spelling-view" class="hidden w-full max-w-3xl flex-col items-center bg-white/95 rounded-3xl p-5 sm:p-7 border-4 border-purple-400 shadow-xl my-2">
           
+          <div class="w-full flex items-center justify-between border-b pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-2xl">🗣️</span>
+              <div>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-800 font-baloo leading-tight">Rozklad slova na hlásky</h3>
+                <p class="text-xs text-purple-700 font-bold" id="spelling-subtitle-instructions">Poslouchej slovo a vyhláskuj ho!</p>
+              </div>
+            </div>
+            <button onclick="repeatSpellingTTS()" class="game-button bg-purple-100 hover:bg-purple-200 text-purple-900 font-black px-3.5 py-2 rounded-2xl text-xs sm:text-sm flex items-center gap-1.5 border-2 border-purple-300">
+              <span>🔊</span> Přehrát znovu
+            </button>
+          </div>
+
+          <div class="w-full mb-3 bg-purple-50/70 p-3 rounded-2xl border border-purple-200">
+            <div class="flex items-center justify-between text-xs font-black text-purple-900 mb-1.5">
+              <div class="flex items-center gap-1.5">
+                <span class="text-base animate-pulse">📢</span>
+                <span id="spelling-timer-label">Poslech slova: 1 / 3</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div id="spelling-countdown-dots" class="flex items-center gap-1 text-[10px]">
+                </div>
+                <span id="spelling-category-pill" class="bg-purple-200 text-purple-900 px-2.5 py-0.5 rounded-full uppercase text-[10px]">2 slabiky</span>
+              </div>
+            </div>
+            <div class="w-full bg-purple-200/80 h-3 rounded-full overflow-hidden p-0.5 shadow-inner">
+              <div id="spelling-progress-bar" class="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-amber-400 rounded-full" style="width: 100%;"></div>
+            </div>
+          </div>
+
+          <div class="w-full min-h-[190px] bg-gradient-to-b from-slate-50 to-purple-50/30 rounded-3xl border-4 border-dashed border-purple-300 flex flex-col items-center justify-center p-4 relative overflow-hidden text-center shadow-inner">
+            <div id="spelling-visible-stage" class="flex flex-col items-center justify-center">
+              <div id="spelling-image-container" class="mb-2 select-none flex items-center justify-center"></div>
+              <h2 id="spelling-word-display" class="text-5xl sm:text-6xl md:text-7xl font-black text-indigo-950 tracking-wider game-font leading-tight"></h2>
+              <div class="flex items-center gap-2 mt-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <p id="spelling-audio-status" class="text-xs font-black text-purple-700 animate-pulse">Poslouchej slovo... 👀</p>
+              </div>
+            </div>
+
+            <div id="spelling-hidden-stage" class="hidden flex flex-col items-center justify-center w-full">
+              <span class="text-5xl sm:text-6xl mb-2 animate-bounce">🗣️</span>
+              <h3 class="text-2xl sm:text-3xl font-black text-purple-900 font-baloo">Hláskuj nahlas tátovi / mamce!</h3>
+              <p class="text-sm font-bold text-slate-600 mt-1 max-w-md">Říkej jednotlivá písmenka po sobě. Poznáš, která jsou samohlásky a která souhlásky?</p>
+              
+              <div id="spelling-letters-strip" class="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mt-4 min-h-[85px] w-full">
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full mt-4 flex flex-wrap items-center justify-between gap-3 bg-purple-50 p-3.5 rounded-2xl border-2 border-purple-200">
+            <div class="flex items-center gap-3.5">
+              <div class="flex items-center gap-1.5 text-xs font-black">
+                <span class="w-4 h-4 rounded-full bg-rose-500 inline-block border-2 border-white shadow-sm"></span>
+                <span class="text-rose-900">Červená = Samohláska</span>
+              </div>
+              <div class="flex items-center gap-1.5 text-xs font-black">
+                <span class="w-4 h-4 rounded-full bg-sky-500 inline-block border-2 border-white shadow-sm"></span>
+                <span class="text-sky-900">Modrá = Souhláska</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button onclick="revealNextSpellingLetter()" id="btn-spelling-hint" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2 rounded-xl text-xs sm:text-sm flex items-center gap-1.5 shadow-sm">
+                <span>🔍</span> Odkrýt písmenko (<span id="spelling-hint-count">0/0</span>)
+              </button>
+              <button onclick="revealAllSpellingLetters()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 py-2 rounded-xl text-xs">
+                Odkrýt celé slovo
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- POKÉMON COLORING VIEW (7. ZÁLOŽKA MATEMATIKY) -->
+        <div id="content-coloring-view" class="hidden w-full max-w-3xl flex-col items-center bg-white/95 rounded-3xl p-4 sm:p-6 border-4 border-amber-300 shadow-xl my-2">
           <div class="w-full flex items-center justify-between border-b pb-3 mb-4">
             <div>
               <span class="text-xs font-black text-amber-600 bg-amber-100 px-3 py-0.5 rounded-full uppercase" id="coloring-pokemon-number">Pokémon #25</span>
@@ -299,7 +392,6 @@
             </div>
           </div>
 
-          <!-- SVG Plátno Pokémona (s jemně šedým pozadím a plnobarevným odkrýváním) -->
           <div class="relative w-full max-w-[380px] aspect-square bg-slate-100 border-4 border-amber-300 rounded-3xl shadow-inner flex items-center justify-center p-2 overflow-hidden">
             <svg id="pokemon-svg" class="w-full h-full select-none" viewBox="0 0 400 400"></svg>
             <div id="coloring-complete-overlay" class="hidden absolute inset-0 bg-slate-900/85 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
@@ -310,7 +402,6 @@
             </div>
           </div>
 
-          <!-- Interaktivní řádek s příkladem -->
           <div class="w-full mt-4 bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3" id="coloring-task-box">
             <div class="text-center sm:text-left">
               <span class="text-xs font-black text-amber-800 uppercase block">Klepni na bílé políčko a spočítej příklad:</span>
@@ -337,7 +428,10 @@
         <div id="content-flash-view" class="w-full hidden flex-col items-center justify-center py-2">
           <div class="w-full max-w-xl bg-white border-4 border-amber-400 rounded-3xl p-6 md:p-10 shadow-game-card flex flex-col items-center justify-center text-center relative overflow-hidden">
             <div id="flash-badge" class="absolute top-4 left-4 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider">Karta 1 / 8</div>
-            <div id="flash-image" class="text-5xl sm:text-6xl mb-3 h-14 flex items-center justify-center select-none"></div>
+            <button id="flash-speak-btn" onclick="speakCurrentCard(event)" class="absolute top-4 right-4 w-10 h-10 rounded-2xl bg-teal-50 hover:bg-teal-100 text-teal-700 border-2 border-teal-200 shadow-sm flex items-center justify-center text-lg transition-transform active:scale-95" title="Přehrát správnou výslovnost">
+              🔊
+            </button>
+            <div id="flash-image" class="mb-3 h-16 flex items-center justify-center select-none"></div>
             <div id="flash-text" class="text-4xl sm:text-6xl md:text-7xl font-black text-sky-800 tracking-normal game-font my-2 max-w-full px-4 break-words"></div>
             <div id="flash-sub" class="text-slate-400 text-sm font-extrabold mt-3">Přečti nahlas a zřetelně! 🗣️</div>
           </div>
@@ -352,24 +446,24 @@
         </div>
       </div>
 
-      <!-- FOOTER 1: HODNOCENÍ ČTENÍ -->
+      <!-- FOOTER 1: HODNOCENÍ ČTENÍ & HLÁSKOVÁNÍ -->
       <div id="reading-review-panel" class="bg-white/95 rounded-3xl p-3 sm:p-4 border-4 border-emerald-400 shadow-xl mt-1">
         <div class="text-center mb-2">
-          <p class="text-xs uppercase font-black tracking-wider text-slate-500">Hodnocení rodiče (Poslechni si čtení syna):</p>
+          <p class="text-xs uppercase font-black tracking-wider text-slate-500" id="reading-review-prompt">Hodnocení rodiče (Poslechni si čtení syna):</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4">
           <button onclick="parentReview(false)" class="game-button bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-3 sm:py-3.5 px-6 rounded-2xl border-b-6 border-amber-600 text-base sm:text-xl flex items-center justify-center gap-3 shadow-game-btn">
             <span class="text-2xl sm:text-3xl">🔄</span>
             <div class="text-left leading-tight">
               <div>DALŠÍ POKUS</div>
-              <div class="text-[11px] font-extrabold opacity-80">Nová sada slov</div>
+              <div class="text-[11px] font-extrabold opacity-80" id="reading-retry-subtitle">Nová sada slov</div>
             </div>
           </button>
 
           <button onclick="parentReview(true)" id="btn-review-success" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 sm:py-3.5 px-6 rounded-2xl border-b-6 border-emerald-700 text-base sm:text-xl flex items-center justify-center gap-3 shadow-game-btn">
             <span class="text-2xl sm:text-3xl">🎉</span>
             <div class="text-left leading-tight">
-              <div>PŘEČTENO SPRÁVNĚ!</div>
+              <div id="reading-success-title">PŘEČTENO SPRÁVNĚ!</div>
               <div class="text-[11px] font-extrabold text-emerald-100" id="btn-review-reward-label">+0,25 MINUTY NA HRANÍ</div>
             </div>
           </button>
@@ -408,7 +502,7 @@
             <span class="text-xs bg-amber-400 text-indigo-950 font-black px-2.5 py-0.5 rounded-full" id="quests-date-display">Dnes</span>
           </div>
           <h2 class="text-3xl sm:text-4xl font-black mt-2 font-baloo leading-tight">Denní Úkoly 📋</h2>
-          <p class="text-purple-100 mt-1 font-bold text-sm">Splň úkoly ze čtení i matematiky a získej za každý celý 1 bonusovou minutu k tabletu navíc!</p>
+          <p class="text-purple-100 mt-1 font-bold text-sm">Splň úkoly ze čtení, hláskování i matematiky a získej za každý bonusový herní čas!</p>
         </div>
         <button onclick="showView('learn')" class="game-button bg-white text-indigo-700 font-black px-4 py-2.5 rounded-2xl shadow-md border-b-4 border-slate-200 flex items-center gap-2 text-sm whitespace-nowrap">
           <span>🎮</span> Zpět do Tréninku
@@ -425,7 +519,7 @@
         <div>
           <span class="bg-white/20 text-white text-xs font-black px-3 py-1 rounded-full uppercase tracking-wider">Herna na tabletu</span>
           <h2 class="text-3xl sm:text-4xl font-black mt-2 font-baloo leading-tight">Obchod s Herním Časem 🎮</h2>
-          <p class="text-pink-100 mt-1 font-bold text-sm">Vyměň své vyčtené a vypočítané hvězdičky za minuty hraní her na iPadu!</p>
+          <p class="text-pink-100 mt-1 font-bold text-sm">Vyměň své vyčtené a vypočítané hvězdičky za minuty hraní her na tabletu!</p>
         </div>
         <div class="bg-white text-purple-900 rounded-3xl p-4 sm:p-5 border-4 border-yellow-300 shadow-lg text-center min-w-[170px]">
           <div class="text-xs font-black uppercase text-slate-500">Máš nasbíráno k vybrání:</div>
@@ -458,7 +552,7 @@
         <div class="flex items-center gap-3.5">
           <span class="text-4xl">🏦</span>
           <div>
-            <h4 class="text-base sm:text-lg font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
+            <h4 class="text-base sm:lg font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
             <p class="text-xs text-amber-900 font-bold">Denní limit přímého herního času je 15 minut. Když se učíš dál, minuty ti nepropadnou – ukládají se do trezoru a odemknou se zítra!</p>
           </div>
         </div>
@@ -468,7 +562,7 @@
         </div>
       </div>
 
-      <!-- Balíčky (Max 15 minut denně: 5, 10, 15) -->
+      <!-- Balíčky -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <div class="bg-white border-4 border-sky-300 rounded-3xl p-5 shadow-md flex flex-col justify-between text-center relative overflow-hidden">
           <div>
@@ -527,9 +621,7 @@
   <!-- DAILY BOX MODAL -->
   <div id="daily-box-modal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-gradient-to-b from-amber-100 via-white to-amber-50 rounded-3xl max-w-sm w-full p-6 sm:p-7 border-4 border-amber-400 shadow-2xl text-center relative overflow-hidden">
-      
       <button onclick="closeDailyBoxModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 font-black text-xl w-8 h-8 rounded-full flex items-center justify-center">✕</button>
-
       <span class="bg-amber-400 text-amber-950 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">Kouzelná Truhla</span>
       <h3 class="text-2xl sm:text-3xl font-black text-slate-800 mt-1 font-baloo">Denní Box Odměn 🎁</h3>
       <p class="text-xs text-slate-600 font-bold mt-1">Klepni na truhlu a získej 0,5 až 2 minuty zdarma každý den!</p>
@@ -538,7 +630,6 @@
         <div id="chest-graphic" onclick="openChestAction()" class="cursor-pointer text-7xl sm:text-8xl select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95">
           🎁
         </div>
-        
         <div id="chest-status-text" class="text-sm font-black text-amber-800 mt-3">
           Klepni pro otevření! 👆
         </div>
@@ -582,224 +673,293 @@
 
   <!-- ADMIN CONTROL PANEL MODAL -->
   <div id="admin-panel-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden overflow-y-auto p-3 sm:p-6 flex items-start justify-center">
-    <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 border-4 border-indigo-600 shadow-2xl my-4">
+    <div class="bg-white rounded-3xl max-w-4xl w-full p-5 sm:p-7 border-4 border-indigo-600 shadow-2xl my-4 flex flex-col">
       
-      <div class="flex items-center justify-between border-b pb-4 mb-4">
+      <!-- Admin Header -->
+      <div class="flex items-center justify-between border-b pb-4 mb-3">
         <div class="flex items-center gap-3">
           <span class="text-3xl">⚙️</span>
           <div>
-            <h2 class="text-2xl font-black text-slate-800">Rodičovská Administrace</h2>
-            <p class="text-xs text-slate-500 font-bold">Nastavení rozsahu matematiky po desítkách, Pokémon omalovánky a PINu</p>
+            <h2 class="text-2xl font-black text-slate-800 font-baloo">Rodičovská Administrace</h2>
+            <p class="text-xs text-slate-500 font-bold">Přehledná správa odměn, rozsahů, písmenek a limitů</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <!-- Bod 3: Verze hry -->
-          <span class="bg-indigo-100 text-indigo-800 font-black text-xs px-3 py-1 rounded-xl border border-indigo-300 shadow-sm" id="admin-version-tag">Verze: 1</span>
+          <span class="bg-indigo-100 text-indigo-800 font-black text-xs px-3 py-1 rounded-xl border border-indigo-300 shadow-sm" id="admin-version-tag">Verze: 4.3</span>
           <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-10 h-10 rounded-full flex items-center justify-center text-xl">✕</button>
         </div>
       </div>
 
-      <!-- Minute Adjustments -->
-      <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 mb-5">
-        <div class="flex items-center justify-between mb-3">
-          <div>
-            <span class="font-black text-indigo-950 text-base sm:text-lg">Kredit na tabletu:</span>
-            <span class="text-xs text-indigo-600 block font-bold">Přidávání a ubírání minut</span>
-          </div>
-          <span class="text-3xl font-black text-indigo-700" id="admin-balance-display">0 min</span>
-        </div>
-
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-          <button onclick="adjustMinutes(0.5, 'Bonus od rodiče (+0.5 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>+0.5 min</span>
-            <span class="text-[10px] font-normal opacity-90">+30 sek</span>
-          </button>
-          <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>+1 min</span>
-            <span class="text-[10px] font-normal opacity-90">+1 celá</span>
-          </button>
-          <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>+5 min</span>
-            <span class="text-[10px] font-normal opacity-90">+5 balíček</span>
-          </button>
-          <button onclick="adjustMinutes(-0.5, 'Odečet rodičem (-0.5 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>-0.5 min</span>
-            <span class="text-[10px] font-normal opacity-90">-30 sek</span>
-          </button>
-          <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>-1 min</span>
-            <span class="text-[10px] font-normal opacity-90">-1 celá</span>
-          </button>
-          <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
-            <span>-5 min</span>
-            <span class="text-[10px] font-normal opacity-90">-5 balíček</span>
-          </button>
-        </div>
+      <!-- HLAVNÍ ADMIN ZÁLOŽKY: 1) Obecné, 2) Matematika, 3) Čtení -->
+      <div class="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border-2 border-slate-200 mb-5">
+        <button onclick="switchAdminTab('general')" id="admin-tab-btn-general" class="flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-2">
+          <span>⚙️</span> Obecné & Odměny
+        </button>
+        <button onclick="switchAdminTab('math')" id="admin-tab-btn-math" class="flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-2">
+          <span>🔢</span> Matematika
+        </button>
+        <button onclick="switchAdminTab('reading')" id="admin-tab-btn-reading" class="flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-2">
+          <span>📖</span> Čtení & Hláskování
+        </button>
       </div>
 
-      <!-- PŘESUN Z TREZORU DO ÚČTU (CELÝ NEBO ČÁSTEČNÝ) -->
-      <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 mb-5">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-          <div>
-            <h4 class="font-black text-amber-950 text-base">Zlatý Noční Trezor (Převod do Můj čas):</h4>
-            <p class="text-xs text-amber-800 font-bold">Přesuň vybraný počet minut nebo celý obsah trezoru ihned k použití.</p>
-          </div>
-          <div class="bg-white px-3 py-1.5 rounded-xl border border-amber-400 self-start sm:self-auto">
-            <span class="text-xs text-slate-500 font-bold">V trezoru je: </span>
-            <span class="font-black text-amber-600 text-base" id="admin-vault-indicator">0 min</span>
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <div class="flex items-center gap-1.5 bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 shadow-inner">
-            <span class="text-xs font-bold text-slate-600">Počet minut:</span>
-            <input type="number" id="vault-transfer-input" step="0.5" min="0.5" placeholder="např. 2" class="w-20 text-center font-black text-indigo-900 border-b-2 border-amber-500 focus:outline-none">
-            <span class="text-xs font-bold text-slate-600">min</span>
-          </div>
-          <button onclick="adminTransferCustomVault()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
-            <span>📥</span> Převést do Můj čas
-          </button>
-          <button onclick="adminUnlockVaultNow()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
-            <span>⚡</span> Převést VŠECHNO z trezoru
-          </button>
-        </div>
-      </div>
-
-      <!-- PŘESNÝ POSUVNÍK ROZSAHU MATEMATIKY -->
-      <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4 mb-5">
-        <div class="flex items-center justify-between mb-2">
-          <h4 class="font-black text-amber-950 text-base">Rozsah počítání matematiky (přesně po desítkách):</h4>
-          <span class="text-sm bg-amber-400 text-amber-950 px-3.5 py-1 rounded-xl font-black shadow-sm" id="admin-math-max-badge">Do 10</span>
-        </div>
-        <p class="text-xs text-amber-800 font-bold mb-3">Vyber nebo posuň přesně na požadovanou desítku (10 až 100):</p>
+      <!-- ==================== ZÁLOŽKA 1: OBECNÉ ==================== -->
+      <div id="admin-tab-content-general" class="space-y-5">
         
-        <div class="px-2 pt-2">
-          <div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5" id="slider-steps-container">
+        <!-- Minute Adjustments -->
+        <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <span class="font-black text-indigo-950 text-base sm:text-lg">Kredit na tabletu:</span>
+              <span class="text-xs text-indigo-600 block font-bold">Přidávání a ubírání minut</span>
+            </div>
+            <span class="text-3xl font-black text-indigo-700 font-baloo" id="admin-balance-display">0 min</span>
+          </div>
+
+          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            <button onclick="adjustMinutes(0.5, 'Bonus od rodiče (+0.5 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+              <span>+0.5 min</span>
+              <span class="text-[10px] font-normal opacity-90">+30 sek</span>
+            </button>
+            <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+              <span>+1 min</span>
+              <span class="text-[10px] font-normal opacity-90">+1 celá</span>
+            </button>
+            <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+              <span>+5 min</span>
+              <span class="text-[10px] font-normal opacity-90">+5 balíček</span>
+            </button>
+            <button onclick="adjustMinutes(-0.5, 'Odečet rodičem (-0.5 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+              <span>-0.5 min</span>
+              <span class="text-[10px] font-normal opacity-90">-30 sek</span>
+            </button>
+            <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+              <span>-1 min</span>
+              <span class="text-[10px] font-normal opacity-90">-1 celá</span>
+            </button>
+            <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2.5 rounded-xl text-sm shadow-sm flex flex-col items-center">
+              <span>-5 min</span>
+              <span class="text-[10px] font-normal opacity-90">-5 balíček</span>
+            </button>
           </div>
         </div>
-      </div>
 
-      <!-- NASTAVENÍ POKÉMON OMALOVÁNEK A TAJNÉHO PINU -->
-      <div class="bg-cyan-50 border-2 border-cyan-300 rounded-2xl p-4 mb-5">
-        <h4 class="font-black text-cyan-950 text-base mb-1">Nastavení Pokémon Omalovánek & Tajného PINu:</h4>
-        <p class="text-xs text-cyan-800 font-bold mb-3">Nastav počet dílků jednoho Pokémona a tajný PIN k tabletu po nasbírání 50 diamantů.</p>
-        
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div class="bg-white p-3 rounded-xl border border-cyan-200">
-            <label class="text-xs font-black text-slate-700 block mb-1">Počet segmentů na Pokémona (10 až 25):</label>
-            <div class="flex items-center gap-2">
-              <input type="range" id="admin-segments-slider" min="10" max="25" step="1" value="12" oninput="changeSegmentsCount(this.value)" class="w-full accent-cyan-600">
-              <span class="text-base font-black text-cyan-700 w-8 text-center" id="admin-segments-count-label">12</span>
+        <!-- PŘESUN Z TREZORU DO ÚČTU -->
+        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div>
+              <h4 class="font-black text-amber-950 text-base">Zlatý Noční Trezor (Převod do Můj čas):</h4>
+              <p class="text-xs text-amber-800 font-bold">Přesuň vybraný počet minut nebo celý obsah trezoru ihned k použití.</p>
+            </div>
+            <div class="bg-white px-3 py-1.5 rounded-xl border border-amber-400 self-start sm:self-auto">
+              <span class="text-xs text-slate-500 font-bold">V trezoru je: </span>
+              <span class="font-black text-amber-600 text-base font-baloo" id="admin-vault-indicator">0 min</span>
             </div>
           </div>
 
-          <div class="bg-white p-3 rounded-xl border border-cyan-200">
-            <label class="text-xs font-black text-slate-700 block mb-1">Tajný PIN k tabletu (cíl za 50 💎):</label>
-            <input type="text" id="admin-secret-pin-input" placeholder="např. 2580" maxlength="8" onchange="saveSecretPin(this.value)" class="w-full text-lg font-black text-center tracking-widest bg-slate-50 border-2 border-cyan-300 rounded-xl py-1.5 focus:outline-none focus:border-cyan-600">
+          <div class="flex flex-wrap items-center gap-2">
+            <div class="flex items-center gap-1.5 bg-white border border-amber-300 rounded-xl px-2.5 py-1.5 shadow-inner">
+              <span class="text-xs font-bold text-slate-600">Počet minut:</span>
+              <input type="number" id="vault-transfer-input" step="0.5" min="0.5" placeholder="např. 2" class="w-20 text-center font-black text-indigo-900 border-b-2 border-amber-500 focus:outline-none">
+              <span class="text-xs font-bold text-slate-600">min</span>
+            </div>
+            <button onclick="adminTransferCustomVault()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+              <span>📥</span> Převést do Můj čas
+            </button>
+            <button onclick="adminUnlockVaultNow()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+              <span>⚡</span> Převést VŠECHNO z trezoru
+            </button>
           </div>
         </div>
 
-        <div class="mt-3 flex items-center justify-between text-xs font-bold text-cyan-900 bg-cyan-100/70 p-2 rounded-xl">
-          <span>Nasbíráno diamantů: <strong id="admin-diamonds-indicator">0 / 50 💎</strong></span>
-          <button onclick="adminAdjustDiamonds(1)" class="bg-cyan-600 text-white font-black px-3 py-1 rounded-lg">+1 💎</button>
-          <button onclick="adminAdjustDiamonds(-1)" class="bg-slate-300 text-slate-700 font-black px-3 py-1 rounded-lg">-1 💎</button>
-        </div>
-      </div>
+        <!-- NASTAVENÍ POKÉMON OMALOVÁNEK A TAJNÉHO PINU -->
+        <div class="bg-cyan-50 border-2 border-cyan-300 rounded-2xl p-4">
+          <h4 class="font-black text-cyan-950 text-base mb-1">Nastavení Pokémon Omalovánek & Tajného PINu:</h4>
+          <p class="text-xs text-cyan-800 font-bold mb-3">Nastav počet dílků jednoho Pokémona a tajný PIN k tabletu po nasbírání 50 diamantů:</p>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="bg-white p-3 rounded-xl border border-cyan-200">
+              <label class="text-xs font-black text-slate-700 block mb-1">Počet segmentů na Pokémona (10 až 25):</label>
+              <div class="flex items-center gap-2">
+                <input type="range" id="admin-segments-slider" min="10" max="25" step="1" value="12" oninput="changeSegmentsCount(this.value)" class="w-full accent-cyan-600">
+                <span class="text-base font-black text-cyan-700 w-8 text-center" id="admin-segments-count-label">12</span>
+              </div>
+            </div>
 
-      <!-- DAILY RESETS SECTION -->
-      <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-4 mb-5">
-        <h4 class="font-black text-purple-950 text-base mb-1">Správa Denních Bonusů (Ruční reset):</h4>
-        <p class="text-xs text-purple-800 font-bold mb-3">Denní limity a mise se obnovují po půlnoci. Zde je můžeš obnovit ručně.</p>
-        
-        <div class="flex flex-wrap gap-2.5">
-          <button onclick="adminResetQuests()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-            <span>🔄</span> Resetovat Denní Úkoly (9 úkolů)
-          </button>
-          <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-            <span>🎁</span> Resetovat Denní Truhlu
-          </button>
-          <button onclick="adminResetDailyDirectLimit()" class="game-button bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
-            <span>⏱️</span> Vynulovat dnešní vyčerpaný limit 15 min
-          </button>
-        </div>
-      </div>
+            <div class="bg-white p-3 rounded-xl border border-cyan-200">
+              <label class="text-xs font-black text-slate-700 block mb-1">Tajný PIN k tabletu (cíl za 50 💎):</label>
+              <input type="text" id="admin-secret-pin-input" placeholder="XXXX" maxlength="12" onchange="saveSecretPin(this.value)" class="w-full text-lg font-black text-center tracking-widest bg-slate-50 border-2 border-cyan-300 rounded-xl py-1.5 focus:outline-none focus:border-cyan-600">
+            </div>
+          </div>
 
-      <!-- Tiles count (Čtení) -->
-      <div class="bg-amber-50 border-2 border-amber-200 rounded-2xl p-4 mb-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="mt-3 flex items-center justify-between text-xs font-bold text-cyan-900 bg-cyan-100/70 p-2 rounded-xl">
+            <span>Nasbíráno diamantů: <strong id="admin-diamonds-indicator">0 / 50 💎</strong></span>
+            <div class="flex items-center gap-2">
+              <button onclick="adminAdjustDiamonds(1)" class="bg-cyan-600 text-white font-black px-3 py-1 rounded-lg">+1 💎</button>
+              <button onclick="adminAdjustDiamonds(-1)" class="bg-slate-300 text-slate-700 font-black px-3 py-1 rounded-lg">-1 💎</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- RUČNÍ NASTAVENÍ ODMĚN (MINUTY ZA ÚKOLY & MISE) -->
+        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h4 class="font-black text-emerald-950 text-base">Nastavení výše odměn (Minuty k tabletu):</h4>
+              <p class="text-xs text-emerald-800 font-bold">Zde můžete libovolně nastavit minuty pro každou úlohu i denní úkoly bez úpravy kódu.</p>
+            </div>
+            <button onclick="resetDefaultRewards()" class="text-xs font-bold bg-white text-emerald-800 border border-emerald-300 px-2.5 py-1 rounded-lg hover:bg-emerald-100">
+              ↺ Výchozí hodnoty
+            </button>
+          </div>
+
+          <div class="bg-white p-3 rounded-xl border border-emerald-200 mb-3 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-black text-slate-800 block">Odměna za 1 splněný Denní úkol:</span>
+              <span class="text-[11px] text-slate-500 font-bold">Kolik minut získá po splnění denního úkolu</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <input type="number" step="0.25" min="0.1" max="10" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-20 text-center font-black text-indigo-900 bg-emerald-50 border-2 border-emerald-300 rounded-xl py-1 text-sm">
+              <span class="text-xs font-black text-slate-600">min</span>
+            </div>
+          </div>
+
+          <h5 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Odměny za kategorie Čtení & Hláskování:</h5>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4" id="rewards-reading-inputs">
+          </div>
+
+          <h5 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Odměny za kategorie Matematiky:</h5>
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="rewards-math-inputs">
+          </div>
+        </div>
+
+        <!-- DAILY RESETS SECTION -->
+        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-4">
+          <h4 class="font-black text-purple-950 text-base mb-1">Správa Denních Bonusů (Ruční reset):</h4>
+          <p class="text-xs text-purple-800 font-bold mb-3">Denní limity a mise se obnovují automaticky o půlnoci. Zde je můžete obnovit ihned ručně.</p>
+          
+          <div class="flex flex-wrap gap-2.5">
+            <button onclick="adminResetQuests()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+              <span>🔄</span> Resetovat Denní Úkoly
+            </button>
+            <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+              <span>🎁</span> Resetovat Denní Truhlu
+            </button>
+            <button onclick="adminResetDailyDirectLimit()" class="game-button bg-sky-600 hover:bg-sky-700 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-sm">
+              <span>⏱️</span> Vynulovat limit 15 min
+            </button>
+          </div>
+        </div>
+
+        <!-- Transaction History Log -->
         <div>
-          <h4 class="font-black text-amber-950 text-base">Počet dlaždic pro Čtení:</h4>
-          <p class="text-xs text-amber-800 font-bold">Standardně 8 nebo 10 dlaždic (vždy bez duplicit!).</p>
-        </div>
-        <div class="inline-flex rounded-xl p-1 bg-amber-200 gap-1">
-          <button onclick="setGridCount(8)" id="admin-count-btn-8" class="px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm">8 dlaždic</button>
-          <button onclick="setGridCount(10)" id="admin-count-btn-10" class="px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300">10 dlaždic</button>
-        </div>
-      </div>
-
-      <!-- Letters Config -->
-      <div class="mb-6">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <div>
-            <h4 class="font-black text-slate-800 text-base">Aktivní písmenka (Čtení):</h4>
-            <p class="text-xs text-slate-500 font-bold">Všechna slova odpovídají pravidlům českého pravopisu a slabikáře!</p>
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-black text-slate-800 text-base">Historie minut:</h4>
+            <button onclick="clearHistory()" class="text-xs text-red-500 font-bold hover:underline">Vyčistit historii</button>
           </div>
-
-          <div class="flex flex-wrap gap-2 text-xs">
-            <button onclick="applyPreset('base5')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-black px-3 py-1.5 rounded-xl border border-amber-300">
-              Jen M, L, E, A, S
-            </button>
-            <button onclick="applyPreset('diacritics5')" class="bg-amber-200 hover:bg-amber-300 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400">
-              M, L, E, É, A, Á, S, O, Ó
-            </button>
-            <button onclick="applyPreset('autumn')" class="bg-teal-100 hover:bg-teal-200 text-teal-900 font-black px-3 py-1.5 rounded-xl border border-teal-300">
-              Podzim (+ P, T, U, Ú, I, Í)
-            </button>
-            <button onclick="applyPreset('midGrade')" class="bg-sky-100 hover:bg-sky-200 text-sky-900 font-black px-3 py-1.5 rounded-xl border border-sky-300">
-              Pololetí (+ N, J, V, Z, D, K, C, B)
-            </button>
-            <button onclick="applyPreset('all')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-black px-3 py-1.5 rounded-xl border border-indigo-300">
-              Vybrat celou abecedu
-            </button>
+          <div id="history-log-container" class="bg-slate-50 border border-slate-200 rounded-2xl p-3 max-h-40 overflow-y-auto text-sm space-y-2">
           </div>
         </div>
 
-        <div id="alphabet-grid-container" class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-200 max-h-60 overflow-y-auto">
+        <div class="border-t pt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <span class="text-slate-400 font-bold">Všechna data se ukládají trvale do paměti prohlížeče.</span>
+          <button onclick="resetAllData()" class="bg-red-100 text-red-700 font-black px-4 py-2 rounded-xl hover:bg-red-200">
+            Resetovat celou hru na výchozí stav
+          </button>
         </div>
 
-        <div class="flex items-center justify-between mt-2 text-xs text-slate-500 font-bold">
-          <span id="active-count-indicator">Aktivních písmen: 0 / 42</span>
-          <span>Klepnutím písmenko zapneš / vypneš</span>
+      </div>
+
+      <!-- ==================== ZÁLOŽKA 2: MATEMATIKA ==================== -->
+      <div id="admin-tab-content-math" class="hidden space-y-5">
+        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2">
+            <h4 class="font-black text-amber-950 text-base">Rozsah počítání matematiky (přesně po desítkách):</h4>
+            <span class="text-sm bg-amber-400 text-amber-950 px-3.5 py-1 rounded-xl font-black shadow-sm font-baloo" id="admin-math-max-badge">Do 10</span>
+          </div>
+          <p class="text-xs text-amber-800 font-bold mb-3">Vyberte přesně na požadovanou desítku (10 až 100):</p>
+          
+          <div class="px-2 pt-2">
+            <div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5" id="slider-steps-container">
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white border-2 border-amber-200 rounded-2xl p-4">
+          <h4 class="font-black text-slate-800 text-base mb-1">Poznámka k didaktice matematiky 1. třídy:</h4>
+          <p class="text-xs text-slate-600 font-bold leading-relaxed">
+            Při nastavení rozsahu <strong>Do 10</strong> zobrazuje záložka 1 obrázkové sčítání a odčítání formou ikon (🍎, 🚗). 
+            Při přepnutí na <strong>20 až 100</strong> se záložka 1 adaptuje na počítání celých desítek (např. 20 + 30, 70 − 40) a příklady na Počítadle i číselné řadě respektují zvolenou maximální mez.
+          </p>
         </div>
       </div>
 
-      <!-- Transaction History Log -->
-      <div class="mb-6">
-        <div class="flex items-center justify-between mb-2">
-          <h4 class="font-black text-slate-800 text-base">Historie minut:</h4>
-          <button onclick="clearHistory()" class="text-xs text-red-500 font-bold hover:underline">Vyčistit historii</button>
+      <!-- ==================== ZÁLOŽKA 3: ČTENÍ & HLÁSKOVÁNÍ ==================== -->
+      <div id="admin-tab-content-reading" class="hidden space-y-5">
+        
+        <!-- NASTAVENÍ OPAKOVÁNÍ ŘEČNÍKA V HLÁSKOVÁNÍ (1x až 5x) -->
+        <div class="bg-purple-50 border-2 border-purple-300 rounded-2xl p-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 class="font-black text-purple-950 text-base">Opakování slova řečníkem (Záložka 8. Hláskování):</h4>
+              <p class="text-xs text-purple-800 font-bold">Kolikrát hlas přečte slovo předtím, než se skryje a začne hláskování (1× až 5×):</p>
+            </div>
+            <div class="flex items-center gap-2 self-start sm:self-auto bg-white p-1 rounded-2xl border-2 border-purple-300">
+              <button onclick="adjustSpellingRepeats(-1)" class="w-9 h-9 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-black text-lg flex items-center justify-center">−1</button>
+              <span class="w-12 text-center text-xl font-black text-purple-950 font-baloo" id="admin-spelling-repeats-label">3×</span>
+              <button onclick="adjustSpellingRepeats(1)" class="w-9 h-9 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-lg flex items-center justify-center">+1</button>
+            </div>
+          </div>
         </div>
-        <div id="history-log-container" class="bg-slate-50 border border-slate-200 rounded-2xl p-3 max-h-40 overflow-y-auto text-sm space-y-2">
+
+        <!-- Letters Config -->
+        <div class="bg-white border-2 border-slate-200 rounded-2xl p-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div>
+              <h4 class="font-black text-slate-800 text-base">Aktivní písmenka pro generování slov:</h4>
+              <p class="text-xs text-slate-500 font-bold">Generují se jen slova složená z vybraných písmen.</p>
+            </div>
+
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button onclick="applyPreset('base5')" class="bg-amber-100 hover:bg-amber-200 text-amber-900 font-black px-3 py-1.5 rounded-xl border border-amber-300">
+                Jen M, L, E, A, S
+              </button>
+              <button onclick="applyPreset('diacritics5')" class="bg-amber-200 hover:bg-amber-200 text-amber-950 font-black px-3 py-1.5 rounded-xl border border-amber-400">
+                M, L, E, É, A, Á, S, O, Ó
+              </button>
+              <button onclick="applyPreset('autumn')" class="bg-teal-100 hover:bg-teal-200 text-teal-900 font-black px-3 py-1.5 rounded-xl border border-teal-300">
+                Podzim (+ P, T, U, Ú, I, Í)
+              </button>
+              <button onclick="applyPreset('midGrade')" class="bg-sky-100 hover:bg-sky-200 text-sky-900 font-black px-3 py-1.5 rounded-xl border border-sky-300">
+                Pololetí (+ N, J, V, Z, D, K, C, B)
+              </button>
+              <button onclick="applyPreset('all')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-black px-3 py-1.5 rounded-xl border border-indigo-300">
+                Vybrat celou abecedu
+              </button>
+            </div>
+          </div>
+
+          <div id="alphabet-grid-container" class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-1.5 p-3 bg-slate-50 rounded-2xl border border-slate-200 max-h-60 overflow-y-auto">
+          </div>
+
+          <div class="flex items-center justify-between mt-2 text-xs text-slate-500 font-bold">
+            <span id="active-count-indicator">Aktivních písmen: 0 / 42</span>
+            <span>Klepnutím písmenko zapneš / vypneš</span>
+          </div>
         </div>
+
       </div>
 
-      <!-- Reset -->
-      <div class="border-t pt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-        <span class="text-slate-400 font-bold">Vše je uloženo trvale v zařízení.</span>
-        <button onclick="resetAllData()" class="bg-red-100 text-red-700 font-black px-4 py-2 rounded-xl hover:bg-red-200">
-          Resetovat celou hru na výchozí stav
-        </button>
-      </div>
     </div>
   </div>
 
   <footer class="py-2 px-4 text-center text-sky-800/80 text-xs font-bold">
-    Školácká mise pro 1. třídu ZŠ • Vzdělávací metodika českého slabikáře a matematiky RVP ❤️
+    Školácká mise pro 1. třídu ZŠ • Vzdělávací metodika českého slabikáře, fonetické analýzy a matematiky RVP ❤️
   </footer>
 
   <script>
-    // TRACKOVÁNÍ VERZE (BOD 3)
-    const APP_VERSION = 1;
-    const STORAGE_KEY = 'ctenarska_mise_v15_pokemon';
+    const APP_VERSION = '4.3';
+    const STORAGE_KEY = 'ctenarska_mise_v18_modular_admin';
 
     const FULL_CZECH_ALPHABET = [
       'A', 'Á', 'B', 'C', 'Č', 'D', 'Ď', 'E', 'É', 'Ě', 
@@ -820,7 +980,7 @@
       all: [...FULL_CZECH_ALPHABET]
     };
 
-    const NATURAL_VOWELS = ['A', 'Á', 'E', 'É', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Ů', 'Y', 'Ý'];
+    const NATURAL_VOWELS = ['A', 'Á', 'E', 'É', 'Ě', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Ů', 'Y', 'Ý'];
     const NATURAL_CONSONANTS = [
       'M', 'L', 'S', 'Š', 'P', 'T', 'Ť', 'N', 'Ň', 'J', 'V', 'Z', 'Ž', 
       'D', 'Ď', 'K', 'C', 'Č', 'B', 'H', 'CH', 'R', 'Ř', 'F', 'G'
@@ -828,10 +988,90 @@
 
     const MATH_EMOJIS = ['🍎', '🍐', '🚗', '⭐', '🎈', '🐶', '🐱', '⚽', '🍬', '🦊', '🚀'];
 
-    const REWARDS_TABLE = {
-      reading: { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 0.50, 7: 1.00 },
+    const DEFAULT_REWARDS = {
+      questRate: 1.0,
+      reading: { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 0.50, 7: 1.00, 8: 0.25 },
       math:    { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 1.00, 7: 0.00 }
     };
+
+    const SVG_BENCH = `
+      <svg class="bench-icon-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="15" y="42" width="70" height="9" rx="3" fill="#B45309" stroke="#78350F" stroke-width="2.5"/>
+        <rect x="18" y="24" width="64" height="7" rx="2" fill="#D97706" stroke="#78350F" stroke-width="2"/>
+        <rect x="18" y="32" width="64" height="7" rx="2" fill="#D97706" stroke="#78350F" stroke-width="2"/>
+        <path d="M22 22 V50 M78 22 V50" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        <path d="M22 50 L16 78 M27 50 L33 78" stroke="#1E293B" stroke-width="4.5" stroke-linecap="round"/>
+        <path d="M78 50 L72 78 M83 50 L89 78" stroke="#1E293B" stroke-width="4.5" stroke-linecap="round"/>
+        <line x1="14" y1="78" x2="35" y2="78" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="70" y1="78" x2="91" y2="78" stroke="#64748B" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+    `;
+
+    const SVG_SHOVEL = `
+      <svg class="bench-icon-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="70" cy="25" r="9" stroke="#B45309" stroke-width="4" fill="none"/>
+        <line x1="64" y1="31" x2="34" y2="61" stroke="#D97706" stroke-width="5" stroke-linecap="round"/>
+        <path d="M34 61 L22 73 C19 76 20 80 24 81 L36 78 C39 77 41 74 39 70 Z" fill="#94A3B8" stroke="#334155" stroke-width="3"/>
+      </svg>
+    `;
+
+    const SPELLING_WORDS_DATABASE = [
+      { w: 'MÁMA', e: '👩', syllables: 2 }, { w: 'TÁTA', e: '👨', syllables: 2 },
+      { w: 'LÍPA', e: '🌳', syllables: 2 }, { w: 'VODA', e: '💧', syllables: 2 },
+      { w: 'KOLO', e: '🚲', syllables: 2 }, { w: 'RYBA', e: '🐟', syllables: 2 },
+      { w: 'RUKA', e: '✋', syllables: 2 }, { w: 'NOHA', e: '🦵', syllables: 2 },
+      { w: 'PUSA', e: '💋', syllables: 2 }, { w: 'ZIMA', e: '❄️', syllables: 2 },
+      { w: 'LÉTO', e: '☀️', syllables: 2 }, { w: 'JARO', e: '🌱', syllables: 2 },
+      { w: 'SOVA', e: '🦉', syllables: 2 }, { w: 'KOZA', e: '🐐', syllables: 2 },
+      { w: 'HUSA', e: '🪿', syllables: 2 }, { w: 'ŽÁBA', e: '🐸', syllables: 2 },
+      { w: 'SELE', e: '🐷', syllables: 2 }, { w: 'LAMA', e: '🦙', syllables: 2 },
+      { w: 'POLE', e: '🌾', syllables: 2 }, { w: 'LANO', e: '🪢', syllables: 2 },
+      { w: 'MÍSA', e: '🥣', syllables: 2 }, { w: 'VÁZA', e: '🏺', syllables: 2 },
+      { w: 'KÁVA', e: '☕', syllables: 2 }, { w: 'BOTA', e: '👞', syllables: 2 },
+      { w: 'MAPA', e: '🗺️', syllables: 2 }, { w: 'PILA', e: '🪚', syllables: 2 },
+      { w: 'VANA', e: '🛁', syllables: 2 }, { w: 'LUPA', e: '🔍', syllables: 2 },
+      { w: 'SÍLA', e: '💪', syllables: 2 }, { w: 'RŮŽE', e: '🌹', syllables: 2 },
+      { w: 'DÍRA', e: '🕳️', syllables: 2 }, { w: 'HŮLKA', e: '🦯', syllables: 2 },
+      { w: 'KOSA', e: '🌾', syllables: 2 }, { w: 'KŮRA', e: '🌲', syllables: 2 },
+      { w: 'VÍLA', e: '🧚', syllables: 2 }, { w: 'VOSA', e: '🐝', syllables: 2 },
+      { w: 'NULA', e: '0️⃣', syllables: 2 }, { w: 'ŽITO', e: '🌾', syllables: 2 },
+      { w: 'OKNO', e: '🪟', syllables: 2 }, { w: 'ZUBY', e: '🦷', syllables: 2 },
+      { w: 'MÁSLO', e: '🧈', syllables: 2 }, { w: 'KOČKA', e: '🐱', syllables: 2 },
+      { w: 'PEJSEK', e: '🐶', syllables: 2 }, { w: 'ŠKOLA', e: '🏫', syllables: 2 },
+      { w: 'TAŠKA', e: '🎒', syllables: 2 }, { w: 'KNIHA', e: '📖', syllables: 2 },
+      { w: 'TUŽKA', e: '✏️', syllables: 2 }, { w: 'LOUKA', e: '🌼', syllables: 2 },
+      { w: 'MOUKA', e: '🌾', syllables: 2 }, { w: 'BOUDA', e: '🐶', syllables: 2 },
+      { w: 'KOULE', e: '⚪', syllables: 2 }, { w: 'HOUBA', e: '🍄', syllables: 2 },
+      { w: 'LOUŽE', e: '🌧️', syllables: 2 }, { w: 'TRÁVA', e: '🌱', syllables: 2 },
+      { w: 'STROM', e: '🌳', syllables: 1 }, { w: 'PTÁČEK', e: '🐦', syllables: 2 },
+      { w: 'DÁREK', e: '🎁', syllables: 2 }, { w: 'LÍSTEK', e: '🍂', syllables: 2 },
+      { w: 'ŠIŠKA', e: '🌲', syllables: 2 }, { w: 'SVETR', e: '🧶', syllables: 2 },
+      { w: 'HNÍZDO', e: '🪹', syllables: 2 }, { w: 'STOPA', e: '🐾', syllables: 2 },
+      { w: 'ZÁMEK', e: '🏰', syllables: 2 },
+      { w: 'LES', e: '🌲', syllables: 1 }, { w: 'PES', e: '🐶', syllables: 1 },
+      { w: 'DŮM', e: '🏠', syllables: 1 }, { w: 'MÁK', e: '🌺', syllables: 1 },
+      { w: 'LEV', e: '🦁', syllables: 1 }, { w: 'RAK', e: '🦞', syllables: 1 },
+      { w: 'HAD', e: '🐍', syllables: 1 }, { w: 'MYŠ', e: '🐭', syllables: 1 },
+      { w: 'KOS', e: '🐦', syllables: 1 }, { w: 'MÍČ', e: '⚽', syllables: 1 },
+      { w: 'LED', e: '🧊', syllables: 1 }, { w: 'MED', e: '🍯', syllables: 1 },
+      { w: 'SÝR', e: '🧀', syllables: 1 }, { w: 'SŮL', e: '🧂', syllables: 1 },
+      { w: 'ZUB', e: '🦷', syllables: 1 }, { w: 'NOS', e: '👃', syllables: 1 },
+      { w: 'NŮŽ', e: '🔪', syllables: 1 }, { w: 'DAR', e: '🎁', syllables: 1 },
+      { w: 'DUB', e: '🌳', syllables: 1 }, { w: 'ČAJ', e: '🍵', syllables: 1 },
+      { w: 'VLAK', e: '🚂', syllables: 1 }, { w: 'HRAD', e: '🏰', syllables: 1 },
+      { w: 'MOST', e: '🌉', syllables: 1 }, { w: 'KLÍČ', e: '🔑', syllables: 1 },
+      { w: 'MRAK', e: '☁️', syllables: 1 }, { w: 'BLESK', e: '⚡', syllables: 1 },
+      { w: 'PEC', e: '🧱', syllables: 1 },
+      { w: 'JABLÍČKO', e: '🍎', syllables: 3 }, { w: 'SLUNÍČKO', e: '☀️', syllables: 3 },
+      { w: 'AUTÍČKO', e: '🚗', syllables: 3 }, { w: 'BABIČKA', e: '👵', syllables: 3 },
+      { w: 'DĚDEČEK', e: '👴', syllables: 3 }, { w: 'CIBULE', e: '🧅', syllables: 3 },
+      { w: 'JAHODA', e: '🍓', syllables: 3 }, { w: 'MALINA', e: '🫐', syllables: 3 },
+      { w: 'LOPATA', svg: SVG_SHOVEL, syllables: 3 }, { w: 'KORUNA', e: '👑', syllables: 3 },
+      { w: 'LETADLO', e: '✈️', syllables: 3 }, { w: 'HODINY', e: '⏰', syllables: 3 },
+      { w: 'ČEPICE', e: '🧢', syllables: 3 }, 
+      { w: 'LAVIČKA', svg: SVG_BENCH, syllables: 3 },
+      { w: 'KOŠÍČEK', e: '🧺', syllables: 3 }, { w: 'PANENKA', e: '🪆', syllables: 3 }
+    ];
 
     let audioCtx = null;
     function getAudioContext() {
@@ -885,6 +1125,105 @@
       for (let i = 0; i < 4; i++) {
         setTimeout(() => playTone(300 + i * 80, 0.09, 'sawtooth', 0.15), i * 140);
       }
+    }
+
+    /* ČESKÁ VÝUKOVÁ VÝSLOVNOST A FONETICKÁ REGULACE (TTS) */
+    function sanitizeForCzechPedagogicalTTS(text) {
+      if (!text) return '';
+      let clean = text.trim();
+
+      if (clean.includes(' ')) {
+        return clean.toLowerCase();
+      }
+
+      // Samostatné hlásky/písmena
+      if (clean.length === 1) {
+        const singleLetterSounds = {
+          'A': 'á', 'Á': 'á', 'B': 'bé', 'C': 'cé', 'Č': 'čé',
+          'D': 'dé', 'Ď': 'ďé', 'E': 'é', 'É': 'é', 'Ě': 'je',
+          'F': 'ef', 'G': 'gé', 'H': 'há', 'CH': 'chá', 'I': 'í',
+          'Í': 'í', 'J': 'jé', 'K': 'ká', 'L': 'el', 'M': 'em',
+          'N': 'en', 'Ň': 'eň', 'O': 'ó', 'Ó': 'ó', 'P': 'pé',
+          'Q': 'kvé', 'R': 'er', 'Ř': 'eř', 'S': 'es', 'Š': 'eš',
+          'T': 'té', 'Ť': 'ťé', 'U': 'ú', 'Ú': 'ú', 'Ů': 'ú',
+          'V': 'vé', 'W': 'dvojité vé', 'X': 'iks', 'Y': 'ypsilon',
+          'Ý': 'dlouhé ypsilon', 'Z': 'zet', 'Ž': 'žet'
+        };
+        const u = clean.toUpperCase();
+        return singleLetterSounds[u] || clean.toLowerCase();
+      }
+
+      // Fonetická normalizace slabik pro plynulý hlasový syntetizér
+      let phonetic = clean.toLowerCase();
+      phonetic = phonetic.replace(/ů/g, 'ú');
+
+      // Přirozené fonetické vazby měkčení
+      phonetic = phonetic
+        .replace(/^dě/, 'ďe')
+        .replace(/^tě/, 'ťe')
+        .replace(/^ně/, 'ňe')
+        .replace(/^di/, 'ďi')
+        .replace(/^ti/, 'ťi')
+        .replace(/^ni/, 'ňi')
+        .replace(/^dí/, 'ďí')
+        .replace(/^tí/, 'ťí')
+        .replace(/^ní/, 'ňí');
+
+      return phonetic;
+    }
+
+    function speakCzechWordWithCallback(text, rateModifier = 0.8, onEndCallback = null) {
+      if (!('speechSynthesis' in window)) {
+        if (onEndCallback) setTimeout(onEndCallback, 600);
+        return;
+      }
+      try {
+        window.speechSynthesis.cancel();
+        const speechText = sanitizeForCzechPedagogicalTTS(text);
+
+        const utterance = new SpeechSynthesisUtterance(speechText);
+        utterance.lang = 'cs-CZ';
+        utterance.rate = rateModifier; 
+        utterance.pitch = 1.0;
+        
+        const voices = window.speechSynthesis.getVoices();
+        const czechVoice = voices.find(v => v.lang.startsWith('cs') || v.lang.includes('Czech') || v.lang.includes('cs_CZ'));
+        if (czechVoice) {
+          utterance.voice = czechVoice;
+        }
+
+        let handled = false;
+        utterance.onend = () => {
+          if (!handled) {
+            handled = true;
+            if (onEndCallback) onEndCallback();
+          }
+        };
+
+        utterance.onerror = () => {
+          if (!handled) {
+            handled = true;
+            if (onEndCallback) onEndCallback();
+          }
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+        setTimeout(() => {
+          if (!handled) {
+            handled = true;
+            if (onEndCallback) onEndCallback();
+          }
+        }, 2500);
+
+      } catch (e) {
+        console.warn('TTS error:', e);
+        if (onEndCallback) onEndCallback();
+      }
+    }
+
+    function speakCzechWord(text, rateModifier = 0.8) {
+      speakCzechWordWithCallback(text, rateModifier, null);
     }
 
     function triggerConfetti() {
@@ -944,7 +1283,6 @@
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }
 
-    // DENNÍ ÚKOLY – VČETNĚ VOLITELNÉHO ÚKOLU (BOD 2)
     function createDefaultDailyQuests(chosenCustomLvl = 4) {
       return [
         {
@@ -977,13 +1315,22 @@
           claimed: false,
           matches: (s, l) => s === 'reading' && l === 3
         },
-        // NOVÝ VOLITELNÝ DENNÍ ÚKOL S ROLOVACÍM SEZNAMEM (BOD 2)
+        {
+          id: 'q_spelling',
+          title: 'Hláskař Šampion',
+          desc: 'Správně vyhláskuj 3 slova v záložce 8. Hláskování.',
+          icon: '🗣️',
+          target: 3,
+          progress: 0,
+          claimed: false,
+          matches: (s, l) => s === 'reading' && l === 8
+        },
         {
           id: 'q_custom_reading',
           isCustom: true,
           selectedTargetLevel: chosenCustomLvl,
           title: 'Volitelná čtenářská výzva',
-          desc: 'Vyber si kategorii níže a přečti 3 sady.',
+          desc: 'Vyber si kategorii níže a splň 3 sady.',
           icon: '🎯',
           target: 3,
           progress: 0,
@@ -1015,7 +1362,7 @@
         {
           id: 'q_m_compare',
           title: 'Váhy a Porovnání',
-          desc: 'Vyřeš 2 sady porovnávání čísel (&lt;, =, &gt;).',
+          desc: 'Vyřeš 2 sady porovnávání čísel (<, =, >).',
           icon: '⚖️',
           target: 2,
           progress: 0,
@@ -1054,7 +1401,7 @@
       vaultBalance: 0.0,
       goldDiamonds: 0,
       pokemonSegmentsCount: 12,
-      tabletSecretPin: '2580',
+      tabletSecretPin: 'XXXX',
       activeLetters: ['M', 'L', 'E', 'É', 'A', 'Á', 'S', 'O', 'Ó'],
       currentLevel: 1,
       currentMathLevel: 1,
@@ -1063,6 +1410,9 @@
       displayMode: 'grid',
       gridCardCount: 8,
       showImages: true,
+      showSpeechButton: true,
+      spellingRepeatCount: 3,
+      rewards: JSON.parse(JSON.stringify(DEFAULT_REWARDS)),
       currentItems: [],
       flashcardIndex: 0,
       history: [],
@@ -1073,6 +1423,226 @@
       boxClaimed: false,
       lastBoxReward: 0.0
     };
+
+    let spellingState = {
+      unseenDeck: [],
+      currentWordObj: null,
+      letters: [],
+      revealedCount: 0,
+      isWordHidden: false,
+      currentRepeatIndex: 0,
+      totalRepeats: 3
+    };
+
+    function clearSpellingTimers() {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
+
+    function parseSpellingLetters(word) {
+      const upper = word.toUpperCase();
+      const res = [];
+      let i = 0;
+      while (i < upper.length) {
+        if (i < upper.length - 1 && upper.substring(i, i + 2) === 'CH') {
+          res.push({ char: 'CH', isVowel: false });
+          i += 2;
+          continue;
+        }
+        const char = upper[i];
+        const isVowel = NATURAL_VOWELS.includes(char);
+        res.push({ char: char, isVowel: isVowel });
+        i++;
+      }
+      return res;
+    }
+
+    function renderSpellingImage(wordObj, containerEl) {
+      if (!containerEl) return;
+      containerEl.innerHTML = '';
+      if (!state.showImages) {
+        containerEl.classList.add('hidden');
+        return;
+      }
+      containerEl.classList.remove('hidden');
+
+      if (wordObj.svg) {
+        containerEl.innerHTML = wordObj.svg;
+      } else {
+        const span = document.createElement('span');
+        span.className = 'text-5xl sm:text-6xl';
+        span.textContent = wordObj.e || '✨';
+        containerEl.appendChild(span);
+      }
+    }
+
+    function updateSpellingRepeatDots(current, total) {
+      const container = document.getElementById('spelling-countdown-dots');
+      if (!container) return;
+      container.innerHTML = '';
+
+      for (let i = 1; i <= total; i++) {
+        const dot = document.createElement('span');
+        const isActive = i <= current;
+        dot.className = `w-3 h-3 rounded-full transition-all ${
+          isActive 
+            ? 'bg-purple-600 scale-110 shadow-sm' 
+            : 'bg-purple-200 scale-90 opacity-60'
+        }`;
+        container.appendChild(dot);
+      }
+    }
+
+    function initSpellingWord() {
+      clearSpellingTimers();
+
+      if (!spellingState.unseenDeck || spellingState.unseenDeck.length === 0) {
+        spellingState.unseenDeck = shuffleArray([...SPELLING_WORDS_DATABASE]);
+      }
+
+      const wordObj = spellingState.unseenDeck.pop();
+      spellingState.currentWordObj = wordObj;
+      spellingState.letters = parseSpellingLetters(wordObj.w);
+      spellingState.revealedCount = 0;
+      spellingState.isWordHidden = false;
+      spellingState.totalRepeats = state.spellingRepeatCount || 3;
+      spellingState.currentRepeatIndex = 0;
+
+      document.getElementById('spelling-visible-stage').classList.remove('hidden');
+      document.getElementById('spelling-hidden-stage').classList.add('hidden');
+      
+      const imgContainer = document.getElementById('spelling-image-container');
+      renderSpellingImage(wordObj, imgContainer);
+
+      const wordDisplay = document.getElementById('spelling-word-display');
+      wordDisplay.textContent = formatCase(wordObj.w);
+
+      const catPill = document.getElementById('spelling-category-pill');
+      catPill.textContent = `${wordObj.syllables} ${czechNounForm(wordObj.syllables, 'slabika', 'slabiky', 'slabik')} • ${wordObj.w.length} písmen`;
+
+      const subInst = document.getElementById('spelling-subtitle-instructions');
+      if (subInst) subInst.textContent = `Poslouchej ${spellingState.totalRepeats}× zřetelně přečtené slovo a pak ho vyhláskuj!`;
+
+      document.getElementById('spelling-hint-count').textContent = `0/${spellingState.letters.length}`;
+
+      renderSpellingLettersStrip();
+      runSpellingSpeechCycle();
+    }
+
+    function runSpellingSpeechCycle() {
+      if (spellingState.isWordHidden) return;
+
+      spellingState.currentRepeatIndex++;
+      const cur = spellingState.currentRepeatIndex;
+      const total = spellingState.totalRepeats;
+
+      const statusLabel = document.getElementById('spelling-timer-label');
+      if (statusLabel) {
+        statusLabel.textContent = `Poslech slova: ${cur} / ${total}`;
+      }
+
+      const audioStatus = document.getElementById('spelling-audio-status');
+      if (audioStatus) {
+        audioStatus.textContent = `Řečník čte slovo (${cur}. z ${total})... 🎧`;
+      }
+
+      const progressBar = document.getElementById('spelling-progress-bar');
+      if (progressBar) {
+        const pct = Math.round(((total - cur + 1) / total) * 100);
+        progressBar.style.width = `${pct}%`;
+      }
+
+      updateSpellingRepeatDots(cur, total);
+
+      speakCzechWordWithCallback(spellingState.currentWordObj.w, 0.75, () => {
+        if (spellingState.isWordHidden) return;
+
+        if (spellingState.currentRepeatIndex < spellingState.totalRepeats) {
+          setTimeout(() => {
+            runSpellingSpeechCycle();
+          }, 320);
+        } else {
+          hideSpellingWord();
+        }
+      });
+    }
+
+    function repeatSpellingTTS() {
+      if (spellingState.currentWordObj) {
+        speakCzechWord(spellingState.currentWordObj.w, 0.75);
+        playTone(600, 0.08, 'sine', 0.15);
+      }
+    }
+
+    function hideSpellingWord() {
+      spellingState.isWordHidden = true;
+      document.getElementById('spelling-visible-stage').classList.add('hidden');
+      document.getElementById('spelling-hidden-stage').classList.remove('hidden');
+      document.getElementById('spelling-timer-label').textContent = 'Slovo doznělo! Teď ho vyhláskuj!';
+      
+      const progressBar = document.getElementById('spelling-progress-bar');
+      if (progressBar) progressBar.style.width = '0%';
+      
+      updateSpellingRepeatDots(spellingState.totalRepeats, spellingState.totalRepeats);
+      playTone(420, 0.12, 'triangle', 0.2);
+    }
+
+    function renderSpellingLettersStrip() {
+      const container = document.getElementById('spelling-letters-strip');
+      container.innerHTML = '';
+
+      spellingState.letters.forEach((item, idx) => {
+        const isRevealed = idx < spellingState.revealedCount;
+        const box = document.createElement('div');
+        
+        const dotBg = item.isVowel ? 'bg-rose-500 ring-rose-300' : 'bg-sky-500 ring-sky-300';
+        const textColor = item.isVowel ? 'text-rose-600' : 'text-sky-700';
+        const cardBorder = item.isVowel ? 'border-rose-300' : 'border-sky-300';
+
+        box.className = `w-14 sm:w-16 h-20 sm:h-24 rounded-2xl border-3 flex flex-col items-center justify-between p-2 transition-all transform duration-200 ${
+          isRevealed 
+            ? `bg-white ${cardBorder} shadow-md scale-100` 
+            : 'bg-purple-100/60 border-dashed border-purple-300 scale-95 opacity-75'
+        }`;
+
+        box.innerHTML = `
+          <div class="w-full flex items-center justify-between px-1">
+            <span class="text-[10px] font-black text-slate-400 font-mono">#${idx + 1}</span>
+            <span class="w-2.5 h-2.5 rounded-full ring-2 transition-all ${isRevealed ? dotBg : 'bg-slate-300 ring-slate-200'}"></span>
+          </div>
+
+          <div class="flex-grow flex items-center justify-center">
+            <span class="text-3xl sm:text-4xl font-black game-font select-none ${isRevealed ? textColor : 'text-purple-300'}">
+              ${isRevealed ? formatCase(item.char) : '?'}
+            </span>
+          </div>
+
+          <div class="w-full text-center">
+            <span class="text-[9px] font-extrabold ${isRevealed ? (item.isVowel ? 'text-rose-400' : 'text-sky-400') : 'text-slate-300'}">
+              ${isRevealed ? '•' : 'skryto'}
+            </span>
+          </div>
+        `;
+        container.appendChild(box);
+      });
+
+      document.getElementById('spelling-hint-count').textContent = `${spellingState.revealedCount}/${spellingState.letters.length}`;
+    }
+
+    function revealNextSpellingLetter() {
+      if (spellingState.revealedCount < spellingState.letters.length) {
+        spellingState.revealedCount++;
+        renderSpellingLettersStrip();
+        playTone(520, 0.08, 'sine', 0.15);
+      }
+    }
+
+    function revealAllSpellingLetters() {
+      spellingState.revealedCount = spellingState.letters.length;
+      renderSpellingLettersStrip();
+      playTone(580, 0.1, 'sine', 0.2);
+    }
 
     function saveState() {
       try {
@@ -1106,6 +1676,14 @@
             });
           }
           state = { ...state, ...parsed };
+          
+          if (!state.rewards) {
+            state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+          } else {
+            state.rewards.questRate = state.rewards.questRate || DEFAULT_REWARDS.questRate;
+            state.rewards.reading = { ...DEFAULT_REWARDS.reading, ...(state.rewards.reading || {}) };
+            state.rewards.math = { ...DEFAULT_REWARDS.math, ...(state.rewards.math || {}) };
+          }
         }
       } catch (e) {
         console.error('Chyba při načítání stavu:', e);
@@ -1161,20 +1739,61 @@
       return lettersArray.every(l => state.activeLetters.includes(l));
     }
 
+    /* GENERÁTOR DIDAKTICKY A GRAMATICKY SPRÁVNÝCH SLABIK PRO 1. TŘÍDU */
     function generatePedagogicalOpenSyllables() {
-      const activeConsonants = NATURAL_CONSONANTS.filter(c => state.activeLetters.includes(c));
-      const activeVowels = NATURAL_VOWELS.filter(v => state.activeLetters.includes(v));
       const syllables = [];
+
+      // Gramatické skupiny českého jazyka
+      const SOFT_CONSONANTS = ['Ž', 'Š', 'Č', 'Ř', 'C', 'J', 'Ď', 'Ť', 'Ň'];
+      const HARD_CONSONANTS = ['H', 'CH', 'K', 'R', 'D', 'T', 'N'];
+      
+      // Vokály pro otevřenou slabiku (kroužkované Ů se na začátku slabiky modelově nevyskytuje)
+      const SYLLABLE_VOWELS = ['A', 'Á', 'E', 'É', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Y', 'Ý'];
+
+      const activeConsonants = NATURAL_CONSONANTS.filter(c => state.activeLetters.includes(c));
+      const activeVowels = SYLLABLE_VOWELS.filter(v => state.activeLetters.includes(v));
 
       activeConsonants.forEach(c => {
         activeVowels.forEach(v => {
-          syllables.push({
-            text: c + v,
-            emoji: '',
-            letters: [c, v]
-          });
+          // 1. Po měkkých souhláskách Ž, Š, Č, Ř, C, J, Ď, Ť, Ň nikdy nepíšeme Y / Ý (vyloučí ŤÝ, ŤY, ČY, ŽY...)
+          if (SOFT_CONSONANTS.includes(c) && (v === 'Y' || v === 'Ý')) {
+            return;
+          }
+
+          // 2. Po tvrdých souhláskách H, CH, K, R nepíšeme měkké I / Í
+          if (['H', 'CH', 'K', 'R'].includes(c) && (v === 'I' || v === 'Í')) {
+            return;
+          }
+
+          // 3. Český pravopisný systém pro Ď, Ť, Ň:
+          // Nikdy se nepíše ĎE, ŤE, ŇE ani ĎI, ŤI, ŇI (zapisuje se DĚ, TĚ, NĚ a DI, TI, NI)
+          if (['Ď', 'Ť', 'Ň'].includes(c) && ['I', 'Í', 'E', 'É'].includes(v)) {
+            return;
+          }
+
+          const syllableText = c + v;
+
+          if (state.activeLetters.includes(c) && state.activeLetters.includes(v)) {
+            syllables.push({
+              text: syllableText,
+              emoji: '',
+              letters: [c, v]
+            });
+          }
         });
+
+        // 4. Měkčené slabiky se samohláskou Ě (DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ)
+        if (state.activeLetters.includes('Ě')) {
+          if (['D', 'T', 'N', 'B', 'P', 'V', 'M'].includes(c)) {
+            syllables.push({
+              text: c + 'Ě',
+              emoji: '',
+              letters: [c, 'Ě']
+            });
+          }
+        }
       });
+
       return syllables;
     }
 
@@ -1281,54 +1900,30 @@
     ];
 
     const RAW_LEVEL_7_SENTENCES = [
-      { t: 'EMA MÁ MÁSLO.', e: '👧🧈' },
-      { t: 'MÁMA MELE MASO.', e: '👩⚙️' },
-      { t: 'EMA MÁ MASO.', e: '👧🥩' },
-      { t: 'ÁLA MELE MASO.', e: '👧🥣' },
-      { t: 'MÁMA MÁ MÁSLO.', e: '👩🧈' },
-      { t: 'EMA MÁ MALÉ SELE.', e: '👧🐷' },
-      { t: 'ÁLA MÁ LASO.', e: '👧🪢' },
-      { t: 'LAMA MÁ SENO.', e: '🦙🌾' },
-      { t: 'MÁMA MÁ MÍSU.', e: '👩🥣' },
-      { t: 'EMA MÁ SELE.', e: '👧🐷' },
-      { t: 'MÁMA MELE SELE.', e: '👩🥩' },
-      { t: 'ÁLA MÁ SELE.', e: '👧🐷' },
-      { t: 'SÁRA MÁ LASO.', e: '👧🪢' },
-      { t: 'TÁTA MÁ KOLO.', e: '👨🚲' },
-      { t: 'TETA MÁ KOLO.', e: '👩🚲' },
-      { t: 'PES JE V LESE.', e: '🐶🌲' },
-      { t: 'PES LESEM BĚŽÍ.', e: '🐕🌲' },
-      { t: 'OTA MÁ PSA.', e: '👦🐶' },
-      { t: 'MÍLA MÁ PSA.', e: '👦🐕' },
-      { t: 'PES SE JMENUJE ALÍK.', e: '🐕✨' },
-      { t: 'TÁTA SEKÁ TRÁVU.', e: '👨🌾' },
-      { t: 'NA LOUCE JE SELE.', e: '🌼🐷' },
-      { t: 'EMA MELE KÁVU.', e: '👧☕' },
-      { t: 'MÁMA MÁ ČAJ.', e: '👩🍵' },
-      { t: 'BABIČKA PEČE KOLÁČ.', e: '👵🥧' },
-      { t: 'DĚDEČEK ČTE KNIHU.', e: '👴📖' },
-      { t: 'NA VĚTVI SEDÍ KOS.', e: '🐦🌿' },
-      { t: 'PETR MÁ NOVÝ MÍČ.', e: '👦⚽' },
-      { t: 'NA OBLOZE PLUJE MRAK.', e: '☁️🌤️' },
-      { t: 'VLAK JEDE DO MĚSTA.', e: '🚂🏙️' },
-      { t: 'KOTĚ SPÍ V KOŠÍKU.', e: '🐱🧺' },
-      { t: 'JANA PIJE TEPLÝ ČAJ.', e: '👧🍵' },
-      { t: 'PES HLÍDÁ NÁŠ DŮM.', e: '🐕🏡' },
-      { t: 'AUTO TROUBÍ NA CESTĚ.', e: '🚗📢' },
-      { t: 'V POTOCE PLAVE RYBA.', e: '🐟🌊' },
-      { t: 'MALÉ KŮZLE SKÁČE.', e: '🐐🪨' },
-      { t: 'MÁMA NESE NÁKUP.', e: '👩🛍️' },
-      { t: 'DĚTI SI HRAJÍ.', e: '🧒🎈' },
-      { t: 'V ZIMĚ PADÁ SNÍH.', e: '❄️⛄' },
-      { t: 'HONZA STAVÍ HRAD.', e: '👦🏰' },
-      { t: 'SOVA HOUKÁ V NOCI.', e: '🦉🌙' },
-      { t: 'MEDVĚD MÁ RÁD MED.', e: '🐻🍯' },
-      { t: 'LUCKA KRESLÍ DŮM.', e: '👧🎨' },
-      { t: 'V ZAHRADĚ KVETE RŮŽE.', e: '🌹🪴' },
-      { t: 'HUSA CHODÍ PO DVORKU.', e: '🪿🏡' },
-      { t: 'DĚDA PRACUJE V DÍLNĚ.', e: '👴🔨' },
-      { t: 'TÁTA OPRAVUJE AUTO.', e: '👨🔧' },
-      { t: 'MYŠKA ŽVÝKÁ SÝR.', e: '🐭🧀' },
+      { t: 'EMA MÁ MÁSLO.', e: '👧🧈' }, { t: 'MÁMA MELE MASO.', e: '👩⚙️' },
+      { t: 'EMA MÁ MASO.', e: '👧🥩' }, { t: 'ÁLA MELE MASO.', e: '👧🥣' },
+      { t: 'MÁMA MÁ MÁSLO.', e: '👩🧈' }, { t: 'EMA MÁ MALÉ SELE.', e: '👧🐷' },
+      { t: 'ÁLA MÁ LASO.', e: '👧🪢' }, { t: 'LAMA MÁ SENO.', e: '🦙🌾' },
+      { t: 'MÁMA MÁ MÍSU.', e: '👩🥣' }, { t: 'EMA MÁ SELE.', e: '👧🐷' },
+      { t: 'MÁMA MELE SELE.', e: '👩🥩' }, { t: 'ÁLA MÁ SELE.', e: '👧🐷' },
+      { t: 'SÁRA MÁ LASO.', e: '👧🪢' }, { t: 'TÁTA MÁ KOLO.', e: '👨🚲' },
+      { t: 'TETA MÁ KOLO.', e: '👩🚲' }, { t: 'PES JE V LESE.', e: '🐶🌲' },
+      { t: 'PES LESEM BĚŽÍ.', e: '🐕🌲' }, { t: 'OTA MÁ PSA.', e: '👦🐶' },
+      { t: 'MÍLA MÁ PSA.', e: '👦🐕' }, { t: 'PES SE JMENUJE ALÍK.', e: '🐕✨' },
+      { t: 'TÁTA SEKÁ TRÁVU.', e: '👨🌾' }, { t: 'NA LOUCE JE SELE.', e: '🌼🐷' },
+      { t: 'EMA MELE KÁVU.', e: '👧☕' }, { t: 'MÁMA MÁ ČAJ.', e: '👩🍵' },
+      { t: 'BABIČKA PEČE KOLÁČ.', e: '👵🥧' }, { t: 'DĚDEČEK ČTE KNIHU.', e: '👴📖' },
+      { t: 'NA VĚTVI SEDÍ KOS.', e: '🐦🌿' }, { t: 'PETR MÁ NOVÝ MÍČ.', e: '👦⚽' },
+      { t: 'NA OBLOZE PLUJE MRAK.', e: '☁️🌤️' }, { t: 'VLAK JEDE DO MĚSTA.', e: '🚂🏙️' },
+      { t: 'KOTĚ SPÍ V KOŠÍKU.', e: '🐱🧺' }, { t: 'JANA PIJE TEPLÝ ČAJ.', e: '👧🍵' },
+      { t: 'PES HLÍDÁ NÁŠ DŮM.', e: '🐕🏡' }, { t: 'AUTO TROUBÍ NA CESTĚ.', e: '🚗📢' },
+      { t: 'V POTOCE PLAVE RYBA.', e: '🐟🌊' }, { t: 'MALÉ KŮZLE SKÁČE.', e: '🐐🪨' },
+      { t: 'MÁMA NESE NÁKUP.', e: '👩🛍️' }, { t: 'DĚTI SI HRAJÍ.', e: '🧒🎈' },
+      { t: 'V ZIMĚ PADÁ SNÍH.', e: '❄️⛄' }, { t: 'HONZA STAVÍ HRAD.', e: '👦🏰' },
+      { t: 'SOVA HOUKÁ V NOCI.', e: '🦉🌙' }, { t: 'MEDVĚD MÁ RÁD MED.', e: '🐻🍯' },
+      { t: 'LUCKA KRESLÍ DŮM.', e: '👧🎨' }, { t: 'V ZAHRADĚ KVETE RŮŽE.', e: '🌹🪴' },
+      { t: 'HUSA CHODÍ PO DVORKU.', e: '🪿🏡' }, { t: 'DĚDA PRACUJE V DÍLNĚ.', e: '👴🔨' },
+      { t: 'TÁTA OPRAVUJE AUTO.', e: '👨🔧' }, { t: 'MYŠKA ŽVÝKÁ SÝR.', e: '🐭🧀' },
       { t: 'ŽÁBA SKOČILA DO VODY.', e: '🐸🌊' }
     ];
 
@@ -1379,7 +1974,6 @@
       return Array(count).fill(emo).join(' ');
     }
 
-    /* MATEMATICKÉ GENERÁTORY */
     function generateMathLevel1(maxVal) {
       const pool = [];
       if (maxVal <= 10) {
@@ -1596,7 +2190,6 @@
       return pool;
     }
 
-    /* POKÉMON OMALOVÁNKA – REÁLNÉ BARVY POKÉMONA & JEMNĚ ŠEDÉ POZADÍ (BOD 1) */
     function generateSingleMathTask() {
       const maxVal = state.mathMax || 10;
       const isPlus = Math.random() > 0.45;
@@ -1664,9 +2257,7 @@
 
       const pokeImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${coloringState.pokemon.id}.png`;
 
-      // Definice <defs> a ořezových masek <clipPath>
       const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-      
       const clipAll = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
       clipAll.setAttribute('id', 'colored-segments-clip');
 
@@ -1683,7 +2274,6 @@
       defs.appendChild(clipAll);
       svgEl.appendChild(defs);
 
-      // Vrstva 0: Podklad jednotlivých políček (Bílá = nevymalováno, Jemně šedá #F1F5F9 = vymalováno)
       coloringState.segments.forEach((seg) => {
         const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
         bgRect.setAttribute('x', seg.x);
@@ -1694,7 +2284,6 @@
         svgEl.appendChild(bgRect);
       });
 
-      // Vrstva 1: Základní obrysová ilustrace pokémona (slabě viditelná jako předloha)
       const baseGhostImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       baseGhostImg.setAttribute('href', pokeImgUrl);
       baseGhostImg.setAttribute('x', '30');
@@ -1705,7 +2294,6 @@
       baseGhostImg.setAttribute('pointer-events', 'none');
       svgEl.appendChild(baseGhostImg);
 
-      // Vrstva 2: Plnobarevný oficiální Pokémon v jeho skutečných barvách, odmaskovaný pouze pro vyřešené segmenty
       const coloredPokeImg = document.createElementNS('http://www.w3.org/2000/svg', 'image');
       coloredPokeImg.setAttribute('href', pokeImgUrl);
       coloredPokeImg.setAttribute('x', '30');
@@ -1716,7 +2304,6 @@
       coloredPokeImg.setAttribute('pointer-events', 'none');
       svgEl.appendChild(coloredPokeImg);
 
-      // Vrstva 3: Interaktivní mřížka s čísly a hranicemi
       coloringState.segments.forEach((seg, i) => {
         const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         poly.setAttribute('points', seg.points);
@@ -1728,7 +2315,6 @@
         poly.onclick = () => selectColoringSegment(i);
         svgEl.appendChild(poly);
 
-        // Číslo políčka
         const coords = seg.points.split(' ')[0].split(',');
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', parseFloat(coords[0]) + 15);
@@ -1840,6 +2426,32 @@
       }
     }
 
+    function getLevelReward(subj, lvl) {
+      if (!state.rewards) return 0.25;
+      if (subj === 'reading') {
+        return (state.rewards.reading && state.rewards.reading[lvl] !== undefined) ? state.rewards.reading[lvl] : (DEFAULT_REWARDS.reading[lvl] || 0.25);
+      } else {
+        return (state.rewards.math && state.rewards.math[lvl] !== undefined) ? state.rewards.math[lvl] : (DEFAULT_REWARDS.math[lvl] || 0.25);
+      }
+    }
+
+    function updateNavTabRewardLabels() {
+      for (let i = 1; i <= 8; i++) {
+        const b = document.getElementById(`reading-lvl-badge-${i}`);
+        if (b) {
+          const r = getLevelReward('reading', i);
+          b.textContent = `+${r.toString().replace('.', ',')} min`;
+        }
+      }
+      for (let i = 1; i <= 6; i++) {
+        const b = document.getElementById(`math-lvl-badge-${i}`);
+        if (b) {
+          const r = getLevelReward('math', i);
+          b.textContent = `+${r.toString().replace('.', ',')} min`;
+        }
+      }
+    }
+
     function generateLessonItems() {
       const subj = state.subject;
       const lvl = (subj === 'reading') ? state.currentLevel : state.currentMathLevel;
@@ -1849,17 +2461,22 @@
       const mathEvalPanel = document.getElementById('math-eval-panel');
       const generalControlBar = document.getElementById('general-control-bar');
       const coloringView = document.getElementById('content-coloring-view');
+      const spellingView = document.getElementById('content-spelling-view');
       const gridView = document.getElementById('content-grid-view');
       const flashView = document.getElementById('content-flash-view');
 
       updateMathCategoryHeader();
+      updateNavTabRewardLabels();
+      clearSpellingTimers();
 
+      // 7. ZÁLOŽKA MATEMATIKY: OMALOVÁNKA
       if (subj === 'math' && lvl === 7) {
         readingReviewPanel.classList.add('hidden');
         mathEvalPanel.classList.add('hidden');
         generalControlBar.classList.add('hidden');
         gridView.classList.add('hidden');
         flashView.classList.add('hidden');
+        spellingView.classList.add('hidden');
         emptyNotice.classList.add('hidden');
         coloringView.classList.remove('hidden');
 
@@ -1868,8 +2485,33 @@
         return;
       }
 
+      // 8. ZÁLOŽKA ČTENÍ: HLÁSKOVÁNÍ A ROZKLAD SLOV
+      if (subj === 'reading' && lvl === 8) {
+        coloringView.classList.add('hidden');
+        gridView.classList.add('hidden');
+        flashView.classList.add('hidden');
+        emptyNotice.classList.add('hidden');
+        mathEvalPanel.classList.add('hidden');
+        generalControlBar.classList.add('hidden');
+        spellingView.classList.remove('hidden');
+        readingReviewPanel.classList.remove('hidden');
+
+        document.getElementById('reading-review-prompt').textContent = 'Hodnocení rodiče (Poslechni si hláskování syna):';
+        document.getElementById('reading-retry-subtitle').textContent = 'Nové slovo na hláskování';
+        document.getElementById('reading-success-title').textContent = 'VYHLÁSKOVÁNO SPRÁVNĚ!';
+
+        initSpellingWord();
+        updateReviewButtonLabel();
+        return;
+      }
+
+      // Běžné režimy
+      spellingView.classList.add('hidden');
       coloringView.classList.add('hidden');
       generalControlBar.classList.remove('hidden');
+      document.getElementById('reading-review-prompt').textContent = 'Hodnocení rodiče (Poslechni si čtení syna):';
+      document.getElementById('reading-retry-subtitle').textContent = 'Nová sada slov';
+      document.getElementById('reading-success-title').textContent = 'PŘEČTENO SPRÁVNĚ!';
 
       let pool = [];
       if (subj === 'reading') {
@@ -1923,7 +2565,7 @@
     function updateReviewButtonLabel() {
       const subj = state.subject;
       const lvl = (subj === 'reading') ? state.currentLevel : state.currentMathLevel;
-      const reward = (REWARDS_TABLE[subj] && REWARDS_TABLE[subj][lvl]) ? REWARDS_TABLE[subj][lvl] : 0.25;
+      const reward = getLevelReward(subj, lvl);
       const label = document.getElementById('btn-review-reward-label');
       if (label) {
         label.textContent = `+${reward.toString().replace('.', ',')} MINUTY NA HRANÍ`;
@@ -1961,12 +2603,51 @@
 
       if (state.showImages) {
         btn.className = 'game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-purple-600 hover:bg-purple-700 text-white shadow-sm flex items-center gap-1.5';
-        text.textContent = 'Obrázky: ZAPNUTO';
+        text.textContent = 'Obrázky: ZAP';
         icon.textContent = '🖼️';
       } else {
         btn.className = 'game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-slate-300 hover:bg-slate-400 text-slate-700 shadow-sm flex items-center gap-1.5';
-        text.textContent = 'Obrázky: VYPNUTO';
+        text.textContent = 'Obrázky: VYP';
         icon.textContent = '🚫';
+      }
+    }
+
+    function toggleSpeech() {
+      state.showSpeechButton = !state.showSpeechButton;
+      saveState();
+      updateSpeechToggleUI();
+      renderCurrentContent();
+      playTone(540, 0.09, 'sine', 0.15);
+    }
+
+    function updateSpeechToggleUI() {
+      const btn = document.getElementById('toggle-speech-btn');
+      const text = document.getElementById('toggle-speech-text');
+      const icon = document.getElementById('toggle-speech-icon');
+
+      if (state.showSpeechButton) {
+        btn.className = 'game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-teal-600 hover:bg-teal-700 text-white shadow-sm flex items-center gap-1.5';
+        text.textContent = 'Výslovnost: ZAP';
+        icon.textContent = '🔊';
+      } else {
+        btn.className = 'game-button px-3 py-1.5 rounded-xl text-xs font-black transition-all bg-slate-300 hover:bg-slate-400 text-slate-700 shadow-sm flex items-center gap-1.5';
+        text.textContent = 'Výslovnost: VYP';
+        icon.textContent = '🔇';
+      }
+    }
+
+    function speakCardItem(event, text) {
+      if (event) event.stopPropagation();
+      speakCzechWord(text, 0.8);
+      playTone(600, 0.08, 'sine', 0.15);
+    }
+
+    function speakCurrentCard(event) {
+      if (event) event.stopPropagation();
+      if (!state.currentItems || !state.currentItems.length) return;
+      const cur = state.currentItems[state.flashcardIndex];
+      if (cur && cur.text) {
+        speakCzechWord(cur.text, 0.8);
       }
     }
 
@@ -1982,6 +2663,7 @@
       const modeWrapper = document.getElementById('control-mode-wrapper');
       const countWrapper = document.getElementById('tile-count-control');
       const imagesWrapper = document.getElementById('control-images-wrapper');
+      const speechWrapper = document.getElementById('control-speech-wrapper');
 
       if (newSubj === 'reading') {
         btnReading.className = 'px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
@@ -1992,6 +2674,7 @@
         modeWrapper.classList.remove('hidden');
         countWrapper.classList.remove('hidden');
         imagesWrapper.classList.remove('hidden');
+        speechWrapper.classList.remove('hidden');
       } else {
         btnMath.className = 'px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
         btnReading.className = 'px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
@@ -2001,6 +2684,7 @@
         modeWrapper.classList.add('hidden');
         countWrapper.classList.add('hidden');
         imagesWrapper.classList.add('hidden');
+        speechWrapper.classList.add('hidden');
       }
 
       playTone(560, 0.1, 'sine', 0.2);
@@ -2011,7 +2695,7 @@
       state.currentLevel = lvl;
       saveState();
 
-      [1, 2, 3, 4, 5, 6, 7].forEach(i => {
+      [1, 2, 3, 4, 5, 6, 7, 8].forEach(i => {
         const btn = document.getElementById(`lvl-btn-${i}`);
         if (btn) {
           if (i === lvl) {
@@ -2097,23 +2781,10 @@
         btn8.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
       }
 
-      const adminBtn8 = document.getElementById('admin-count-btn-8');
-      const adminBtn10 = document.getElementById('admin-count-btn-10');
-      if (adminBtn8 && adminBtn10) {
-        if (count === 8) {
-          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
-          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
-        } else {
-          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
-          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
-        }
-      }
-
       playTone(550, 0.08, 'sine', 0.15);
       generateLessonItems();
     }
 
-    /* RENDER DLAŽDIC */
     function renderCurrentContent() {
       const gridContainer = document.getElementById('content-grid-view');
       const flashContainer = document.getElementById('content-flash-view');
@@ -2147,7 +2818,7 @@
           if (item.type === 'decomposition') {
             card.className = 'math-row-card bg-white rounded-3xl p-4 sm:p-5 border-4 border-amber-300 shadow-game-card flex flex-col items-center justify-center';
             card.innerHTML = `
-              <div class="w-16 h-16 rounded-2xl border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-3xl font-black text-slate-800 shadow-sm">
+              <div class="w-16 h-16 rounded-2xl border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-3xl font-black text-slate-800 shadow-sm font-baloo">
                 ${item.topNum}
               </div>
               
@@ -2174,7 +2845,7 @@
           } else if (item.type === 'compare') {
             card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-4 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-3 overflow-x-auto';
             card.innerHTML = `
-              <div class="flex items-center whitespace-nowrap select-none">
+              <div class="flex items-center whitespace-nowrap select-none font-baloo">
                 ${item.htmlRow}
               </div>
               <div class="flex items-center gap-1.5 whitespace-nowrap ml-auto">
@@ -2200,7 +2871,7 @@
           } else {
             card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border-4 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-3 overflow-x-auto';
             card.innerHTML = `
-              <div class="flex items-center whitespace-nowrap select-none overflow-x-auto">
+              <div class="flex items-center whitespace-nowrap select-none overflow-x-auto font-baloo">
                 ${item.htmlRow}
               </div>
               <div class="flex items-center gap-2 whitespace-nowrap ml-auto">
@@ -2221,18 +2892,30 @@
 
         state.currentItems.forEach((item, index) => {
           const card = document.createElement('div');
-          const padClass = isSentence ? 'p-3.5 sm:p-4 min-h-[85px]' : 'p-3 sm:p-4 min-h-[120px]';
+          const padClass = isSentence ? 'p-3.5 sm:p-4 min-h-[95px]' : 'p-3 sm:p-4 min-h-[125px]';
           card.className = `letter-card bg-white rounded-2xl sm:rounded-3xl ${padClass} border-4 border-amber-300 shadow-game-card flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-amber-400 relative`;
 
           const textDisplay = formatCase(item.text);
           let emojiHtml = '';
           if (state.showImages && item.emoji) {
             emojiHtml = `<div class="h-7 sm:h-8 flex items-center justify-center mb-1 text-2xl sm:text-3xl select-none leading-none">${item.emoji}</div>`;
+          } else if (state.showImages && item.svg) {
+            emojiHtml = `<div class="h-7 sm:h-8 flex items-center justify-center mb-1 select-none leading-none">${item.svg}</div>`;
           } else if (!isSentence) {
             emojiHtml = '<div class="h-2"></div>';
           }
 
+          let speakerBtnHtml = '';
+          if (state.showSpeechButton) {
+            speakerBtnHtml = `
+              <button onclick="speakCardItem(event, '${item.text.replace(/'/g, "\\'")}')" class="absolute top-2 right-2 w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-50 hover:bg-sky-100 text-sky-600 hover:text-sky-800 border border-slate-200 hover:border-sky-300 shadow-sm flex items-center justify-center text-xs sm:text-sm transition-all transform active:scale-90" title="Přehrát správnou výslovnost">
+                🔊
+              </button>
+            `;
+          }
+
           card.innerHTML = `
+            ${speakerBtnHtml}
             ${emojiHtml}
             <div class="w-full flex items-center justify-center px-1">
               <span class="text-3xl sm:text-4xl md:text-5xl font-black text-sky-800 game-font leading-tight select-none text-center">
@@ -2361,7 +3044,7 @@
         statusEl.innerHTML = '<span class="text-emerald-600 font-black">Všechno správně! Skvělá práce! 🎉</span>';
         
         const lvl = state.currentMathLevel;
-        const reward = (REWARDS_TABLE.math && REWARDS_TABLE.math[lvl]) ? REWARDS_TABLE.math[lvl] : 0.25;
+        const reward = getLevelReward('math', lvl);
         const catNames = ['Počty/Desítky', 'Porovnávání', 'Číselná řada', 'Počítadlo', 'Rozklad čísel', 'Slovní úlohy'];
 
         creditRewardMinutes(reward, `Matematika: ${catNames[lvl - 1]}`);
@@ -2385,10 +3068,24 @@
       const badge = document.getElementById('flash-badge');
       const text = document.getElementById('flash-text');
       const img = document.getElementById('flash-image');
+      const speakBtn = document.getElementById('flash-speak-btn');
+
+      if (speakBtn) {
+        speakBtn.classList.toggle('hidden', !state.showSpeechButton);
+      }
 
       badge.textContent = `Karta ${state.flashcardIndex + 1} z ${state.currentItems.length}`;
       text.textContent = formatCase(current.text);
-      img.textContent = (state.showImages && current.emoji) ? current.emoji : '';
+      
+      if (img) {
+        if (!state.showImages) {
+          img.innerHTML = '';
+        } else if (current.svg) {
+          img.innerHTML = current.svg;
+        } else {
+          img.textContent = current.emoji || '';
+        }
+      }
 
       text.className = (state.currentLevel === 7)
         ? 'text-2xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-normal game-font my-3 leading-relaxed break-words'
@@ -2412,10 +3109,12 @@
     }
 
     function parentReview(isSuccess) {
+      clearSpellingTimers();
+
       if (isSuccess) {
         const lvl = state.currentLevel;
-        const reward = (REWARDS_TABLE.reading && REWARDS_TABLE.reading[lvl]) ? REWARDS_TABLE.reading[lvl] : 0.25;
-        const catNames = ['Písmena', 'Slabiky', 'Jednoslabičná', 'Dvouslabičná', 'Shluky/OU', 'DĚ/TĚ/NĚ', 'Věty'];
+        const reward = getLevelReward('reading', lvl);
+        const catNames = ['Písmena', 'Slabiky', 'Jednoslabičná', 'Dvouslabičná', 'Shluky/OU', 'DĚ/TĚ/NĚ', 'Věty', 'Hláskování'];
 
         creditRewardMinutes(reward, `Čtení: ${catNames[lvl - 1]}`);
         updateDailyQuestsProgress('reading', lvl);
@@ -2455,6 +3154,8 @@
     }
 
     function showView(viewName) {
+      clearSpellingTimers();
+
       const learnView = document.getElementById('view-learn');
       const storeView = document.getElementById('view-store');
       const questsView = document.getElementById('view-quests');
@@ -2476,7 +3177,7 @@
         const pinLabel = document.getElementById('pin-status-label');
         if (diamonds >= 50) {
           pinLabel.className = 'text-xs font-black uppercase text-yellow-300 animate-bounce';
-          pinLabel.textContent = `ODEMČENO! PIN: ${state.tabletSecretPin || '2580'}`;
+          pinLabel.textContent = `ODEMČENO! PIN: ${state.tabletSecretPin || 'XXXX'}`;
         } else {
           pinLabel.className = 'text-[10px] font-black uppercase text-cyan-200';
           pinLabel.textContent = `Chybí ještě ${50 - diamonds} 💎`;
@@ -2650,6 +3351,9 @@
       } else if (questId === 'q3') {
         setSubject('reading');
         switchLevel(3);
+      } else if (questId === 'q_spelling') {
+        setSubject('reading');
+        switchLevel(8);
       } else if (questId === 'q_custom_reading') {
         setSubject('reading');
         const customQ = state.quests.find(q => q.id === 'q_custom_reading');
@@ -2675,7 +3379,6 @@
       playTone(500, 0.1, 'sine', 0.15);
     }
 
-    // Změna výběru volitelného úkolu z rozevíracího seznamu (bod 2)
     function onCustomQuestLevelChange(newLvlStr) {
       const newLvl = parseInt(newLvlStr, 10);
       state.customDailyLevelChoice = newLvl;
@@ -2700,6 +3403,7 @@
       dateDisplay.textContent = todayFormatted;
 
       container.innerHTML = '';
+      const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 1.0;
 
       state.quests.forEach(quest => {
         const isDone = quest.progress >= quest.target;
@@ -2722,20 +3426,20 @@
         if (quest.claimed) {
           actionHtml = `
             <div class="flex items-center gap-1.5 text-emerald-700 font-black text-sm bg-emerald-100 px-4 py-2 rounded-2xl self-start sm:self-auto">
-              <span>✅</span> VYZVEDNUTO (+1 min)
+              <span>✅</span> VYZVEDNUTO (+${formatMinutes(qRate)})
             </div>
           `;
         } else if (isDone) {
           actionHtml = `
             <button onclick="event.stopPropagation(); claimQuestReward('${quest.id}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-5 py-2.5 rounded-2xl border-b-4 border-emerald-700 text-sm shadow-game-btn flex items-center gap-2 self-start sm:self-auto animate-bounce">
-              <span>🎁</span> VYZVEDNOUT +1 MINUTU!
+              <span>🎁</span> VYZVEDNOUT +${formatMinutes(qRate)}!
             </button>
           `;
         } else {
           actionHtml = `
             <div class="flex flex-col sm:items-end gap-1.5 self-start sm:self-auto">
               <span class="text-xs font-black text-indigo-900 bg-indigo-100 px-3 py-1 rounded-xl block">
-                Odměna: +1 min ⭐
+                Odměna: +${formatMinutes(qRate)} ⭐
               </span>
               <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-xl shadow-sm flex items-center gap-1">
                 Trénovat ➡️
@@ -2744,7 +3448,6 @@
           `;
         }
 
-        // Speciální rolovací seznam pro volitelný úkol (bod 2)
         let customSelectorHtml = '';
         if (quest.isCustom) {
           const curLvl = quest.selectedTargetLevel || 4;
@@ -2755,6 +3458,7 @@
                 <option value="4" ${curLvl === 4 ? 'selected' : ''}>📖 4. Dvouslabičná slova</option>
                 <option value="5" ${curLvl === 5 ? 'selected' : ''}>✨ 5. Shluky / OU</option>
                 <option value="6" ${curLvl === 6 ? 'selected' : ''}>🎯 6. DĚ / TĚ / NĚ</option>
+                <option value="8" ${curLvl === 8 ? 'selected' : ''}>🗣️ 8. Hláskování (rozklad)</option>
               </select>
             </div>
           `;
@@ -2790,8 +3494,9 @@
       const quest = state.quests.find(q => q.id === questId);
       if (!quest || quest.claimed || quest.progress < quest.target) return;
 
+      const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 1.0;
       quest.claimed = true;
-      creditRewardMinutes(1.0, `Denní úkol: ${quest.title}`);
+      creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`);
 
       saveState();
       soundSuccess();
@@ -2807,7 +3512,7 @@
       playTone(700, 0.15, 'sine', 0.2);
       renderDailyQuests();
       updateTopBadges();
-      alertUserFeedback('Denní úkoly byly resetovány na 0/9!');
+      alertUserFeedback('Denní úkoly byly resetovány na 0/10!');
     }
 
     function adminResetChest() {
@@ -2932,6 +3637,36 @@
       }
     }
 
+    function switchAdminTab(tabKey) {
+      const btnGeneral = document.getElementById('admin-tab-btn-general');
+      const btnMath = document.getElementById('admin-tab-btn-math');
+      const btnReading = document.getElementById('admin-tab-btn-reading');
+
+      const contentGeneral = document.getElementById('admin-tab-content-general');
+      const contentMath = document.getElementById('admin-tab-content-math');
+      const contentReading = document.getElementById('admin-tab-content-reading');
+
+      [btnGeneral, btnMath, btnReading].forEach(b => {
+        b.className = 'flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-2';
+      });
+
+      contentGeneral.classList.add('hidden');
+      contentMath.classList.add('hidden');
+      contentReading.classList.add('hidden');
+
+      if (tabKey === 'math') {
+        btnMath.className = 'flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm flex items-center justify-center gap-2';
+        contentMath.classList.remove('hidden');
+      } else if (tabKey === 'reading') {
+        btnReading.className = 'flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center justify-center gap-2';
+        contentReading.classList.remove('hidden');
+      } else {
+        btnGeneral.className = 'flex-1 py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-2';
+        contentGeneral.classList.remove('hidden');
+      }
+      playTone(520, 0.08, 'sine', 0.12);
+    }
+
     function openAdminPanel() {
       const panel = document.getElementById('admin-panel-modal');
       updateBalanceUI();
@@ -2939,35 +3674,105 @@
       renderHistoryLog();
       renderAdminMathSteps();
       updateAdminMathUI();
+      renderRewardInputs();
 
-      // Zobrazení verze (bod 3)
       const verTag = document.getElementById('admin-version-tag');
       if (verTag) verTag.textContent = `Verze: ${APP_VERSION}`;
 
-      const count = state.gridCardCount || 8;
-      const adminBtn8 = document.getElementById('admin-count-btn-8');
-      const adminBtn10 = document.getElementById('admin-count-btn-10');
-      if (adminBtn8 && adminBtn10) {
-        if (count === 8) {
-          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
-          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
-        } else {
-          adminBtn10.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all bg-amber-500 text-white shadow-sm';
-          adminBtn8.className = 'px-4 py-2 rounded-lg text-sm font-black transition-all text-amber-950 hover:bg-amber-300';
-        }
-      }
-
       document.getElementById('admin-segments-slider').value = state.pokemonSegmentsCount || 12;
       document.getElementById('admin-segments-count-label').textContent = (state.pokemonSegmentsCount || 12).toString();
-      document.getElementById('admin-secret-pin-input').value = state.tabletSecretPin || '2580';
+      document.getElementById('admin-secret-pin-input').value = state.tabletSecretPin || 'XXXX';
       document.getElementById('admin-diamonds-indicator').textContent = `${state.goldDiamonds || 0} / 50 💎`;
 
+      document.getElementById('admin-spelling-repeats-label').textContent = `${state.spellingRepeatCount || 3}×`;
+
+      switchAdminTab('general');
       panel.classList.remove('hidden');
     }
 
     function closeAdminPanel() {
       document.getElementById('admin-panel-modal').classList.add('hidden');
+      updateNavTabRewardLabels();
       generateLessonItems();
+    }
+
+    function renderRewardInputs() {
+      if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+
+      const qRateInput = document.getElementById('reward-quest-rate');
+      if (qRateInput) qRateInput.value = state.rewards.questRate || 1.0;
+
+      const readingBox = document.getElementById('rewards-reading-inputs');
+      readingBox.innerHTML = '';
+      const rNames = ['1. Písmena', '2. Slabiky', '3. Jednoslabičná', '4. Dvouslabičná', '5. Shluky/OU', '6. DĚ/TĚ/NĚ', '7. Celé věty', '8. Hláskování'];
+      
+      for (let i = 1; i <= 8; i++) {
+        const val = (state.rewards.reading && state.rewards.reading[i] !== undefined) ? state.rewards.reading[i] : DEFAULT_REWARDS.reading[i];
+        const item = document.createElement('div');
+        item.className = 'bg-white p-2.5 rounded-xl border border-emerald-200 flex flex-col justify-between';
+        item.innerHTML = `
+          <span class="text-[11px] font-black text-slate-700 truncate mb-1">${rNames[i - 1]}</span>
+          <div class="flex items-center gap-1">
+            <input type="number" step="0.25" min="0.0" max="10" value="${val}" onchange="saveRewardRate('reading', ${i}, this.value)" class="w-full text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-1 text-xs">
+            <span class="text-[10px] font-bold text-slate-500">min</span>
+          </div>
+        `;
+        readingBox.appendChild(item);
+      }
+
+      const mathBox = document.getElementById('rewards-math-inputs');
+      mathBox.innerHTML = '';
+      const mNames = ['1. Počty/Desítky', '2. Porovnávání', '3. Číselná řada', '4. Počítadlo', '5. Rozklad čísel', '6. Slovní úlohy'];
+
+      for (let i = 1; i <= 6; i++) {
+        const val = (state.rewards.math && state.rewards.math[i] !== undefined) ? state.rewards.math[i] : DEFAULT_REWARDS.math[i];
+        const item = document.createElement('div');
+        item.className = 'bg-white p-2.5 rounded-xl border border-emerald-200 flex flex-col justify-between';
+        item.innerHTML = `
+          <span class="text-[11px] font-black text-slate-700 truncate mb-1">${mNames[i - 1]}</span>
+          <div class="flex items-center gap-1">
+            <input type="number" step="0.25" min="0.0" max="10" value="${val}" onchange="saveRewardRate('math', ${i}, this.value)" class="w-full text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-1 text-xs">
+            <span class="text-[10px] font-bold text-slate-500">min</span>
+          </div>
+        `;
+        mathBox.appendChild(item);
+      }
+    }
+
+    function saveRewardRate(category, level, valStr) {
+      const num = Math.max(0, parseFloat(valStr.replace(',', '.')) || 0);
+      if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+
+      if (category === 'quest') {
+        state.rewards.questRate = num;
+      } else if (category === 'reading') {
+        state.rewards.reading[level] = num;
+      } else if (category === 'math') {
+        state.rewards.math[level] = num;
+      }
+      saveState();
+      updateNavTabRewardLabels();
+      updateReviewButtonLabel();
+      playTone(550, 0.08, 'sine', 0.15);
+    }
+
+    function resetDefaultRewards() {
+      state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+      saveState();
+      renderRewardInputs();
+      updateNavTabRewardLabels();
+      updateReviewButtonLabel();
+      playTone(600, 0.1, 'sine', 0.2);
+      alertUserFeedback('Odměny byly obnoveny na výchozí hodnoty!');
+    }
+
+    function adjustSpellingRepeats(delta) {
+      const cur = state.spellingRepeatCount || 3;
+      const next = Math.max(1, Math.min(5, cur + delta));
+      state.spellingRepeatCount = next;
+      document.getElementById('admin-spelling-repeats-label').textContent = `${next}×`;
+      saveState();
+      playTone(580, 0.08, 'sine', 0.15);
     }
 
     const MATH_STEP_VALUES = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
@@ -3083,7 +3888,7 @@
       saveState();
       renderHistoryLog();
       updateBalanceUI();
-      playTone(550, 0.1, 'sine', 0.2);
+      playTone(550, 0.2, 'sine', 0.2);
     }
 
     function renderHistoryLog() {
@@ -3112,6 +3917,7 @@
     }
 
     function resetAllData() {
+      clearSpellingTimers();
       state = {
         appVersion: APP_VERSION,
         subject: 'reading',
@@ -3121,7 +3927,7 @@
         vaultBalance: 0.0,
         goldDiamonds: 0,
         pokemonSegmentsCount: 12,
-        tabletSecretPin: '2580',
+        tabletSecretPin: 'XXXX',
         activeLetters: ['M', 'L', 'E', 'É', 'A', 'Á', 'S', 'O', 'Ó'],
         currentLevel: 1,
         currentMathLevel: 1,
@@ -3130,6 +3936,9 @@
         displayMode: 'grid',
         gridCardCount: 8,
         showImages: true,
+        showSpeechButton: true,
+        spellingRepeatCount: 3,
+        rewards: JSON.parse(JSON.stringify(DEFAULT_REWARDS)),
         currentItems: [],
         flashcardIndex: 0,
         history: [],
@@ -3147,6 +3956,8 @@
       switchLevel(1);
       updateBalanceUI();
       updateTopBadges();
+      updateSpeechToggleUI();
+      updateImageToggleUI();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -3155,15 +3966,24 @@
       updateTopBadges();
       if (!state.gridCardCount) state.gridCardCount = 8;
       if (state.showImages === undefined) state.showImages = true;
+      if (state.showSpeechButton === undefined) state.showSpeechButton = true;
+      if (!state.spellingRepeatCount) state.spellingRepeatCount = 3;
       if (!state.mathMax) state.mathMax = 10;
       if (!state.goldDiamonds) state.goldDiamonds = 0;
       if (!state.pokemonSegmentsCount) state.pokemonSegmentsCount = 12;
-      if (!state.tabletSecretPin) state.tabletSecretPin = '2580';
+      if (!state.tabletSecretPin) state.tabletSecretPin = 'XXXX';
       if (!state.customDailyLevelChoice) state.customDailyLevelChoice = 4;
       
       updateImageToggleUI();
+      updateSpeechToggleUI();
       setSubject(state.subject || 'reading');
       setGridCount(state.gridCardCount);
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          window.speechSynthesis.getVoices();
+        };
+      }
 
       document.getElementById('pin-input').addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
