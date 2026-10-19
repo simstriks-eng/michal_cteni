@@ -135,6 +135,11 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    /* Přesné centrování elementů uvnitř QR boxu */
+    #sync-qrcode-display canvas, #sync-qrcode-display img {
+      margin: 0 auto !important;
+      display: block !important;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-sky-300 via-sky-100 to-amber-100 min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
@@ -341,9 +346,7 @@
 
       <!-- Main Interactive Content Area -->
       <div class="flex-grow flex flex-col justify-center items-center min-h-[220px]">
-        
-        <div id="content-grid-view" class="w-full py-1">
-        </div>
+        <div id="content-grid-view" class="w-full py-1"></div>
 
         <!-- SPECIAL VIEW: HLÁSKOVÁNÍ A ROZKLAD SLOV -->
         <div id="content-spelling-view" class="hidden w-full max-w-3xl flex-col items-center bg-white/95 rounded-3xl p-4 sm:p-6 border-4 border-purple-400 shadow-xl my-1">
@@ -367,8 +370,7 @@
                 <span id="spelling-timer-label">Poslech slova: 1 / 3</span>
               </div>
               <div class="flex items-center gap-2">
-                <div id="spelling-countdown-dots" class="flex items-center gap-1 text-[10px]">
-                </div>
+                <div id="spelling-countdown-dots" class="flex items-center gap-1 text-[10px]"></div>
                 <span id="spelling-category-pill" class="bg-purple-200 text-purple-900 px-2.5 py-0.5 rounded-full uppercase text-[10px]">2 slabiky</span>
               </div>
             </div>
@@ -391,9 +393,7 @@
               <span class="text-4xl sm:text-6xl mb-1 animate-bounce">🗣️</span>
               <h3 class="text-xl sm:text-3xl font-black text-purple-900 font-baloo">Hláskuj nahlas tátovi / mamce!</h3>
               <p class="text-xs sm:text-sm font-bold text-slate-600 mt-0.5 max-w-md">Říkej jednotlivá písmenka po sobě.</p>
-              
-              <div id="spelling-letters-strip" class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mt-3 min-h-[75px] w-full">
-              </div>
+              <div id="spelling-letters-strip" class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-3 mt-3 min-h-[75px] w-full"></div>
             </div>
           </div>
 
@@ -447,8 +447,7 @@
             <div id="coloring-prompt-message" class="text-slate-500 font-black text-xs sm:text-sm text-center py-2">
               👆 Klepni na libovolný bílý dílek na Pokémonovi!
             </div>
-            <div id="coloring-widget-container" class="hidden w-full flex flex-col items-center justify-center">
-            </div>
+            <div id="coloring-widget-container" class="hidden w-full flex flex-col items-center justify-center"></div>
           </div>
         </div>
 
@@ -484,7 +483,7 @@
         </div>
       </div>
 
-      <!-- FOOTER 1: HODNOCENÍ ČTENÍ & HLÁSKOVÁNÍ -->
+      <!-- FOOTER 1: HODNOCENÍ ČTENÍ -->
       <div id="reading-review-panel" class="bg-white/95 rounded-3xl p-2.5 sm:p-3.5 border-4 border-emerald-400 shadow-xl mt-1">
         <div class="text-center mb-1.5">
           <p class="text-[11px] uppercase font-black tracking-wider text-slate-500" id="reading-review-prompt">Hodnocení rodiče (Poslechni si čtení syna):</p>
@@ -552,7 +551,7 @@
         <span class="text-5xl select-none block mb-2">🎓</span>
         <h3 class="text-xl sm:text-2xl font-black text-slate-800 font-baloo">Připraven na dnešní test?</h3>
         <p class="text-xs text-slate-600 font-bold mt-1.5 leading-relaxed">
-          Čeká tě celkem <strong>8 úloh</strong> (mix čtení i matematiky). Výsledky se vyhodnotí až na úplném konci, přesně jako ve škole.
+          Čeká tě celkem <strong>8 úloh</strong> (mix čtení i matematiky). Výsledky se vyhodnotí až na úplném konci.
         </p>
 
         <div class="my-4 p-3 bg-indigo-50 border-2 border-indigo-200 rounded-2xl text-left text-xs font-bold text-indigo-900 space-y-1 max-w-md mx-auto">
@@ -582,8 +581,7 @@
           <span class="text-[11px] font-bold text-slate-500" id="test-task-category-pill">Čtení</span>
         </div>
 
-        <div class="bg-white rounded-3xl p-5 sm:p-7 border-4 border-indigo-400 shadow-xl flex flex-col items-center justify-center min-h-[220px] text-center" id="test-task-interactive-area">
-        </div>
+        <div class="bg-white rounded-3xl p-5 sm:p-7 border-4 border-indigo-400 shadow-xl flex flex-col items-center justify-center min-h-[220px] text-center" id="test-task-interactive-area"></div>
 
         <div id="test-controls-panel" class="bg-white/95 rounded-2xl p-3 border-2 border-indigo-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2.5">
           <div id="test-reading-eval-bar" class="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5">
@@ -629,8 +627,7 @@
             </div>
             <span class="text-xs font-black text-indigo-800 bg-indigo-100 px-2.5 py-0.5 rounded-xl" id="test-score-counter-badge">7 / 8</span>
           </div>
-          <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1" id="test-review-items-list">
-          </div>
+          <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1" id="test-review-items-list"></div>
           <div class="mt-4 pt-2 border-t text-center">
             <button onclick="showView('learn')" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-6 py-2.5 rounded-2xl shadow-game-btn border-b-4 border-indigo-800 text-xs sm:text-sm">
               Zpět do Učení 👍
@@ -690,8 +687,7 @@
       </div>
 
       <div id="subtab-content-tasks" class="space-y-2.5">
-        <div class="space-y-2.5" id="quests-list-container">
-        </div>
+        <div class="space-y-2.5" id="quests-list-container"></div>
       </div>
 
       <div id="subtab-content-streak" class="hidden space-y-3">
@@ -717,8 +713,7 @@
               <span class="text-xs sm:text-sm font-black text-cyan-600">+1 Diamant 💎</span>
             </div>
           </div>
-          <div class="grid grid-cols-7 gap-1.5 sm:gap-2.5" id="streak-week-track">
-          </div>
+          <div class="grid grid-cols-7 gap-1.5 sm:gap-2.5" id="streak-week-track"></div>
         </div>
       </div>
     </section>
@@ -1018,12 +1013,12 @@
           </div>
         </div>
         <div class="flex items-center gap-2.5">
-          <span class="bg-indigo-100 text-indigo-800 font-black text-[11px] px-2.5 py-0.5 rounded-xl border border-indigo-300" id="admin-version-tag">Verze: 4.8</span>
+          <span class="bg-indigo-100 text-indigo-800 font-black text-[11px] px-2.5 py-0.5 rounded-xl border border-indigo-300" id="admin-version-tag">Verze: 5.0</span>
           <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-9 h-9 rounded-full flex items-center justify-center text-lg">✕</button>
         </div>
       </div>
 
-      <!-- HLAVNÍ ADMIN ZÁLOŽKY: 1) Obecné, 2) TEST, 3) Legendární truhla, 4) Matematika, 5) Čtení -->
+      <!-- HLAVNÍ ADMIN ZÁLOŽKY -->
       <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border-2 border-slate-200 mb-4 overflow-x-auto no-scrollbar">
         <button onclick="switchAdminTab('general')" id="admin-tab-btn-general" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0">
           <span>⚙️</span> Obecné & Sync
@@ -1045,14 +1040,14 @@
       <!-- ==================== ZÁLOŽKA 1: OBECNÉ & SYNCHRONIZACE ==================== -->
       <div id="admin-tab-content-general" class="space-y-4">
         
-        <!-- NOVÁ SEKCE: SYNCHRONIZACE MEZI ZAŘÍZENÍMI -->
+        <!-- SEKCE: SYNCHRONIZACE MEZI ZAŘÍZENÍMI -->
         <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-cyan-50 border-3 border-indigo-400 rounded-2xl p-4 shadow-sm">
           <div class="flex items-center gap-2 mb-1">
             <span class="text-2xl">🔄</span>
             <h4 class="font-black text-indigo-950 text-base">Synchronizace mezi Zařízeními (Tablet ↔ Mobil ↔ PC):</h4>
           </div>
           <p class="text-xs text-indigo-900 font-bold mb-3">
-            Přeneste aktuální stav (diamanty, minuty, test, celou administraci i písmena) na druhé zařízení pomocí QR kódu nebo textového kódu pro PC bez kamery:
+            Přeneste aktuální stav (diamanty, minuty, dnešní test 4/8, celou administraci i písmena) na druhé zařízení pomocí QR kódu nebo textového kódu pro PC:
           </p>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1397,7 +1392,7 @@
     </div>
   </div>
 
-  <!-- MODAL 1: QR & TEXTOVÝ KÓD PRO DRUHÉ ZAŘÍZENÍ -->
+  <!-- MODAL 1: QR & TEXTOVÝ KÓD PRO DRUHÉ ZAŘÍZENÍ (PERFEKTNĚ VYCENTROVÁNO) -->
   <div id="sync-export-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-4 border-indigo-600 shadow-2xl text-center flex flex-col items-center">
       <div class="flex items-center justify-between w-full border-b pb-2 mb-3">
@@ -1409,9 +1404,9 @@
         Namiřte kamerou z druhého mobilu nebo zkopírujte kód do PC:
       </p>
 
-      <!-- Kontejner pro vygenerovaný QR kód -->
-      <div class="p-3 bg-white border-3 border-indigo-200 rounded-2xl shadow-inner flex items-center justify-center min-h-[200px] min-w-[200px]">
-        <div id="sync-qrcode-display" class="flex items-center justify-center"></div>
+      <!-- Kontejner pro vygenerovaný QR kód (vycentrováno s pevnou šířkou) -->
+      <div class="w-full flex items-center justify-center p-3 bg-white border-3 border-indigo-200 rounded-2xl shadow-inner">
+        <div id="sync-qrcode-display" class="w-[200px] h-[200px] flex items-center justify-center mx-auto"></div>
       </div>
 
       <!-- Textový kód pro ruční přepsání na PC bez kamery -->

@@ -2,10 +2,10 @@
    app.js - Školácká Mise
    Herní logika, počítání úkolů, Duolingo řady, audio,
    grafická omalovánka, diamantový trh, legendární truhla,
-   TESTOVACÍ MODUL a ULTRA-KOMPAKTNÍ QR KÓD (RYCHLÉ ČTENÍ)
+   TESTOVACÍ MODUL a ULTRA-KOMPAKTNÍ SYNCHRONIZACE S VÝSLEDKEM TESTU
    ============================================================ */
 
-const APP_VERSION = '4.9';
+const APP_VERSION = '5.0';
 const STORAGE_KEY = 'ctenarska_mise_v18_modular_admin';
 
 let audioCtx = null;
@@ -2885,6 +2885,7 @@ function showTestReviewAgain() {
 function adminResetTestToday() {
   state.testDoneToday = false;
   state.testDate = getTodayDateString();
+  state.testLastResult = null;
   saveState();
   updateTopBadges();
   updateAdminTestUI();
@@ -2932,8 +2933,8 @@ function saveAdminTestThreshold(index, field, val) {
 }
 
 /* ============================================================
-   ULTRA-KOMPAKTNÍ SYNCHRONIZAČNÍ PROTOKOL (VELKÉ ČITELNÉ KOSTKY)
-   Formát: SM1:minuty|diamanty|trezor|limitBonus|pin|akt.pismena|streak|...
+   ULTRA-KOMPAKTNÍ SYNCHRONIZAČNÍ PROTOKOL SM2
+   Formát: SM2~minuty~earned~vault~dia~bonus~pin~streak~boxClaimed~testDone~testScore~testTotal~testPercent~testDia~mathMax~segCount~legActive~legDia~legTitle~letters
    ============================================================ */
 
 function exportCurrentSyncPayload() {
@@ -2942,9 +2943,14 @@ function exportCurrentSyncPayload() {
   const legDia = (state.legendaryChest ? state.legendaryChest.diamonds : 10);
   const legTitle = (state.legendaryChest ? (state.legendaryChest.title || '') : '').replace(/[|:~]/g, ' ');
 
-  // Sestavení ultra-krátkého textu (cca 70-110 znaků)
+  const tDone = state.testDoneToday ? 1 : 0;
+  const tScore = (state.testLastResult && state.testLastResult.score !== undefined) ? state.testLastResult.score : 0;
+  const tTotal = (state.testLastResult && state.testLastResult.total !== undefined) ? state.testLastResult.total : 8;
+  const tPercent = (state.testLastResult && state.testLastResult.percent !== undefined) ? state.testLastResult.percent : 0;
+  const tDiamonds = (state.testLastResult && state.testLastResult.diamonds !== undefined) ? state.testLastResult.diamonds : 0;
+
   const parts = [
-    'SM1',
+    'SM2',
     state.minutesBalance,
     state.dailyEarnedToday,
     state.vaultBalance,
@@ -2953,7 +2959,11 @@ function exportCurrentSyncPayload() {
     state.tabletSecretPin || '1234',
     state.streakDays || 0,
     state.boxClaimed ? 1 : 0,
-    state.testDoneToday ? 1 : 0,
+    tDone,
+    tScore,
+    tTotal,
+    tPercent,
+    tDiamonds,
     state.mathMax || 10,
     state.pokemonSegmentsCount || 12,
     legActive,
@@ -2968,39 +2978,88 @@ function exportCurrentSyncPayload() {
 function importSyncPayload(rawStr) {
   try {
     const text = rawStr.trim();
-    if (!text.startsWith('SM1~')) {
-      throw new Error('Neplatný formát kódu (musí začínat SM1~).');
+    if (!text.startsWith('SM1~') && !text.startsWith('SM2~')) {
+      throw new Error('Neplatný formát kódu (musí začínat SM1~ nebo SM2~).');
     }
 
     const p = text.split('~');
-    if (p.length < 15) throw new Error('Neúplný kód.');
 
-    state.minutesBalance = parseFloat(p[1]) || 0;
-    state.dailyEarnedToday = parseFloat(p[2]) || 0;
-    state.vaultBalance = parseFloat(p[3]) || 0;
-    state.goldDiamonds = parseInt(p[4], 10) || 0;
-    state.bonusMaxLimitMinutes = parseInt(p[5], 10) || 0;
-    state.tabletSecretPin = p[6] || 'XXXX';
-    state.streakDays = parseInt(p[7], 10) || 0;
-    state.boxClaimed = (p[8] === '1');
-    state.testDoneToday = (p[9] === '1');
-    state.mathMax = parseInt(p[10], 10) || 10;
-    state.pokemonSegmentsCount = parseInt(p[11], 10) || 12;
+    if (text.startsWith('SM2~')) {
+      state.minutesBalance = parseFloat(p[1]) || 0;
+      state.dailyEarnedToday = parseFloat(p[2]) || 0;
+      state.vaultBalance = parseFloat(p[3]) || 0;
+      state.goldDiamonds = parseInt(p[4], 10) || 0;
+      state.bonusMaxLimitMinutes = parseInt(p[5], 10) || 0;
+      state.tabletSecretPin = p[6] || 'XXXX';
+      state.streakDays = parseInt(p[7], 10) || 0;
+      state.boxClaimed = (p[8] === '1');
+      state.testDoneToday = (p[9] === '1');
+      
+      const tScore = parseInt(p[10], 10) || 0;
+      const tTotal = parseInt(p[11], 10) || 8;
+      const tPercent = parseInt(p[12], 10) || 0;
+      const tDiamonds = parseInt(p[13], 10) || 0;
 
-    const legActive = (p[12] === '1');
-    const legDia = parseInt(p[13], 10) || 10;
-    const legTitle = p[14] || 'ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE';
+      if (state.testDoneToday) {
+        state.testLastResult = {
+          date: getTodayDateString(),
+          score: tScore,
+          total: tTotal,
+          percent: tPercent,
+          diamonds: tDiamonds,
+          answers: (state.testLastResult && state.testLastResult.answers) ? state.testLastResult.answers : []
+        };
+      } else {
+        state.testLastResult = null;
+      }
 
-    state.legendaryChest = {
-      active: legActive,
-      diamonds: legDia,
-      title: legTitle,
-      claimed: !legActive
-    };
+      state.mathMax = parseInt(p[14], 10) || 10;
+      state.pokemonSegmentsCount = parseInt(p[15], 10) || 12;
 
-    if (p[15]) {
-      const ltrs = p[15].split(',').filter(x => x.length > 0);
-      if (ltrs.length > 0) state.activeLetters = ltrs;
+      const legActive = (p[16] === '1');
+      const legDia = parseInt(p[17], 10) || 10;
+      const legTitle = p[18] || 'ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE';
+
+      state.legendaryChest = {
+        active: legActive,
+        diamonds: legDia,
+        title: legTitle,
+        claimed: !legActive
+      };
+
+      if (p[19]) {
+        const ltrs = p[19].split(',').filter(x => x.length > 0);
+        if (ltrs.length > 0) state.activeLetters = ltrs;
+      }
+    } else {
+      // Zpětná kompatibilita s SM1
+      state.minutesBalance = parseFloat(p[1]) || 0;
+      state.dailyEarnedToday = parseFloat(p[2]) || 0;
+      state.vaultBalance = parseFloat(p[3]) || 0;
+      state.goldDiamonds = parseInt(p[4], 10) || 0;
+      state.bonusMaxLimitMinutes = parseInt(p[5], 10) || 0;
+      state.tabletSecretPin = p[6] || 'XXXX';
+      state.streakDays = parseInt(p[7], 10) || 0;
+      state.boxClaimed = (p[8] === '1');
+      state.testDoneToday = (p[9] === '1');
+      state.mathMax = parseInt(p[10], 10) || 10;
+      state.pokemonSegmentsCount = parseInt(p[11], 10) || 12;
+
+      const legActive = (p[12] === '1');
+      const legDia = parseInt(p[13], 10) || 10;
+      const legTitle = p[14] || 'ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE';
+
+      state.legendaryChest = {
+        active: legActive,
+        diamonds: legDia,
+        title: legTitle,
+        claimed: !legActive
+      };
+
+      if (p[15]) {
+        const ltrs = p[15].split(',').filter(x => x.length > 0);
+        if (ltrs.length > 0) state.activeLetters = ltrs;
+      }
     }
 
     state.history.unshift({
@@ -3022,6 +3081,12 @@ function importSyncPayload(rawStr) {
     renderAlphabetGrid();
     renderRewardInputs();
     generateLessonItems();
+
+    // Pokud je otevřené zobrazení testu, ihned ho překreslíme se správnými daty!
+    const testView = document.getElementById('view-test');
+    if (testView && !testView.classList.contains('hidden')) {
+      openTestView();
+    }
 
     soundSuccess();
     triggerConfetti();
@@ -3046,13 +3111,12 @@ function generateSyncQRModal() {
 
   let rendered = false;
 
-  // 1. Zkouška lokální QRCode knihovny (s kratičkým textem vytvoří obrovské čitelné kostky!)
   if (typeof QRCode !== 'undefined') {
     try {
       new QRCode(qrContainer, {
         text: payload,
-        width: 220,
-        height: 220,
+        width: 200,
+        height: 200,
         colorDark: '#0f172a',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M
@@ -3063,12 +3127,11 @@ function generateSyncQRModal() {
     }
   }
 
-  // 2. Záložní generování: Online QuickChart QR
   if (!rendered) {
     const img = document.createElement('img');
-    img.src = `https://quickchart.io/qr?text=${encodeURIComponent(payload)}&size=220&ecLevel=M&margin=1`;
+    img.src = `https://quickchart.io/qr?text=${encodeURIComponent(payload)}&size=200&ecLevel=M&margin=1`;
     img.alt = 'QR Kód';
-    img.className = 'w-[220px] h-[220px] rounded-xl shadow-md border-2 border-slate-200';
+    img.className = 'w-[200px] h-[200px] mx-auto block rounded-xl shadow-md border-2 border-slate-200';
     qrContainer.appendChild(img);
   }
 
