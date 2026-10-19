@@ -1,8 +1,8 @@
 /* ============================================================
    app.js - Školácká Mise
-   Herní logika, počítání úkolů, Duolingo řady, audio,
-   grafická omalovánka, diamantový trh, legendární truhla,
-   TESTOVACÍ MODUL a ULTRA-KOMPAKTNÍ SYNCHRONIZACE S VÝSLEDKEM TESTU
+   Herní logika, počítání úkolů, Duolingo řady (včetně 7. dne s gemy),
+   audio, grafická omalovánka, diamantový trh, legendární truhla,
+   MODULÁRNÍ TESTOVACÍ MODUL (bez obrázků) a SYNCHRONIZACE
    ============================================================ */
 
 const APP_VERSION = '5.0';
@@ -248,7 +248,8 @@ let state = {
   testConfig: JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG)),
   streakDays: 0,
   streakLastActiveDate: '',
-  streakTodayCompleted: false
+  streakTodayCompleted: false,
+  streakClaimedDay7: false
 };
 
 function getMaxDailyDirectLimit() {
@@ -504,6 +505,13 @@ function loadState() {
       }
       if (!state.testConfig) {
         state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
+      } else {
+        if (!state.testConfig.enabledTopics) {
+          state.testConfig.enabledTopics = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG.enabledTopics));
+        }
+        if (!state.testConfig.taskCount) {
+          state.testConfig.taskCount = 8;
+        }
       }
     }
   } catch (e) {
@@ -519,6 +527,7 @@ function checkAndHandleDailyResets() {
   if (state.streakLastActiveDate && state.streakLastActiveDate !== today && state.streakLastActiveDate !== yesterday) {
     state.streakDays = 0;
     state.streakTodayCompleted = false;
+    state.streakClaimedDay7 = false;
   } else if (state.streakLastActiveDate !== today) {
     state.streakTodayCompleted = false;
   }
@@ -1043,7 +1052,7 @@ function renderColoringWidget(task) {
     }).join(' <span class="text-slate-300 font-black text-2xl mx-1">,</span> ');
 
     card.innerHTML = `
-      <div class="flex items-center whitespace-nowrap overflow-x-auto select-none pl-2 sm:pl-4">${seqHtml}</div>
+      <div class="flex items-center gap-2 select-none pl-2 sm:pl-4 overflow-x-auto">${seqHtml}</div>
       <div class="flex items-center gap-2 pr-1 sm:pr-2">
         <input type="number" id="coloring-inline-input" placeholder="?" class="w-16 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-950 shadow-inner">
         <button onclick="submitColoringInput()" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm">Vybarvit 🎨</button>
@@ -1426,11 +1435,11 @@ function setSubject(newSubj) {
   const imagesWrapper = document.getElementById('control-images-wrapper');
   const speechWrapper = document.getElementById('control-speech-wrapper');
 
-  btnTest.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+  btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
 
   if (newSubj === 'reading') {
-    btnReading.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
-    btnMath.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+    btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
+    btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
     readingTabs.classList.remove('hidden');
     mathTabs.classList.add('hidden');
     caseWrapper.classList.remove('hidden');
@@ -1439,8 +1448,8 @@ function setSubject(newSubj) {
     imagesWrapper.classList.remove('hidden');
     speechWrapper.classList.remove('hidden');
   } else {
-    btnMath.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
-    btnReading.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+    btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
+    btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
     mathTabs.classList.remove('hidden');
     readingTabs.classList.add('hidden');
     caseWrapper.classList.add('hidden');
@@ -1538,11 +1547,11 @@ function setGridCount(count) {
   const btn8 = document.getElementById('count-btn-8');
   const btn10 = document.getElementById('count-btn-10');
   if (count === 8) {
-    btn8.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
-    btn10.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
+    btn8.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
+    btn10.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
   } else {
-    btn10.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
-    btn8.className = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
+    btn10.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
+    btn8.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
   }
 
   playTone(550, 0.08, 'sine', 0.15);
@@ -1866,7 +1875,7 @@ function parentReview(isSuccess) {
 }
 
 /* ============================================================
-   DUOLINGO STREAK / ŘADA - LOGIKA
+   DUOLINGO STREAK / ŘADA - LOGIKA VČETNĚ 7. DNE (KLIKATELNÝ DIAMANT)
    ============================================================ */
 
 function checkStreakStatus() {
@@ -1877,19 +1886,58 @@ function checkStreakStatus() {
     state.streakTodayCompleted = true;
     state.streakLastActiveDate = today;
     state.streakDays = (state.streakDays || 0) + 1;
-
-    if (state.streakDays % 7 === 0) {
-      state.goldDiamonds = (state.goldDiamonds || 0) + 1;
-      alertUserFeedback(`🔥 Fantastická řada ${state.streakDays} dní! Získáváš +1 Diamant 💎!`);
-    } else {
-      alertUserFeedback(`🔥 Denní řada započtena! Pokračuješ na ${state.streakDays} ${czechNounForm(state.streakDays, 'den', 'dny', 'dní')}!`);
+    
+    // Pokud tímto dnem vstupujeme do 7. dne cyklu, odemkne se možnost kliknout na diamant
+    const currentDayInCycle = ((state.streakDays - 1) % 7) + 1;
+    if (currentDayInCycle === 7) {
+      state.streakClaimedDay7 = false;
     }
+
+    alertUserFeedback(`🔥 Denní řada započtena! Pokračuješ na ${state.streakDays} ${czechNounForm(state.streakDays, 'den', 'dny', 'dní')}!`);
     soundSuccess();
     triggerConfetti();
     saveState();
   }
   updateTopBadges();
   renderStreakView();
+}
+
+function claimStreakDiamondDay7() {
+  const days = state.streakDays || 0;
+  const currentDayInCycle = days > 0 ? (((days - 1) % 7) + 1) : 0;
+
+  if (currentDayInCycle !== 7) {
+    soundError();
+    alertUserFeedback('K zisku diamantu potřebuješ dokončit plnou 7-denní řadu!');
+    return;
+  }
+
+  if (state.streakClaimedDay7) {
+    soundShuffle();
+    alertUserFeedback('Diamant za tuto 7-denní řadu už máš vyzvednutý!');
+    return;
+  }
+
+  state.streakClaimedDay7 = true;
+  state.goldDiamonds = (state.goldDiamonds || 0) + 1;
+
+  state.history.unshift({
+    id: Date.now(),
+    time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+    date: new Date().toLocaleDateString('cs-CZ'),
+    type: 'streak_diamond',
+    minutes: 0,
+    note: `Vyzvednut diamant za 7. den v řadě (+1 💎)`
+  });
+
+  saveState();
+  soundSuccess();
+  triggerConfetti();
+  updateBalanceUI();
+  updateTopBadges();
+  updateDiamondMarketUI();
+  renderStreakView();
+  alertUserFeedback('💎 Paráda! 1 Modrý Diamant byl připsán na tvůj účet!');
 }
 
 function showStreakTab() {
@@ -1943,7 +1991,7 @@ function renderStreakView() {
 
   if (weekTrack) {
     weekTrack.innerHTML = '';
-    const currentDayInCycle = ((days - 1) % 7) + 1;
+    const currentDayInCycle = days > 0 ? (((days - 1) % 7) + 1) : 0;
 
     for (let i = 1; i <= 7; i++) {
       const isPast = days > 0 && i < currentDayInCycle;
@@ -1951,15 +1999,42 @@ function renderStreakView() {
       const isDiamondDay = i === 7;
 
       const dayCard = document.createElement('div');
-      dayCard.className = `p-1.5 sm:p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all ${
-        isCurrent ? 'bg-orange-500 border-amber-300 text-white shadow-lg scale-105 ring-2 ring-orange-300' : isPast ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-400'
-      }`;
+      
+      if (isDiamondDay) {
+        const canClaimDiamond = (isCurrent && !state.streakClaimedDay7);
+        const alreadyClaimed = state.streakClaimedDay7;
 
-      dayCard.innerHTML = `
-        <span class="text-[9px] sm:text-[10px] font-black uppercase">${i}. den</span>
-        <span class="text-xl sm:text-2xl my-0.5 select-none">${isDiamondDay ? '💎' : (isPast || isCurrent ? '🔥' : '⚪')}</span>
-        <span class="text-[8px] sm:text-[9px] font-black uppercase">${isDiamondDay ? '+1 💎' : (isPast ? 'Hotovo' : (isCurrent ? 'Dnes' : 'Čeká'))}</span>
-      `;
+        dayCard.className = `p-1.5 sm:p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all ${
+          canClaimDiamond 
+            ? 'cursor-pointer bg-gradient-to-tr from-cyan-400 to-blue-500 text-white border-yellow-300 shadow-xl scale-105 ring-4 ring-yellow-300 animate-pulse'
+            : alreadyClaimed
+              ? 'bg-emerald-100 border-emerald-400 text-emerald-900 font-bold'
+              : 'bg-slate-50 border-cyan-200 text-slate-400'
+        }`;
+
+        if (canClaimDiamond) {
+          dayCard.onclick = () => claimStreakDiamondDay7();
+        }
+
+        dayCard.innerHTML = `
+          <span class="text-[9px] sm:text-[10px] font-black uppercase">7. den</span>
+          <span class="text-2xl sm:text-3xl my-0.5 select-none ${canClaimDiamond ? 'animate-bounce' : ''}">${alreadyClaimed ? '✅' : '💎'}</span>
+          <span class="text-[8px] sm:text-[9px] font-black uppercase ${canClaimDiamond ? 'text-yellow-200 underline' : ''}">
+            ${alreadyClaimed ? 'Vyzvednuto' : canClaimDiamond ? 'KLIKNI ZDE!' : '+1 💎'}
+          </span>
+        `;
+      } else {
+        dayCard.className = `p-1.5 sm:p-2.5 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all ${
+          isCurrent ? 'bg-orange-500 border-amber-300 text-white shadow-lg scale-105 ring-2 ring-orange-300' : isPast ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold' : 'bg-slate-50 border-slate-200 text-slate-400'
+        }`;
+
+        dayCard.innerHTML = `
+          <span class="text-[9px] sm:text-[10px] font-black uppercase">${i}. den</span>
+          <span class="text-xl sm:text-2xl my-0.5 select-none">${isPast || isCurrent ? '🔥' : '⚪'}</span>
+          <span class="text-[8px] sm:text-[9px] font-black uppercase">${isPast ? 'Hotovo' : (isCurrent ? 'Dnes' : 'Čeká')}</span>
+        `;
+      }
+
       weekTrack.appendChild(dayCard);
     }
   }
@@ -2218,7 +2293,7 @@ function updateTopBadges() {
 }
 
 /* ============================================================
-   TRUHLA MODAL (ZLATÁ HVĚZDA PRO MINUTY)[cite: 6]
+   TRUHLA MODAL (ZLATÁ HVĚZDA PRO MINUTY)
    ============================================================ */
 
 function openDailyBoxModal() {
@@ -2455,7 +2530,7 @@ function updateAdminLegendaryUI() {
 }
 
 /* ============================================================
-   TESTOVACÍ MODUL (PÍSEMKA)
+   TESTOVACÍ MODUL (BEZ OBRÁZKŮ + DLE ZVOLENÝCH OKRUHŮ)
    ============================================================ */
 
 let testState = { tasks: [], currentIndex: 0, answers: [] };
@@ -2468,9 +2543,9 @@ function openTestView() {
   const btnMath = document.getElementById('subject-btn-math');
   const btnTest = document.getElementById('subject-btn-test');
 
-  btnReading.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  btnMath.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  btnTest.className = 'px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm relative';
+  btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm relative';
 
   const introBox = document.getElementById('test-intro-box');
   const runnerBox = document.getElementById('test-runner-box');
@@ -2482,9 +2557,15 @@ function openTestView() {
   resultsBox.classList.add('hidden');
   alreadyDoneBox.classList.add('hidden');
 
+  const count = (state.testConfig && state.testConfig.taskCount) ? state.testConfig.taskCount : 8;
+  const introCountText = document.getElementById('test-intro-task-count-text');
+  if (introCountText) {
+    introCountText.innerHTML = `Čeká tě celkem <strong>${count} úloh</strong> (mix čtení i matematiky dle nastavení rodiče). Výsledky se vyhodnotí až na konci.`;
+  }
+
   if (state.testDoneToday) {
     alreadyDoneBox.classList.remove('hidden');
-    const res = state.testLastResult || { score: 8, total: 8, percent: 100, diamonds: 4 };
+    const res = state.testLastResult || { score: count, total: count, percent: 100, diamonds: 4 };
     document.getElementById('test-saved-score-label').textContent = `${res.percent} % (${res.score}/${res.total})`;
     document.getElementById('test-saved-diamonds-label').textContent = `Odměna: +${res.diamonds} Diamantů 💎`;
   } else {
@@ -2492,63 +2573,66 @@ function openTestView() {
   }
 }
 
-function generateRandomReadingTask() {
-  const readingLvl = randomInt(1, 7);
+function generateRandomReadingTaskForLevel(level) {
   let item = null;
-
-  if (readingLvl === 1) {
+  if (level === 1) {
     const char = state.activeLetters[Math.floor(Math.random() * state.activeLetters.length)] || 'M';
     item = { text: char, label: 'Písmeno' };
-  } else if (readingLvl === 2) {
+  } else if (level === 2) {
     const sylls = generatePedagogicalOpenSyllables();
     item = sylls.length ? sylls[Math.floor(Math.random() * sylls.length)] : { text: 'MA' };
     item.label = 'Slabika';
-  } else if (readingLvl === 3) {
+  } else if (level === 3) {
     const list = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'PES', emoji: '🐶' };
+    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'PES' };
     item.label = 'Jednoslabičné slovo';
-  } else if (readingLvl === 4) {
+  } else if (level === 4) {
     const list = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'MÁMA', emoji: '👩' };
+    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'MÁMA' };
     item.label = 'Dvouslabičné slovo';
-  } else if (readingLvl === 5) {
+  } else if (level === 5) {
     const list = LEVEL_5_CLUSTERS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'STŮL', emoji: '🪑' };
+    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'STŮL' };
     item.label = 'Shluk / Dvojhláska';
-  } else if (readingLvl === 6) {
+  } else if (level === 6) {
     const list = LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'DĚDA', emoji: '👴' };
+    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'DĚDA' };
     item.label = 'Měkčení DĚ/TĚ/NĚ';
   } else {
     const list = LEVEL_7_SENTENCES.filter(sen => isItemFormedByActive(sen.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'MÁMA MÁ MÁSLO.', emoji: '👩🧈' };
+    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'MÁMA MÁ MÁSLO.' };
     item.label = 'Celá věta';
   }
 
-  return { category: 'reading', subLabel: item.label, questionText: item.text, emoji: item.emoji || '', correctAnswer: item.text };
+  // Zásadní změna: emoji/obrázky jsou v testu striktně zakázány! Syn musí číst.
+  return { 
+    category: 'reading', 
+    subLabel: item.label, 
+    questionText: item.text, 
+    emoji: '', 
+    correctAnswer: item.text 
+  };
 }
 
-function generateRandomMathTask() {
+function generateRandomMathTaskForLevel(level) {
   const maxVal = state.mathMax || 10;
-  const mathLvl = randomInt(1, 6);
-
-  if (mathLvl === 1) {
+  if (level === 1) {
     const tasks = generateMathLevel1(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
     return { category: 'math', subLabel: 'Počty', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer };
-  } else if (mathLvl === 2) {
+  } else if (level === 2) {
     const tasks = generateMathLevel2(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
     return { category: 'math', subLabel: 'Porovnávání (<, =, >)', renderType: 'compare', left: t.leftVal, right: t.rightVal, correctAnswer: t.correctAnswer };
-  } else if (mathLvl === 3) {
+  } else if (level === 3) {
     const tasks = generateMathLevel3(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
     return { category: 'math', subLabel: 'Číselná řada', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer };
-  } else if (mathLvl === 4) {
+  } else if (level === 4) {
     const tasks = generateMathLevel4(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
     return { category: 'math', subLabel: 'Počítadlo (+/-)', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer };
-  } else if (mathLvl === 5) {
+  } else if (level === 5) {
     const tasks = generateMathLevel5(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
     return { category: 'math', subLabel: 'Rozklad čísel', renderType: 'decomposition', topNum: t.topNum, leftNum: t.leftNum, rightNum: t.rightNum, missingSide: t.missingSide, correctAnswer: t.correctAnswer };
@@ -2561,11 +2645,42 @@ function generateRandomMathTask() {
 
 function startDailyTest() {
   checkAndHandleDailyResets();
-  const taskList = [];
-  for (let i = 0; i < 4; i++) taskList.push(generateRandomReadingTask());
-  for (let i = 0; i < 4; i++) taskList.push(generateRandomMathTask());
+  
+  const config = state.testConfig || DEFAULT_TEST_CONFIG;
+  const topics = config.enabledTopics || DEFAULT_TEST_CONFIG.enabledTopics;
+  const targetCount = config.taskCount || 8;
 
-  testState.tasks = shuffleArray(taskList);
+  const activeReadingLevels = [];
+  for (let i = 1; i <= 7; i++) {
+    if (topics[`reading_${i}`]) activeReadingLevels.push(i);
+  }
+
+  const activeMathLevels = [];
+  for (let i = 1; i <= 6; i++) {
+    if (topics[`math_${i}`]) activeMathLevels.push(i);
+  }
+
+  if (activeReadingLevels.length === 0 && activeMathLevels.length === 0) {
+    soundError();
+    alertUserFeedback('V administraci nemáš vybrané žádné okruhy pro test! Zaškrtni aspoň jeden.');
+    return;
+  }
+
+  const generators = [];
+  activeReadingLevels.forEach(lvl => {
+    generators.push(() => generateRandomReadingTaskForLevel(lvl));
+  });
+  activeMathLevels.forEach(lvl => {
+    generators.push(() => generateRandomMathTaskForLevel(lvl));
+  });
+
+  const taskList = [];
+  for (let i = 0; i < targetCount; i++) {
+    const pickGen = generators[Math.floor(Math.random() * generators.length)];
+    taskList.push(pickGen());
+  }
+
+  testState.tasks = taskList;
   testState.currentIndex = 0;
   testState.answers = [];
 
@@ -2600,13 +2715,12 @@ function renderCurrentTestTask() {
 
     const card = document.createElement('div');
     card.className = 'flex flex-col items-center justify-center p-3 max-w-lg';
-    let emoHtml = cur.emoji ? `<span class="text-4xl sm:text-6xl mb-1 select-none">${cur.emoji}</span>` : '';
+    // ŽÁDNÉ OBRÁZKY ANI EMOJI V TESTU!
     card.innerHTML = `
-      ${emoHtml}
-      <h2 class="text-3xl sm:text-5xl font-black text-indigo-950 font-baloo tracking-wide leading-tight my-1">
+      <h2 class="text-3xl sm:text-5xl font-black text-indigo-950 font-baloo tracking-wide leading-tight my-2">
         ${formatCase(cur.questionText)}
       </h2>
-      <p class="text-xs font-bold text-slate-500 mt-1">Přečti nahlas tátovi! 🗣️</p>
+      <p class="text-xs font-bold text-slate-500 mt-2">Přečti nahlas tátovi! 🗣️</p>
     `;
     area.appendChild(card);
   } else {
@@ -2894,34 +3008,91 @@ function adminResetTestToday() {
 }
 
 function updateAdminTestUI() {
-  const container = document.getElementById('admin-test-thresholds-container');
-  if (!container) return;
   const config = state.testConfig || DEFAULT_TEST_CONFIG;
-  container.innerHTML = '';
+  const topics = config.enabledTopics || DEFAULT_TEST_CONFIG.enabledTopics;
 
-  config.thresholds.forEach((th, idx) => {
-    const row = document.createElement('div');
-    row.className = 'flex items-center justify-between gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold';
-    row.innerHTML = `
-      <span class="w-28 truncate text-slate-700 text-[11px]">${th.label}:</span>
-      <div class="flex items-center gap-1">
-        <span class="text-slate-500 text-[10px]">Od:</span>
-        <input type="number" min="0" max="100" value="${th.minPercent}" onchange="saveAdminTestThreshold(${idx}, 'minPercent', this.value)" class="w-12 text-center font-black py-0.5 px-1 border border-purple-300 rounded-lg bg-white text-xs">
-        <span class="text-slate-500 text-[10px]">%</span>
-      </div>
-      <div class="flex items-center gap-1">
-        <span class="text-slate-500 text-[10px]">Odměna:</span>
-        <input type="number" min="0" max="20" value="${th.diamonds}" onchange="saveAdminTestThreshold(${idx}, 'diamonds', this.value)" class="w-10 text-center font-black py-0.5 px-1 border border-cyan-300 rounded-lg bg-white text-cyan-800 text-xs">
-        <span class="text-xs">💎</span>
-      </div>
-    `;
-    container.appendChild(row);
-  });
+  // Checkboxy pro ČTENÍ
+  for (let i = 1; i <= 7; i++) {
+    const cb = document.getElementById(`test-topic-reading_${i}`);
+    if (cb) cb.checked = !!topics[`reading_${i}`];
+  }
+
+  // Checkboxy pro MATEMATIKU
+  for (let i = 1; i <= 6; i++) {
+    const cb = document.getElementById(`test-topic-math_${i}`);
+    if (cb) cb.checked = !!topics[`math_${i}`];
+  }
+
+  // Počet otázek
+  const countInp = document.getElementById('admin-test-task-count-input');
+  if (countInp) countInp.value = config.taskCount || 8;
+
+  // Odznáčky počtu
+  const rCount = [1,2,3,4,5,6,7].filter(i => topics[`reading_${i}`]).length;
+  const mCount = [1,2,3,4,5,6].filter(i => topics[`math_${i}`]).length;
+  const rBadge = document.getElementById('admin-test-reading-count-badge');
+  const mBadge = document.getElementById('admin-test-math-count-badge');
+  if (rBadge) rBadge.textContent = `${rCount} vybráno`;
+  if (mBadge) mBadge.textContent = `${mCount} vybráno`;
+
+  // Pásma
+  const container = document.getElementById('admin-test-thresholds-container');
+  if (container) {
+    container.innerHTML = '';
+    config.thresholds.forEach((th, idx) => {
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between gap-1.5 p-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold';
+      row.innerHTML = `
+        <span class="w-28 truncate text-slate-700 text-[11px]">${th.label}:</span>
+        <div class="flex items-center gap-1">
+          <span class="text-slate-500 text-[10px]">Od:</span>
+          <input type="number" min="0" max="100" value="${th.minPercent}" onchange="saveAdminTestThreshold(${idx}, 'minPercent', this.value)" class="w-12 text-center font-black py-0.5 px-1 border border-purple-300 rounded-lg bg-white text-xs">
+          <span class="text-slate-500 text-[10px]">%</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <span class="text-slate-500 text-[10px]">Odměna:</span>
+          <input type="number" min="0" max="20" value="${th.diamonds}" onchange="saveAdminTestThreshold(${idx}, 'diamonds', this.value)" class="w-10 text-center font-black py-0.5 px-1 border border-cyan-300 rounded-lg bg-white text-cyan-800 text-xs">
+          <span class="text-xs">💎</span>
+        </div>
+      `;
+      container.appendChild(row);
+    });
+  }
 
   const statusLabel = document.getElementById('admin-test-status-label');
   if (statusLabel) {
     statusLabel.textContent = state.testDoneToday ? 'Stav: Dnešní test byl dnes již dokončen.' : 'Stav: Test je dnes připraven k absolvování.';
   }
+}
+
+function saveAdminTestTopic(topicKey, isChecked) {
+  if (!state.testConfig) state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
+  if (!state.testConfig.enabledTopics) state.testConfig.enabledTopics = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG.enabledTopics));
+  
+  state.testConfig.enabledTopics[topicKey] = isChecked;
+  saveState();
+  updateAdminTestUI();
+  playTone(550, 0.08, 'sine', 0.15);
+}
+
+function toggleAllTestTopics(selectVal) {
+  if (!state.testConfig) state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
+  if (!state.testConfig.enabledTopics) state.testConfig.enabledTopics = {};
+
+  for (let i = 1; i <= 7; i++) state.testConfig.enabledTopics[`reading_${i}`] = selectVal;
+  for (let i = 1; i <= 6; i++) state.testConfig.enabledTopics[`math_${i}`] = selectVal;
+
+  saveState();
+  updateAdminTestUI();
+  playTone(600, 0.1, 'sine', 0.2);
+}
+
+function saveAdminTestTaskCount(val) {
+  const count = Math.max(4, Math.min(25, parseInt(val, 10) || 8));
+  if (!state.testConfig) state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
+  state.testConfig.taskCount = count;
+  saveState();
+  playTone(550, 0.08, 'sine', 0.15);
 }
 
 function saveAdminTestThreshold(index, field, val) {
@@ -2934,7 +3105,6 @@ function saveAdminTestThreshold(index, field, val) {
 
 /* ============================================================
    ULTRA-KOMPAKTNÍ SYNCHRONIZAČNÍ PROTOKOL SM2
-   Formát: SM2~minuty~earned~vault~dia~bonus~pin~streak~boxClaimed~testDone~testScore~testTotal~testPercent~testDia~mathMax~segCount~legActive~legDia~legTitle~letters
    ============================================================ */
 
 function exportCurrentSyncPayload() {
@@ -3082,7 +3252,6 @@ function importSyncPayload(rawStr) {
     renderRewardInputs();
     generateLessonItems();
 
-    // Pokud je otevřené zobrazení testu, ihned ho překreslíme se správnými daty!
     const testView = document.getElementById('view-test');
     if (testView && !testView.classList.contains('hidden')) {
       openTestView();
@@ -3115,8 +3284,8 @@ function generateSyncQRModal() {
     try {
       new QRCode(qrContainer, {
         text: payload,
-        width: 200,
-        height: 200,
+        width: 195,
+        height: 195,
         colorDark: '#0f172a',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.M
@@ -3129,9 +3298,9 @@ function generateSyncQRModal() {
 
   if (!rendered) {
     const img = document.createElement('img');
-    img.src = `https://quickchart.io/qr?text=${encodeURIComponent(payload)}&size=200&ecLevel=M&margin=1`;
+    img.src = `https://quickchart.io/qr?text=${encodeURIComponent(payload)}&size=195&ecLevel=M&margin=1`;
     img.alt = 'QR Kód';
-    img.className = 'w-[200px] h-[200px] mx-auto block rounded-xl shadow-md border-2 border-slate-200';
+    img.className = 'w-[195px] h-[195px] mx-auto block rounded-xl shadow-md border-2 border-slate-200';
     qrContainer.appendChild(img);
   }
 
@@ -3388,7 +3557,7 @@ function claimQuestReward(questId) {
 }
 
 /* ============================================================
-   ADMIN MODUL
+   ADMIN MODUL (SIDEBAR MENU A MODULÁRNÍ NASTAVENÍ)
    ============================================================ */
 
 function saveDiamondRate(val) {
@@ -3595,8 +3764,9 @@ function switchAdminTab(tabKey) {
   const contentMath = document.getElementById('admin-tab-content-math');
   const contentReading = document.getElementById('admin-tab-content-reading');
 
+  // Reset stylů pro vertikální lištu na tabletu
   [btnGeneral, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
-    if (b) b.className = 'flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0';
+    if (b) b.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left';
   });
 
   contentGeneral.classList.add('hidden');
@@ -3606,21 +3776,21 @@ function switchAdminTab(tabKey) {
   contentReading.classList.add('hidden');
 
   if (tabKey === 'test') {
-    btnTest.className = 'flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-purple-700 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0';
+    btnTest.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-purple-700 text-white shadow-sm flex items-center gap-2 text-left';
     contentTest.classList.remove('hidden');
     updateAdminTestUI();
   } else if (tabKey === 'legendary') {
-    btnLegend.className = 'flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-cyan-600 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0';
+    btnLegend.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-cyan-600 text-white shadow-sm flex items-center gap-2 text-left';
     contentLegend.classList.remove('hidden');
     updateAdminLegendaryUI();
   } else if (tabKey === 'math') {
-    btnMath.className = 'flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0';
+    btnMath.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm flex items-center gap-2 text-left';
     contentMath.classList.remove('hidden');
   } else if (tabKey === 'reading') {
-    btnReading.className = 'flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0';
+    btnReading.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center gap-2 text-left';
     contentReading.classList.remove('hidden');
   } else {
-    btnGeneral.className = 'flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0';
+    btnGeneral.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2 text-left';
     contentGeneral.classList.remove('hidden');
   }
   playTone(520, 0.08, 'sine', 0.12);
@@ -3904,7 +4074,8 @@ function resetAllData() {
     testConfig: JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG)),
     streakDays: 0,
     streakLastActiveDate: '',
-    streakTodayCompleted: false
+    streakTodayCompleted: false,
+    streakClaimedDay7: false
   };
   saveState();
   closeAdminPanel();
@@ -3940,6 +4111,13 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   if (!state.testConfig) {
     state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
+  } else {
+    if (!state.testConfig.enabledTopics) {
+      state.testConfig.enabledTopics = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG.enabledTopics));
+    }
+    if (!state.testConfig.taskCount) {
+      state.testConfig.taskCount = 8;
+    }
   }
   
   updateImageToggleUI();

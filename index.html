@@ -23,7 +23,7 @@
             baloo: ['"Baloo 2"', 'cursive', 'sans-serif'],
           },
           boxShadow: {
-            'game-btn': '0 6px 0px rgba(0,0,0,0.18)',
+            'game-btn': '0 5px 0px rgba(0,0,0,0.18)',
             'game-card': '0 10px 22px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)',
           }
         }
@@ -61,7 +61,7 @@
       transition: all 0.12s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .game-button:active {
-      transform: translateY(4px);
+      transform: translateY(3px);
       box-shadow: 0 2px 0px rgba(0,0,0,0.2) !important;
     }
     .letter-card {
@@ -85,15 +85,15 @@
       animation: chestShake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
     }
     @keyframes pulseGlow {
-      0%, 100% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6)); }
-      50% { filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.95)); }
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6)); }
+      50% { filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.95)); }
     }
     .chest-ready {
       animation: pulseGlow 2.2s infinite ease-in-out;
     }
     @keyframes pulseGlowDiamond {
-      0%, 100% { filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.7)); }
-      50% { filter: drop-shadow(0 0 28px rgba(59, 130, 246, 0.95)); }
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.7)); }
+      50% { filter: drop-shadow(0 0 24px rgba(59, 130, 246, 0.95)); }
     }
     .chest-legend-ready {
       animation: pulseGlowDiamond 2s infinite ease-in-out;
@@ -135,10 +135,13 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
-    /* Přesné centrování elementů uvnitř QR boxu */
+    /* Dokonale přesné vycentrování QR kódu */
     #sync-qrcode-display canvas, #sync-qrcode-display img {
       margin: 0 auto !important;
       display: block !important;
+      max-width: 100% !important;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      border-radius: 12px;
     }
   </style>
 </head>
@@ -148,73 +151,77 @@
 
   <!-- Top Navigation -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-4 border-amber-300 shadow-md header-safe pb-2">
-    <div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-2">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
       
       <!-- Logo -->
       <div class="flex items-center gap-2 cursor-pointer flex-shrink-0" onclick="showView('learn')">
-        <span class="text-2xl sm:text-4xl filter drop-shadow wiggle">🚀</span>
+        <span class="text-2xl sm:text-3xl filter drop-shadow wiggle">🚀</span>
         <div>
-          <h1 class="text-lg sm:text-2xl md:text-3xl font-black text-amber-500 tracking-wide font-baloo leading-none">ŠKOLÁCKÁ MISE</h1>
-          <p class="text-[10px] sm:text-[11px] text-sky-600 font-extrabold hidden md:block">1. třída ZŠ • Čtení, Matematika, Test & Sync</p>
+          <h1 class="text-base sm:text-xl md:text-2xl font-black text-amber-500 tracking-wide font-baloo leading-none">ŠKOLÁCKÁ MISE</h1>
+          <p class="text-[9px] sm:text-[10px] text-sky-600 font-extrabold hidden md:block">1. třída ZŠ • Čtení, Matematika, Test & Sync</p>
         </div>
       </div>
 
       <!-- Center Switcher: Čtení vs Matematika vs TEST -->
-      <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0">
-        <button onclick="setSubject('reading')" id="subject-btn-reading" class="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm">
+      <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0 h-[42px] items-center">
+        <button onclick="setSubject('reading')" id="subject-btn-reading" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm">
           <span>📖</span> <span class="hidden sm:inline">Čtení</span>
         </button>
-        <button onclick="setSubject('math')" id="subject-btn-math" class="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200">
+        <button onclick="setSubject('math')" id="subject-btn-math" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200">
           <span>🔢</span> <span class="hidden sm:inline">Matematika</span>
         </button>
-        <button onclick="openTestView()" id="subject-btn-test" class="px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative">
+        <button onclick="openTestView()" id="subject-btn-test" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative">
           <span>📝</span> <span class="font-black">TEST</span>
           <span id="nav-test-badge" class="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-ping absolute -top-1 -right-1 hidden"></span>
         </button>
       </div>
 
-      <!-- Action items -->
-      <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+      <!-- Action items - Sjednocená výška 42px, symetrický design a jasné popisky -->
+      <div class="flex items-center gap-1.5 flex-wrap">
         
-        <!-- Duolingo Streak Badge -->
-        <div onclick="showStreakTab()" title="Denní řada učení" class="cursor-pointer bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl border-2 border-amber-300 shadow-sm flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform h-[38px] sm:h-[44px]">
-          <span class="text-lg sm:text-xl" id="top-streak-icon">🔥</span>
-          <div class="flex items-baseline gap-0.5">
-            <span class="text-xs sm:text-sm font-black whitespace-nowrap" id="top-streak-count">0</span>
-            <span class="text-[9px] sm:text-[10px] font-bold text-orange-200 uppercase hidden sm:inline">dní</span>
-          </div>
+        <!-- 1. ŘADA (STREAK) -->
+        <div onclick="showStreakTab()" title="Denní řada učení" class="cursor-pointer bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black px-2.5 rounded-2xl border-2 border-amber-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px]">
+          <span class="text-base sm:text-lg" id="top-streak-icon">🔥</span>
+          <span class="text-xs sm:text-sm font-black whitespace-nowrap" id="top-streak-count">0</span>
+          <span class="text-[9px] font-bold text-orange-200 uppercase hidden md:inline">dní</span>
         </div>
 
-        <button onclick="openDailyBoxModal()" id="top-box-btn" title="Truhla Odměn" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold p-1.5 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-amber-700 shadow-sm flex items-center gap-1 h-[38px] sm:h-[44px]">
-          <span class="text-lg sm:text-xl" id="top-box-icon">🎁</span>
-          <span class="hidden lg:inline font-black text-xs uppercase tracking-wider">Truhla</span>
+        <!-- 2. TRUHLA -->
+        <button onclick="openDailyBoxModal()" id="top-box-btn" title="Truhla Odměn" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold px-2.5 rounded-2xl border-b-3 border-amber-700 shadow-sm flex items-center gap-1.5 h-[42px]">
+          <span class="text-base sm:text-lg" id="top-box-icon">🎁</span>
+          <span class="font-black text-xs uppercase tracking-wider hidden sm:inline">Truhla</span>
           <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
         </button>
 
-        <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold p-1.5 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-indigo-700 shadow-sm flex items-center gap-1 h-[38px] sm:h-[44px]">
-          <span class="text-lg sm:text-xl">📋</span>
-          <span class="hidden lg:inline font-black text-xs uppercase tracking-wider">Úkoly</span>
+        <!-- 3. DENNÍ ÚKOLY -->
+        <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-2.5 rounded-2xl border-b-3 border-indigo-700 shadow-sm flex items-center gap-1.5 h-[42px]">
+          <span class="text-base sm:text-lg">📋</span>
+          <span class="font-black text-xs uppercase tracking-wider hidden sm:inline">Úkoly</span>
           <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/10</span>
         </button>
 
-        <!-- Modré diamanty -->
-        <div onclick="showStoreTab('diamonds')" title="Modré diamanty" class="cursor-pointer bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl border-2 border-cyan-300 shadow-sm flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform h-[38px] sm:h-[44px]">
-          <span class="text-base sm:text-lg">💎</span>
+        <!-- 4. MODRÉ DIAMANTY -->
+        <div onclick="showStoreTab('diamonds')" title="Modré diamanty" class="cursor-pointer bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-2.5 rounded-2xl border-2 border-cyan-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px]">
+          <span class="text-base">💎</span>
           <span class="text-xs sm:text-sm font-black" id="top-diamonds-display">0</span>
         </div>
 
-        <!-- Herní čas na tabletu -->
-        <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1 hover:scale-105 active:scale-95 transition-transform h-[38px] sm:h-[44px]">
-          <span class="text-base sm:text-lg animate-pulse">⭐</span>
+        <!-- 5. HERNÍ ČAS NA TABLETU (MINUTY) -->
+        <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px]">
+          <span class="text-base animate-pulse">⭐</span>
           <span class="text-xs sm:text-sm font-black whitespace-nowrap" id="top-balance-display">0 min</span>
         </div>
 
-        <button onclick="showStoreTab('tickets')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold p-1.5 sm:px-3 sm:py-2 rounded-2xl border-b-4 border-pink-700 shadow-sm flex items-center gap-1 h-[38px] sm:h-[44px]">
-          <span class="text-lg sm:text-xl">🎟️</span>
+        <!-- 6. HERNÍ OBCHOD (LÍSTKY) -->
+        <button onclick="showStoreTab('tickets')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold px-2.5 rounded-2xl border-b-3 border-pink-700 shadow-sm flex items-center gap-1.5 h-[42px]">
+          <span class="text-base sm:text-lg">🎟️</span>
+          <span class="font-black text-xs uppercase tracking-wider hidden md:inline">Obchod</span>
         </button>
 
-        <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white p-1.5 sm:p-2.5 rounded-2xl border-b-4 border-slate-900 shadow-sm flex items-center justify-center h-[38px] sm:h-[44px]">
-          <span class="text-base sm:text-lg">🔒</span>
+        <!-- 7. RODIČOVSKÁ SPRÁVA (ZÁMEK) -->
+        <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white font-bold px-2.5 rounded-2xl border-b-3 border-slate-900 shadow-sm flex items-center gap-1.5 h-[42px]">
+          <span class="text-base">🔒</span>
+          <span class="font-black text-xs uppercase tracking-wider hidden md:inline">Správa</span>
         </button>
       </div>
     </div>
@@ -455,7 +462,7 @@
         <div id="content-empty-notice" class="hidden text-center p-5 bg-white/95 border-3 border-amber-300 rounded-3xl max-w-md shadow-md my-3">
           <span class="text-3xl block mb-1">🔐</span>
           <h3 class="text-base font-black text-slate-800">Chybí podklady pro procvičení</h3>
-          <p class="text-xs text-slate-600 mt-1 font-bold">V rodičovském nastavení zapni další písmenka nebo uprav rozsah matematiky.</p>
+          <p class="text-xs text-slate-600 font-bold mt-1.5">V rodičovském nastavení zapni další písmenka nebo uprav rozsah matematiky.</p>
           <button onclick="openParentModal()" class="mt-3 game-button bg-indigo-600 text-white font-black text-xs px-4 py-2 rounded-2xl">
             Otevřít Rodičovskou Správu 🔒
           </button>
@@ -539,7 +546,7 @@
             <span class="text-[10px] bg-cyan-400 text-slate-900 font-black px-2 py-0.5 rounded-full">Odměna: až 4 💎</span>
           </div>
           <h2 class="text-2xl sm:text-3xl font-black mt-1 font-baloo leading-tight">Školácký Test Znalostí 📝</h2>
-          <p class="text-indigo-100 font-bold text-xs">8 náhodných otázek z učiva (čtení i matematika). Získej co nejvíce diamantů!</p>
+          <p class="text-indigo-100 font-bold text-xs" id="test-banner-description">8 vybraných otázek z učiva. Čti slova bez nápovědných obrázků a získej diamanty!</p>
         </div>
         <button onclick="showView('learn')" class="game-button bg-white text-indigo-800 font-black px-3.5 py-2 rounded-2xl text-xs shadow-md flex items-center gap-1.5 self-start sm:self-auto">
           <span>🎮</span> Zpět do Tréninku
@@ -550,13 +557,13 @@
       <div id="test-intro-box" class="bg-white/95 rounded-3xl p-5 sm:p-7 border-4 border-indigo-300 shadow-xl text-center max-w-xl mx-auto w-full my-auto">
         <span class="text-5xl select-none block mb-2">🎓</span>
         <h3 class="text-xl sm:text-2xl font-black text-slate-800 font-baloo">Připraven na dnešní test?</h3>
-        <p class="text-xs text-slate-600 font-bold mt-1.5 leading-relaxed">
-          Čeká tě celkem <strong>8 úloh</strong> (mix čtení i matematiky). Výsledky se vyhodnotí až na úplném konci.
+        <p class="text-xs text-slate-600 font-bold mt-1.5 leading-relaxed" id="test-intro-task-count-text">
+          Čeká tě celkem <strong>8 úloh</strong> (mix čtení i matematiky dle nastavení rodiče). Výsledky se vyhodnotí až na konci.
         </p>
 
         <div class="my-4 p-3 bg-indigo-50 border-2 border-indigo-200 rounded-2xl text-left text-xs font-bold text-indigo-900 space-y-1 max-w-md mx-auto">
           <div class="font-black text-indigo-950 mb-1">💎 Odměny podle úspěšnosti:</div>
-          <div class="flex justify-between"><span>90 – 100 % (8/8 nebo 7/8):</span> <strong class="text-cyan-700 font-black">+4 Diamanty 💎</strong></div>
+          <div class="flex justify-between"><span>90 – 100 %:</span> <strong class="text-cyan-700 font-black">+4 Diamanty 💎</strong></div>
           <div class="flex justify-between"><span>80 – 89 %:</span> <strong class="text-cyan-700 font-black">+3 Diamanty 💎</strong></div>
           <div class="flex justify-between"><span>65 – 79 %:</span> <strong class="text-cyan-700 font-black">+2 Diamanty 💎</strong></div>
           <div class="flex justify-between"><span>50 – 64 %:</span> <strong class="text-cyan-700 font-black">+1 Diamant 💎</strong></div>
@@ -585,7 +592,7 @@
 
         <div id="test-controls-panel" class="bg-white/95 rounded-2xl p-3 border-2 border-indigo-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2.5">
           <div id="test-reading-eval-bar" class="w-full flex flex-col sm:flex-row items-center justify-between gap-2.5">
-            <span class="text-[11px] font-black uppercase tracking-wider text-slate-500">Hodnocení rodiče (přečetl správně?):</span>
+            <span class="text-[11px] font-black uppercase tracking-wider text-slate-500">Hodnocení rodiče (přečetl správně bez obrázku?):</span>
             <div class="flex items-center gap-2.5 w-full sm:w-auto">
               <button onclick="submitTestReadingAnswer(false)" class="game-button flex-1 sm:flex-none bg-rose-500 hover:bg-rose-600 text-white font-black px-4 py-2 rounded-xl border-b-4 border-rose-700 text-xs sm:text-sm flex items-center justify-center gap-1 shadow-sm">
                 <span>❌</span> ŠPATNĚ
@@ -706,13 +713,14 @@
           <div class="flex items-center justify-between mb-3">
             <div>
               <span class="text-[10px] font-black bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full uppercase">Odměna za vytrvalost</span>
-              <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo mt-0.5">Cesta k Zlatému Diamantu 💎</h4>
+              <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo mt-0.5">Cesta k Modrému Diamantu 💎</h4>
             </div>
             <div class="text-right">
               <span class="text-[10px] font-black text-slate-500 block">7. den řady =</span>
               <span class="text-xs sm:text-sm font-black text-cyan-600">+1 Diamant 💎</span>
             </div>
           </div>
+          <!-- 7-denní cyklus s možností kliknutí a vyzvednutí diamantu 7. den -->
           <div class="grid grid-cols-7 gap-1.5 sm:gap-2.5" id="streak-week-track"></div>
         </div>
       </div>
@@ -999,400 +1007,507 @@
     </div>
   </div>
 
-  <!-- ADMIN CONTROL PANEL MODAL -->
-  <div id="admin-panel-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-md z-50 hidden overflow-y-auto p-2 sm:p-5 flex items-start justify-center">
-    <div class="bg-white rounded-3xl max-w-4xl w-full p-4 sm:p-6 border-4 border-indigo-600 shadow-2xl my-2 flex flex-col">
+  <!-- ADMIN CONTROL PANEL MODAL - SIDEBAR LAYOUT PRO TABLETY -->
+  <div id="admin-panel-modal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-md z-50 hidden p-2 sm:p-5 flex items-center justify-center">
+    <div class="bg-white rounded-3xl max-w-5xl w-full h-[90vh] max-h-[800px] border-4 border-indigo-600 shadow-2xl flex flex-col overflow-hidden">
       
-      <!-- Admin Header -->
-      <div class="flex items-center justify-between border-b pb-3 mb-3">
+      <!-- Admin Top Bar -->
+      <div class="flex items-center justify-between border-b px-4 sm:px-6 py-3 bg-slate-50 flex-shrink-0">
         <div class="flex items-center gap-2.5">
           <span class="text-2xl sm:text-3xl">⚙️</span>
           <div>
-            <h2 class="text-xl sm:text-2xl font-black text-slate-800 font-baloo">Rodičovská Administrace</h2>
-            <p class="text-[11px] text-slate-500 font-bold">Správa odměn, rozsahů, písmenek, limitů, TESTU i SYNCHRONIZACE</p>
+            <h2 class="text-lg sm:text-xl font-black text-slate-800 font-baloo leading-tight">Rodičovská Administrace</h2>
+            <p class="text-[10px] sm:text-[11px] text-slate-500 font-bold hidden sm:block">Správa odměn, rozsahů, písmenek, limitů, TESTU i SYNCHRONIZACE</p>
           </div>
         </div>
         <div class="flex items-center gap-2.5">
-          <span class="bg-indigo-100 text-indigo-800 font-black text-[11px] px-2.5 py-0.5 rounded-xl border border-indigo-300" id="admin-version-tag">Verze: 5.0</span>
-          <button onclick="closeAdminPanel()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black w-9 h-9 rounded-full flex items-center justify-center text-lg">✕</button>
+          <span class="bg-indigo-100 text-indigo-800 font-black text-[10px] sm:text-[11px] px-2.5 py-1 rounded-xl border border-indigo-300" id="admin-version-tag">Verze: 5.0</span>
+          <button onclick="closeAdminPanel()" class="bg-white hover:bg-slate-200 text-slate-700 font-black w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center text-lg shadow-sm border border-slate-200">✕</button>
         </div>
       </div>
 
-      <!-- HLAVNÍ ADMIN ZÁLOŽKY -->
-      <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border-2 border-slate-200 mb-4 overflow-x-auto no-scrollbar">
-        <button onclick="switchAdminTab('general')" id="admin-tab-btn-general" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0">
-          <span>⚙️</span> Obecné & Sync
-        </button>
-        <button onclick="switchAdminTab('test')" id="admin-tab-btn-test" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-purple-700 hover:bg-purple-100 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0">
-          <span>📝</span> Nastavení TESTU
-        </button>
-        <button onclick="switchAdminTab('legendary')" id="admin-tab-btn-legendary" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0">
-          <span>👑</span> Legendární Truhla
-        </button>
-        <button onclick="switchAdminTab('math')" id="admin-tab-btn-math" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0">
-          <span>🔢</span> Matematika
-        </button>
-        <button onclick="switchAdminTab('reading')" id="admin-tab-btn-reading" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-200 flex items-center justify-center gap-1.5 whitespace-nowrap min-w-[120px] sm:min-w-0">
-          <span>📖</span> Čtení & Hláskování
-        </button>
-      </div>
-
-      <!-- ==================== ZÁLOŽKA 1: OBECNÉ & SYNCHRONIZACE ==================== -->
-      <div id="admin-tab-content-general" class="space-y-4">
+      <!-- Admin Main: LEVÉ BOČNÍ MENU + PRAVÝ OBSAH -->
+      <div class="flex-grow flex overflow-hidden">
         
-        <!-- SEKCE: SYNCHRONIZACE MEZI ZAŘÍZENÍMI -->
-        <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-cyan-50 border-3 border-indigo-400 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-2xl">🔄</span>
-            <h4 class="font-black text-indigo-950 text-base">Synchronizace mezi Zařízeními (Tablet ↔ Mobil ↔ PC):</h4>
-          </div>
-          <p class="text-xs text-indigo-900 font-bold mb-3">
-            Přeneste aktuální stav (diamanty, minuty, dnešní test 4/8, celou administraci i písmena) na druhé zařízení pomocí QR kódu nebo textového kódu pro PC:
-          </p>
-
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <button onclick="generateSyncQRModal()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
-              <span>📤</span> Vygenerovat QR & Kód
-            </button>
-            <button onclick="openCameraScanModal()" class="game-button bg-cyan-600 hover:bg-cyan-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
-              <span>📷</span> Skenovat QR fotoaparátem
-            </button>
-            <button onclick="openManualCodeModal()" class="game-button bg-purple-600 hover:bg-purple-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
-              <span>⌨️</span> Vložit kód ručně (pro PC)
-            </button>
-          </div>
-        </div>
-
-        <!-- DIAMANTOVÝ TRH & HERNÍ LIMIT -->
-        <div class="bg-cyan-50 border-2 border-cyan-300 rounded-2xl p-3.5">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xl">💎</span>
-            <h4 class="font-black text-cyan-950 text-sm sm:text-base">Diamantový trh & Herní limit:</h4>
-          </div>
-          <p class="text-[11px] text-cyan-800 font-bold mb-2.5">Nastavte kurz diamantů a spravujte bonusové minuty:</p>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div class="bg-white p-2.5 rounded-xl border border-cyan-200">
-              <label class="text-[11px] font-black text-slate-700 block mb-1">Kurz (diamanty za +1 minutu):</label>
-              <div class="flex items-center gap-1.5">
-                <input type="number" id="admin-diamond-rate-input" min="1" max="100" value="20" onchange="saveDiamondRate(this.value)" class="w-full text-center font-black text-cyan-900 bg-cyan-50 border border-cyan-300 rounded-lg py-1 text-xs">
-                <span class="text-xs font-bold text-slate-500">💎</span>
-              </div>
-            </div>
-
-            <div class="bg-white p-2.5 rounded-xl border border-cyan-200">
-              <label class="text-[11px] font-black text-slate-700 block mb-1">Bonusové minuty:</label>
-              <div class="flex items-center gap-1.5">
-                <button onclick="adminAdjustBonusMinutes(-1)" class="w-7 h-7 rounded-lg bg-slate-100 font-black text-slate-700 hover:bg-slate-200">−1</button>
-                <span class="w-full text-center font-black text-cyan-900 font-baloo text-base" id="admin-bonus-minutes-label">+0 min</span>
-                <button onclick="adminAdjustBonusMinutes(1)" class="w-7 h-7 rounded-lg bg-cyan-600 font-black text-white hover:bg-cyan-700">+1</button>
-              </div>
-            </div>
-
-            <div class="bg-white p-2.5 rounded-xl border border-cyan-200">
-              <label class="text-[11px] font-black text-slate-700 block mb-1">Diamanty syna:</label>
-              <div class="flex items-center gap-1.5">
-                <button onclick="adminAdjustDiamonds(-1)" class="w-7 h-7 rounded-lg bg-slate-100 font-black text-slate-700 hover:bg-slate-200">−1</button>
-                <span class="w-full text-center font-black text-cyan-900 font-baloo text-base" id="admin-diamonds-indicator">0 💎</span>
-                <button onclick="adminAdjustDiamonds(1)" class="w-7 h-7 rounded-lg bg-cyan-600 font-black text-white hover:bg-cyan-700">+1</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- DUOLINGO ŘADA -->
-        <div class="bg-orange-50 border-2 border-orange-300 rounded-2xl p-3.5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <div>
-              <div class="flex items-center gap-1.5">
-                <span class="text-xl">🔥</span>
-                <h4 class="font-black text-orange-950 text-sm sm:text-base">Denní Řada:</h4>
-              </div>
-              <p class="text-[11px] text-orange-800 font-bold mt-0.5">
-                Při nemoci nebo prázdninách můžete řadu upravit nebo omluvit dnešek:
-              </p>
-            </div>
-            <div class="bg-white px-3 py-1 rounded-xl border border-orange-300 text-center self-start sm:self-auto">
-              <span class="text-[9px] uppercase font-black text-slate-400 block">Aktuální řada:</span>
-              <span class="text-xl font-black text-orange-600 font-baloo" id="admin-streak-display">0 dní</span>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 mt-2">
-            <button onclick="adminAdjustStreak(1)" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>➕</span> Přidat 1 den
-            </button>
-            <button onclick="adminAdjustStreak(-1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1">
-              <span>➖</span> Ubrat 1 den
-            </button>
-            <button onclick="adminFreezeStreak()" class="bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>🛡️</span> Omluvit dnešek
-            </button>
-          </div>
-        </div>
-
-        <!-- Minute Adjustments -->
-        <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3.5">
-          <div class="flex items-center justify-between mb-2">
-            <div>
-              <span class="font-black text-indigo-950 text-sm sm:text-base">Kredit na tabletu:</span>
-              <span class="text-[11px] text-indigo-600 block font-bold">Odečet uvolní dnešní limit synovi pro férové dočtení</span>
-            </div>
-            <span class="text-2xl font-black text-indigo-700 font-baloo" id="admin-balance-display">0 min</span>
-          </div>
-
-          <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            <button onclick="adjustMinutes(0.5, 'Bonus od rodiče (+0.5 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-              <span>+0.5 min</span>
-              <span class="text-[9px] font-normal opacity-90">+30 sek</span>
-            </button>
-            <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-              <span>+1 min</span>
-              <span class="text-[9px] font-normal opacity-90">+1 celá</span>
-            </button>
-            <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-              <span>+5 min</span>
-              <span class="text-[9px] font-normal opacity-90">+5 balíček</span>
-            </button>
-            <button onclick="adjustMinutes(-0.5, 'Odečet rodičem (-0.5 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-              <span>-0.5 min</span>
-              <span class="text-[9px] font-normal opacity-90">-30 sek</span>
-            </button>
-            <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-              <span>-1 min</span>
-              <span class="text-[9px] font-normal opacity-90">-1 celá</span>
-            </button>
-            <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-              <span>-5 min</span>
-              <span class="text-[9px] font-normal opacity-90">-5 balíček</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- PŘESUN Z TREZORU DO ÚČTU -->
-        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-            <div>
-              <h4 class="font-black text-amber-950 text-sm sm:text-base">Zlatý Noční Trezor (Převod do Můj čas):</h4>
-              <p class="text-[11px] text-amber-800 font-bold">Přesuň vybraný počet minut nebo celý obsah ihned k použití.</p>
-            </div>
-            <div class="bg-white px-3 py-1 rounded-xl border border-amber-400 self-start sm:self-auto">
-              <span class="text-[11px] text-slate-500 font-bold">V trezoru je: </span>
-              <span class="font-black text-amber-600 text-sm font-baloo" id="admin-vault-indicator">0 min</span>
-            </div>
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2">
-            <div class="flex items-center gap-1 bg-white border border-amber-300 rounded-xl px-2 py-1 shadow-inner">
-              <span class="text-[11px] font-bold text-slate-600">Počet:</span>
-              <input type="number" id="vault-transfer-input" step="0.5" min="0.5" placeholder="2" class="w-16 text-center font-black text-indigo-900 border-b-2 border-amber-500 focus:outline-none text-xs">
-              <span class="text-[11px] font-bold text-slate-600">min</span>
-            </div>
-            <button onclick="adminTransferCustomVault()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>📥</span> Převést do Můj čas
-            </button>
-            <button onclick="adminUnlockVaultNow()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>⚡</span> Převést VŠECHNO
-            </button>
-          </div>
-        </div>
-
-        <!-- POKÉMON SEGMENTY A TAJNÝ PIN -->
-        <div class="bg-slate-50 border-2 border-slate-300 rounded-2xl p-3.5">
-          <h4 class="font-black text-slate-800 text-sm sm:text-base mb-1">Nastavení Pokémonů & PINu:</h4>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
-            <div class="bg-white p-2.5 rounded-xl border border-slate-200">
-              <label class="text-[11px] font-black text-slate-700 block mb-1">Dílků na Pokémona (10 až 25):</label>
-              <div class="flex items-center gap-2">
-                <input type="range" id="admin-segments-slider" min="10" max="25" step="1" value="12" oninput="changeSegmentsCount(this.value)" class="w-full accent-cyan-600">
-                <span class="text-sm font-black text-cyan-700 w-6 text-center" id="admin-segments-count-label">12</span>
-              </div>
-            </div>
-
-            <div class="bg-white p-2.5 rounded-xl border border-slate-200">
-              <label class="text-[11px] font-black text-slate-700 block mb-1">Tajný PIN k tabletu (za 50 💎):</label>
-              <input type="text" id="admin-secret-pin-input" placeholder="XXXX" maxlength="12" onchange="saveSecretPin(this.value)" class="w-full text-base font-black text-center tracking-widest bg-slate-50 border-2 border-cyan-300 rounded-xl py-1 focus:outline-none focus:border-cyan-600">
-            </div>
-          </div>
-        </div>
-
-        <!-- RUČNÍ NASTAVENÍ ODMĚN -->
-        <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3.5">
-          <div class="flex items-center justify-between mb-2">
-            <div>
-              <h4 class="font-black text-emerald-950 text-sm sm:text-base">Nastavení výše odměn (Minuty k tabletu):</h4>
-            </div>
-            <button onclick="resetDefaultRewards()" class="text-[10px] font-bold bg-white text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-lg hover:bg-emerald-100">
-              ↺ Výchozí
-            </button>
-          </div>
-
-          <div class="bg-white p-2 rounded-xl border border-emerald-200 mb-2.5 flex items-center justify-between">
-            <span class="text-xs font-black text-slate-800">Odměna za 1 splněný Denní úkol:</span>
-            <div class="flex items-center gap-1">
-              <input type="number" step="0.25" min="0.1" max="10" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
-              <span class="text-[11px] font-black text-slate-600">min</span>
-            </div>
-          </div>
-
-          <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za Čtení:</h5>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3" id="rewards-reading-inputs">
-          </div>
-
-          <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za Matematiku:</h5>
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="rewards-math-inputs">
-          </div>
-        </div>
-
-        <!-- DAILY RESETS SECTION -->
-        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-3.5">
-          <h4 class="font-black text-purple-950 text-sm mb-1">Správa Denních Bonusů (Ruční reset):</h4>
-          <div class="flex flex-wrap gap-2 mt-2">
-            <button onclick="adminResetQuests()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>🔄</span> Resetovat Denní Úkoly
-            </button>
-            <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>🎁</span> Resetovat Denní Truhlu
-            </button>
-            <button onclick="adminResetDailyDirectLimit()" class="game-button bg-sky-600 hover:bg-sky-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-              <span>⏱️</span> Vynulovat dnešní čas
-            </button>
-          </div>
-        </div>
-
-        <!-- Historie -->
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <h4 class="font-black text-slate-800 text-sm">Historie minut:</h4>
-            <button onclick="clearHistory()" class="text-[11px] text-red-500 font-bold hover:underline">Vyčistit historii</button>
-          </div>
-          <div id="history-log-container" class="bg-slate-50 border border-slate-200 rounded-2xl p-2.5 max-h-36 overflow-y-auto text-xs space-y-1.5">
-          </div>
-        </div>
-
-        <div class="border-t pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <span class="text-slate-400 font-bold">Všechna data se ukládají trvale do paměti prohlížeče.</span>
-          <button onclick="resetAllData()" class="bg-red-100 text-red-700 font-black px-3 py-1.5 rounded-xl hover:bg-red-200">
-            Resetovat celou hru na výchozí stav
+        <!-- Levé svislé menu (vhodné pro tablety) -->
+        <nav class="w-44 sm:w-56 bg-slate-100/90 border-r-2 border-slate-200 p-2 sm:p-3 flex flex-col gap-1.5 flex-shrink-0 overflow-y-auto">
+          <button onclick="switchAdminTab('general')" id="admin-tab-btn-general" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2 text-left">
+            <span class="text-base">⚙️</span>
+            <span>Obecné & Sync</span>
           </button>
-        </div>
-      </div>
+          <button onclick="switchAdminTab('test')" id="admin-tab-btn-test" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-purple-800 hover:bg-purple-100 flex items-center gap-2 text-left">
+            <span class="text-base">📝</span>
+            <span>Nastavení TESTU</span>
+          </button>
+          <button onclick="switchAdminTab('legendary')" id="admin-tab-btn-legendary" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left">
+            <span class="text-base">👑</span>
+            <span>Výjimečná Truhla</span>
+          </button>
+          <button onclick="switchAdminTab('math')" id="admin-tab-btn-math" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left">
+            <span class="text-base">🔢</span>
+            <span>Matematika</span>
+          </button>
+          <button onclick="switchAdminTab('reading')" id="admin-tab-btn-reading" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left">
+            <span class="text-base">📖</span>
+            <span>Čtení & Hláskování</span>
+          </button>
+        </nav>
 
-      <!-- ==================== ZÁLOŽKA 2: NASTAVENÍ TESTU ==================== -->
-      <div id="admin-tab-content-test" class="hidden space-y-4">
-        <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-300 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <span class="text-2xl">📝</span>
-              <div>
-                <h4 class="font-black text-purple-950 text-base">Správa a hodnocení TESTU:</h4>
-                <p class="text-xs text-purple-800 font-bold">Nastavte minimální procenta a počty modrých diamantů:</p>
+        <!-- Pravý rolovatelný obsah záložek -->
+        <div class="flex-grow p-3 sm:p-5 overflow-y-auto bg-white">
+          
+          <!-- ==================== ZÁLOŽKA 1: OBECNÉ & SYNCHRONIZACE ==================== -->
+          <div id="admin-tab-content-general" class="space-y-4">
+            
+            <!-- SEKCE: SYNCHRONIZACE MEZI ZAŘÍZENÍMI -->
+            <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-cyan-50 border-3 border-indigo-400 rounded-2xl p-4 shadow-sm">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-2xl">🔄</span>
+                <h4 class="font-black text-indigo-950 text-base">Synchronizace mezi Zařízeními (Tablet ↔ Mobil ↔ PC):</h4>
               </div>
-            </div>
-            <button onclick="adminResetTestToday()" class="game-button bg-purple-600 hover:bg-purple-700 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-sm">
-              🔄 Resetovat dnešní test
-            </button>
-          </div>
+              <p class="text-xs text-indigo-900 font-bold mb-3">
+                Přeneste aktuální stav (diamanty, minuty, dnešní test, řadu i písmena) na druhé zařízení pomocí QR kódu nebo textového kódu pro PC:
+              </p>
 
-          <div class="bg-white p-3 rounded-2xl border border-purple-200 shadow-inner mt-2.5">
-            <h5 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Pásma úspěšnosti & Diamanty:</h5>
-            <div class="space-y-2" id="admin-test-thresholds-container">
-            </div>
-          </div>
-
-          <div class="mt-3 p-2.5 bg-purple-100/70 border border-purple-200 rounded-xl text-xs font-bold text-purple-950 flex items-center justify-between">
-            <span id="admin-test-status-label">Stav: Test je dnes připraven.</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- ==================== ZÁLOŽKA 3: SPRÁVA VÝJIMEČNÉ TRUHLY ==================== -->
-      <div id="admin-tab-content-legendary" class="hidden space-y-4">
-        <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-cyan-300 rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center gap-2 mb-2">
-            <span class="text-2xl">👑</span>
-            <div>
-              <h4 class="font-black text-slate-800 text-base">Správa Výjimečné / Legendární Truhly:</h4>
-              <p class="text-xs text-slate-600 font-bold">Zadej mimořádný důvod odměny a počet diamantů:</p>
-            </div>
-          </div>
-
-          <div class="space-y-3 mt-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-cyan-200 shadow-inner">
-            <div>
-              <label class="block text-xs font-black text-slate-700 uppercase mb-1">Důvod odměny:</label>
-              <input type="text" id="admin-legendary-title-input" placeholder="např. ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE" value="ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE" class="w-full text-sm sm:text-base font-black px-3 py-2 bg-slate-50 border-2 border-cyan-300 rounded-xl focus:outline-none focus:border-cyan-600 text-slate-800">
-            </div>
-
-            <div>
-              <label class="block text-xs font-black text-slate-700 uppercase mb-1">Počet diamantů:</label>
-              <div class="flex items-center gap-2">
-                <input type="number" id="admin-legendary-diamonds-input" min="1" max="500" value="10" class="w-28 text-center text-lg font-black px-2.5 py-1.5 bg-slate-50 border-2 border-cyan-300 rounded-xl focus:outline-none focus:border-cyan-600 text-indigo-950">
-                <span class="text-xs font-black text-cyan-700">💎 modrých diamantů</span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button onclick="generateSyncQRModal()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
+                  <span>📤</span> Vygenerovat QR & Kód
+                </button>
+                <button onclick="openCameraScanModal()" class="game-button bg-cyan-600 hover:bg-cyan-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
+                  <span>📷</span> Skenovat QR fotoaparátem
+                </button>
+                <button onclick="openManualCodeModal()" class="game-button bg-purple-600 hover:bg-purple-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
+                  <span>⌨️</span> Vložit kód ručně (pro PC)
+                </button>
               </div>
             </div>
 
-            <div class="pt-1 flex flex-wrap items-center gap-2">
-              <button onclick="adminApplyLegendaryChest()" class="game-button bg-cyan-600 hover:bg-cyan-700 text-white font-black px-5 py-2 rounded-2xl text-xs sm:text-sm shadow-game-btn border-b-4 border-cyan-800 flex items-center gap-1.5">
-                <span>🚀</span> APLIKOVAT TRUHLU
-              </button>
-              <button onclick="adminCancelLegendaryChest()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 py-2 rounded-2xl text-xs">
-                Odebrat truhlu
-              </button>
+            <!-- DIAMANTOVÝ TRH & HERNÍ LIMIT -->
+            <div class="bg-cyan-50 border-2 border-cyan-300 rounded-2xl p-3.5">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-xl">💎</span>
+                <h4 class="font-black text-cyan-950 text-sm sm:text-base">Diamantový trh & Herní limit:</h4>
+              </div>
+              <p class="text-[11px] text-cyan-800 font-bold mb-2.5">Nastavte kurz diamantů a spravujte bonusové minuty:</p>
+              
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div class="bg-white p-2.5 rounded-xl border border-cyan-200">
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Kurz (diamanty za +1 minutu):</label>
+                  <div class="flex items-center gap-1.5">
+                    <input type="number" id="admin-diamond-rate-input" min="1" max="100" value="20" onchange="saveDiamondRate(this.value)" class="w-full text-center font-black text-cyan-900 bg-cyan-50 border border-cyan-300 rounded-lg py-1 text-xs">
+                    <span class="text-xs font-bold text-slate-500">💎</span>
+                  </div>
+                </div>
+
+                <div class="bg-white p-2.5 rounded-xl border border-cyan-200">
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Bonusové minuty:</label>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="adminAdjustBonusMinutes(-1)" class="w-7 h-7 rounded-lg bg-slate-100 font-black text-slate-700 hover:bg-slate-200">−1</button>
+                    <span class="w-full text-center font-black text-cyan-900 font-baloo text-base" id="admin-bonus-minutes-label">+0 min</span>
+                    <button onclick="adminAdjustBonusMinutes(1)" class="w-7 h-7 rounded-lg bg-cyan-600 font-black text-white hover:bg-cyan-700">+1</button>
+                  </div>
+                </div>
+
+                <div class="bg-white p-2.5 rounded-xl border border-cyan-200">
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Diamanty syna:</label>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="adminAdjustDiamonds(-1)" class="w-7 h-7 rounded-lg bg-slate-100 font-black text-slate-700 hover:bg-slate-200">−1</button>
+                    <span class="w-full text-center font-black text-cyan-900 font-baloo text-base" id="admin-diamonds-indicator">0 💎</span>
+                    <button onclick="adminAdjustDiamonds(1)" class="w-7 h-7 rounded-lg bg-cyan-600 font-black text-white hover:bg-cyan-700">+1</button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div class="mt-3 p-2.5 bg-cyan-100/70 border border-cyan-300 rounded-xl text-xs font-bold text-cyan-900 flex items-center justify-between">
-            <span id="admin-legendary-status-label">Stav: Truhla je neaktivní.</span>
-          </div>
-        </div>
-      </div>
+            <!-- DUOLINGO ŘADA -->
+            <div class="bg-orange-50 border-2 border-orange-300 rounded-2xl p-3.5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xl">🔥</span>
+                    <h4 class="font-black text-orange-950 text-sm sm:text-base">Denní Řada:</h4>
+                  </div>
+                  <p class="text-[11px] text-orange-800 font-bold mt-0.5">
+                    Při nemoci nebo prázdninách můžete řadu upravit nebo omluvit dnešek:
+                  </p>
+                </div>
+                <div class="bg-white px-3 py-1 rounded-xl border border-orange-300 text-center self-start sm:self-auto">
+                  <span class="text-[9px] uppercase font-black text-slate-400 block">Aktuální řada:</span>
+                  <span class="text-xl font-black text-orange-600 font-baloo" id="admin-streak-display">0 dní</span>
+                </div>
+              </div>
 
-      <!-- ==================== ZÁLOŽKA 4: MATEMATIKA ==================== -->
-      <div id="admin-tab-content-math" class="hidden space-y-4">
-        <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5">
-          <div class="flex items-center justify-between mb-2">
-            <h4 class="font-black text-amber-950 text-sm sm:text-base">Rozsah počítání matematiky:</h4>
-            <span class="text-xs sm:text-sm bg-amber-400 text-amber-950 px-3 py-0.5 rounded-xl font-black font-baloo" id="admin-math-max-badge">Do 10</span>
-          </div>
-          <div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 mt-2" id="slider-steps-container">
-          </div>
-        </div>
-      </div>
+              <div class="flex flex-wrap items-center gap-2 mt-2">
+                <button onclick="adminAdjustStreak(1)" class="bg-orange-500 hover:bg-orange-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>➕</span> Přidat 1 den
+                </button>
+                <button onclick="adminAdjustStreak(-1)" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1">
+                  <span>➖</span> Ubrat 1 den
+                </button>
+                <button onclick="adminFreezeStreak()" class="bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>🛡️</span> Omluvit dnešek
+                </button>
+              </div>
+            </div>
 
-      <!-- ==================== ZÁLOŽKA 5: ČTENÍ & HLÁSKOVÁNÍ ==================== -->
-      <div id="admin-tab-content-reading" class="hidden space-y-4">
-        <div class="bg-purple-50 border-2 border-purple-300 rounded-2xl p-3.5">
-          <div class="flex items-center justify-between gap-2">
+            <!-- Minute Adjustments -->
+            <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3.5">
+              <div class="flex items-center justify-between mb-2">
+                <div>
+                  <span class="font-black text-indigo-950 text-sm sm:text-base">Kredit na tabletu:</span>
+                  <span class="text-[11px] text-indigo-600 block font-bold">Odečet uvolní dnešní limit synovi pro férové dočtení</span>
+                </div>
+                <span class="text-2xl font-black text-indigo-700 font-baloo" id="admin-balance-display">0 min</span>
+              </div>
+
+              <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                <button onclick="adjustMinutes(0.5, 'Bonus od rodiče (+0.5 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
+                  <span>+0.5 min</span>
+                  <span class="text-[9px] font-normal opacity-90">+30 sek</span>
+                </button>
+                <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
+                  <span>+1 min</span>
+                  <span class="text-[9px] font-normal opacity-90">+1 celá</span>
+                </button>
+                <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
+                  <span>+5 min</span>
+                  <span class="text-[9px] font-normal opacity-90">+5 balíček</span>
+                </button>
+                <button onclick="adjustMinutes(-0.5, 'Odečet rodičem (-0.5 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
+                  <span>-0.5 min</span>
+                  <span class="text-[9px] font-normal opacity-90">-30 sek</span>
+                </button>
+                <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
+                  <span>-1 min</span>
+                  <span class="text-[9px] font-normal opacity-90">-1 celá</span>
+                </button>
+                <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
+                  <span>-5 min</span>
+                  <span class="text-[9px] font-normal opacity-90">-5 balíček</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- PŘESUN Z TREZORU DO ÚČTU -->
+            <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                <div>
+                  <h4 class="font-black text-amber-950 text-sm sm:text-base">Zlatý Noční Trezor (Převod do Můj čas):</h4>
+                  <p class="text-[11px] text-amber-800 font-bold">Přesuň vybraný počet minut nebo celý obsah ihned k použití.</p>
+                </div>
+                <div class="bg-white px-3 py-1 rounded-xl border border-amber-400 self-start sm:self-auto">
+                  <span class="text-[11px] text-slate-500 font-bold">V trezoru je: </span>
+                  <span class="font-black text-amber-600 text-sm font-baloo" id="admin-vault-indicator">0 min</span>
+                </div>
+              </div>
+
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="flex items-center gap-1 bg-white border border-amber-300 rounded-xl px-2 py-1 shadow-inner">
+                  <span class="text-[11px] font-bold text-slate-600">Počet:</span>
+                  <input type="number" id="vault-transfer-input" step="0.5" min="0.5" placeholder="2" class="w-16 text-center font-black text-indigo-900 border-b-2 border-amber-500 focus:outline-none text-xs">
+                  <span class="text-[11px] font-bold text-slate-600">min</span>
+                </div>
+                <button onclick="adminTransferCustomVault()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>📥</span> Převést do Můj čas
+                </button>
+                <button onclick="adminUnlockVaultNow()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>⚡</span> Převést VŠECHNO
+                </button>
+              </div>
+            </div>
+
+            <!-- POKÉMON SEGMENTY A TAJNÝ PIN -->
+            <div class="bg-slate-50 border-2 border-slate-300 rounded-2xl p-3.5">
+              <h4 class="font-black text-slate-800 text-sm sm:text-base mb-1">Nastavení Pokémonů & PINu:</h4>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-1.5">
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Dílků na Pokémona (10 až 25):</label>
+                  <div class="flex items-center gap-2">
+                    <input type="range" id="admin-segments-slider" min="10" max="25" step="1" value="12" oninput="changeSegmentsCount(this.value)" class="w-full accent-cyan-600">
+                    <span class="text-sm font-black text-cyan-700 w-6 text-center" id="admin-segments-count-label">12</span>
+                  </div>
+                </div>
+
+                <div class="bg-white p-2.5 rounded-xl border border-slate-200">
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Tajný PIN k tabletu (za 50 💎):</label>
+                  <input type="text" id="admin-secret-pin-input" placeholder="XXXX" maxlength="12" onchange="saveSecretPin(this.value)" class="w-full text-base font-black text-center tracking-widest bg-slate-50 border-2 border-cyan-300 rounded-xl py-1 focus:outline-none focus:border-cyan-600">
+                </div>
+              </div>
+            </div>
+
+            <!-- RUČNÍ NASTAVENÍ ODMĚN -->
+            <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3.5">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="font-black text-emerald-950 text-sm sm:text-base">Nastavení výše odměn (Minuty k tabletu):</h4>
+                <button onclick="resetDefaultRewards()" class="text-[10px] font-bold bg-white text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-lg hover:bg-emerald-100">
+                  ↺ Výchozí
+                </button>
+              </div>
+
+              <div class="bg-white p-2 rounded-xl border border-emerald-200 mb-2.5 flex items-center justify-between">
+                <span class="text-xs font-black text-slate-800">Odměna za 1 splněný Denní úkol:</span>
+                <div class="flex items-center gap-1">
+                  <input type="number" step="0.25" min="0.1" max="10" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+                  <span class="text-[11px] font-black text-slate-600">min</span>
+                </div>
+              </div>
+
+              <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za Čtení:</h5>
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3" id="rewards-reading-inputs"></div>
+
+              <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za Matematiku:</h5>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="rewards-math-inputs"></div>
+            </div>
+
+            <!-- DAILY RESETS SECTION -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-2xl p-3.5">
+              <h4 class="font-black text-purple-950 text-sm mb-1">Správa Denních Bonusů (Ruční reset):</h4>
+              <div class="flex flex-wrap gap-2 mt-2">
+                <button onclick="adminResetQuests()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>🔄</span> Resetovat Denní Úkoly
+                </button>
+                <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>🎁</span> Resetovat Denní Truhlu
+                </button>
+                <button onclick="adminResetDailyDirectLimit()" class="game-button bg-sky-600 hover:bg-sky-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
+                  <span>⏱️</span> Vynulovat dnešní čas
+                </button>
+              </div>
+            </div>
+
+            <!-- Historie -->
             <div>
-              <h4 class="font-black text-purple-950 text-sm">Opakování slova v hláskování:</h4>
+              <div class="flex items-center justify-between mb-1.5">
+                <h4 class="font-black text-slate-800 text-sm">Historie minut:</h4>
+                <button onclick="clearHistory()" class="text-[11px] text-red-500 font-bold hover:underline">Vyčistit historii</button>
+              </div>
+              <div id="history-log-container" class="bg-slate-50 border border-slate-200 rounded-2xl p-2.5 max-h-36 overflow-y-auto text-xs space-y-1.5"></div>
             </div>
-            <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border-2 border-purple-300">
-              <button onclick="adjustSpellingRepeats(-1)" class="w-8 h-8 rounded-lg bg-purple-100 font-black text-purple-900 text-base flex items-center justify-center">−1</button>
-              <span class="w-10 text-center text-lg font-black text-purple-950 font-baloo" id="admin-spelling-repeats-label">3×</span>
-              <button onclick="adjustSpellingRepeats(1)" class="w-8 h-8 rounded-lg bg-purple-600 text-white font-black text-base flex items-center justify-center">+1</button>
+
+            <div class="border-t pt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span class="text-slate-400 font-bold">Všechna data se ukládají trvale do paměti prohlížeče.</span>
+              <button onclick="resetAllData()" class="bg-red-100 text-red-700 font-black px-3 py-1.5 rounded-xl hover:bg-red-200">
+                Resetovat celou hru na výchozí stav
+              </button>
             </div>
           </div>
+
+          <!-- ==================== ZÁLOŽKA 2: NASTAVENÍ TESTU (KOMPLETNÍ MODULÁRNÍ VÝBĚR) ==================== -->
+          <div id="admin-tab-content-test" class="hidden space-y-4">
+            
+            <div class="bg-gradient-to-r from-purple-50 via-indigo-50 to-pink-50 border-2 border-purple-300 rounded-2xl p-4 shadow-sm">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-3xl">📝</span>
+                  <div>
+                    <h4 class="font-black text-purple-950 text-base">Modulární složení TESTU:</h4>
+                    <p class="text-xs text-purple-800 font-bold">Zaškrtni přesně ty okruhy, které chceš mít v testu obsaženy:</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="toggleAllTestTopics(true)" class="text-[11px] font-black bg-purple-100 text-purple-900 px-2.5 py-1 rounded-xl border border-purple-300 hover:bg-purple-200">Vybrat vše</button>
+                  <button onclick="toggleAllTestTopics(false)" class="text-[11px] font-black bg-slate-100 text-slate-700 px-2.5 py-1 rounded-xl border border-slate-300 hover:bg-slate-200">Odznačit vše</button>
+                  <button onclick="adminResetTestToday()" class="game-button bg-purple-600 hover:bg-purple-700 text-white font-black px-3 py-1 rounded-xl text-xs shadow-sm">
+                    🔄 Resetovat test
+                  </button>
+                </div>
+              </div>
+
+              <!-- Nastavení celkového počtu úloh v testu -->
+              <div class="bg-white p-3 rounded-2xl border border-purple-200 mb-4 flex items-center justify-between">
+                <div>
+                  <span class="text-xs font-black text-slate-800 block">Celkový počet otázek v testu:</span>
+                  <span class="text-[11px] text-slate-500 font-bold">Vygeneruje se náhodný mix ze zaškrtnutých okruhů</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="number" id="admin-test-task-count-input" min="4" max="20" value="8" onchange="saveAdminTestTaskCount(this.value)" class="w-16 text-center text-sm font-black py-1 px-2 border-2 border-purple-300 rounded-xl bg-purple-50 text-purple-950 focus:bg-white focus:outline-none">
+                  <span class="text-xs font-black text-slate-600">otázek</span>
+                </div>
+              </div>
+
+              <!-- Dvousloupcový výběr checkboxů: ČTENÍ vs MATEMATIKA -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                
+                <!-- Sloupec 1: Okruhy Čtení -->
+                <div class="bg-white p-3.5 rounded-2xl border-2 border-sky-200 shadow-inner">
+                  <div class="flex items-center justify-between border-b pb-2 mb-2">
+                    <span class="text-xs font-black text-sky-900 uppercase flex items-center gap-1.5">
+                      <span>📖</span> Okruhy Čtení (BEZ OBRÁZKŮ)
+                    </span>
+                    <span class="text-[10px] font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded-full" id="admin-test-reading-count-badge">7 vybráno</span>
+                  </div>
+                  <div class="space-y-2 text-xs font-bold text-slate-700" id="test-checkboxes-reading">
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_1" onchange="saveAdminTestTopic('reading_1', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>🔤 1. Samostatná písmena</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_2" onchange="saveAdminTestTopic('reading_2', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>🧩 2. Slabiky (otevřené)</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_3" onchange="saveAdminTestTopic('reading_3', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>📦 3. Jednoslabičná slova</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_4" onchange="saveAdminTestTopic('reading_4', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>📖 4. Dvouslabičná slova</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_5" onchange="saveAdminTestTopic('reading_5', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>✨ 5. Shluky souhlásek / OU</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_6" onchange="saveAdminTestTopic('reading_6', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>🎯 6. Měkčení (DĚ, TĚ, NĚ...)</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-sky-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-reading_7" onchange="saveAdminTestTopic('reading_7', this.checked)" class="w-4 h-4 rounded text-sky-600 focus:ring-sky-500">
+                      <span>🌟 7. Celé věty</span>
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Sloupec 2: Okruhy Matematiky -->
+                <div class="bg-white p-3.5 rounded-2xl border-2 border-amber-200 shadow-inner">
+                  <div class="flex items-center justify-between border-b pb-2 mb-2">
+                    <span class="text-xs font-black text-amber-900 uppercase flex items-center gap-1.5">
+                      <span>🔢</span> Okruhy Matematiky
+                    </span>
+                    <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" id="admin-test-math-count-badge">6 vybráno</span>
+                  </div>
+                  <div class="space-y-2 text-xs font-bold text-slate-700" id="test-checkboxes-math">
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-amber-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-math_1" onchange="saveAdminTestTopic('math_1', this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                      <span>🍎 1. Obrázkové počty / Desítky</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-amber-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-math_2" onchange="saveAdminTestTopic('math_2', this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                      <span>⚖️ 2. Porovnávání (&lt;, =, &gt;)</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-amber-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-math_3" onchange="saveAdminTestTopic('math_3', this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                      <span>🔢 3. Číselná řada</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-amber-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-math_4" onchange="saveAdminTestTopic('math_4', this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                      <span>➕ 4. Počítadlo (+/-)</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-amber-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-math_5" onchange="saveAdminTestTopic('math_5', this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                      <span>🌿 5. Rozklad čísel</span>
+                    </label>
+                    <label class="flex items-center gap-2 p-1.5 hover:bg-amber-50 rounded-xl cursor-pointer">
+                      <input type="checkbox" id="test-topic-math_6" onchange="saveAdminTestTopic('math_6', this.checked)" class="w-4 h-4 rounded text-amber-600 focus:ring-amber-500">
+                      <span>📖 6. Slovní úlohy</span>
+                    </label>
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- Pásma diamantových odměn -->
+              <div class="bg-white p-3.5 rounded-2xl border border-purple-200 shadow-inner mt-3.5">
+                <h5 class="text-xs font-black text-slate-700 uppercase tracking-wider mb-2">Pásma úspěšnosti & Diamanty:</h5>
+                <div class="space-y-2" id="admin-test-thresholds-container"></div>
+              </div>
+
+              <div class="mt-3 p-2.5 bg-purple-100/70 border border-purple-200 rounded-xl text-xs font-bold text-purple-950 flex items-center justify-between">
+                <span id="admin-test-status-label">Stav: Test je dnes připraven.</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ==================== ZÁLOŽKA 3: SPRÁVA VÝJIMEČNÉ TRUHLY ==================== -->
+          <div id="admin-tab-content-legendary" class="hidden space-y-4">
+            <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-cyan-300 rounded-2xl p-4 shadow-sm">
+              <div class="flex items-center gap-2 mb-2">
+                <span class="text-2xl">👑</span>
+                <div>
+                  <h4 class="font-black text-slate-800 text-base">Správa Výjimečné / Legendární Truhly:</h4>
+                  <p class="text-xs text-slate-600 font-bold">Zadej mimořádný důvod odměny a počet diamantů:</p>
+                </div>
+              </div>
+
+              <div class="space-y-3 mt-3 bg-white p-3.5 sm:p-4 rounded-2xl border border-cyan-200 shadow-inner">
+                <div>
+                  <label class="block text-xs font-black text-slate-700 uppercase mb-1">Důvod odměny:</label>
+                  <input type="text" id="admin-legendary-title-input" placeholder="např. ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE" value="ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE" class="w-full text-sm sm:text-base font-black px-3 py-2 bg-slate-50 border-2 border-cyan-300 rounded-xl focus:outline-none focus:border-cyan-600 text-slate-800">
+                </div>
+
+                <div>
+                  <label class="block text-xs font-black text-slate-700 uppercase mb-1">Počet diamantů:</label>
+                  <div class="flex items-center gap-2">
+                    <input type="number" id="admin-legendary-diamonds-input" min="1" max="500" value="10" class="w-28 text-center text-lg font-black px-2.5 py-1.5 bg-slate-50 border-2 border-cyan-300 rounded-xl focus:outline-none focus:border-cyan-600 text-indigo-950">
+                    <span class="text-xs font-black text-cyan-700">💎 modrých diamantů</span>
+                  </div>
+                </div>
+
+                <div class="pt-1 flex flex-wrap items-center gap-2">
+                  <button onclick="adminApplyLegendaryChest()" class="game-button bg-cyan-600 hover:bg-cyan-700 text-white font-black px-5 py-2 rounded-2xl text-xs sm:text-sm shadow-game-btn border-b-4 border-cyan-800 flex items-center gap-1.5">
+                    <span>🚀</span> APLIKOVAT TRUHLU
+                  </button>
+                  <button onclick="adminCancelLegendaryChest()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 py-2 rounded-2xl text-xs">
+                    Odebrat truhlu
+                  </button>
+                </div>
+              </div>
+
+              <div class="mt-3 p-2.5 bg-cyan-100/70 border border-cyan-300 rounded-xl text-xs font-bold text-cyan-900 flex items-center justify-between">
+                <span id="admin-legendary-status-label">Stav: Truhla je neaktivní.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ==================== ZÁLOŽKA 4: MATEMATIKA ==================== -->
+          <div id="admin-tab-content-math" class="hidden space-y-4">
+            <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="font-black text-amber-950 text-sm sm:text-base">Rozsah počítání matematiky:</h4>
+                <span class="text-xs sm:text-sm bg-amber-400 text-amber-950 px-3 py-0.5 rounded-xl font-black font-baloo" id="admin-math-max-badge">Do 10</span>
+              </div>
+              <div class="grid grid-cols-5 sm:grid-cols-10 gap-1.5 mt-2" id="slider-steps-container"></div>
+            </div>
+          </div>
+
+          <!-- ==================== ZÁLOŽKA 5: ČTENÍ & HLÁSKOVÁNÍ ==================== -->
+          <div id="admin-tab-content-reading" class="hidden space-y-4">
+            <div class="bg-purple-50 border-2 border-purple-300 rounded-2xl p-3.5">
+              <div class="flex items-center justify-between gap-2">
+                <div>
+                  <h4 class="font-black text-purple-950 text-sm">Opakování slova v hláskování:</h4>
+                </div>
+                <div class="flex items-center gap-1.5 bg-white p-1 rounded-xl border-2 border-purple-300">
+                  <button onclick="adjustSpellingRepeats(-1)" class="w-8 h-8 rounded-lg bg-purple-100 font-black text-purple-900 text-base flex items-center justify-center">−1</button>
+                  <span class="w-10 text-center text-lg font-black text-purple-950 font-baloo" id="admin-spelling-repeats-label">3×</span>
+                  <button onclick="adjustSpellingRepeats(1)" class="w-8 h-8 rounded-lg bg-purple-600 text-white font-black text-base flex items-center justify-center">+1</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border-2 border-slate-200 rounded-2xl p-3.5">
+              <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+                <h4 class="font-black text-slate-800 text-sm">Aktivní písmenka pro čtení:</h4>
+                <div class="flex flex-wrap gap-1 text-[11px]">
+                  <button onclick="applyPreset('base5')" class="bg-amber-100 text-amber-900 font-black px-2 py-1 rounded-lg">M,L,E,A,S</button>
+                  <button onclick="applyPreset('diacritics5')" class="bg-amber-200 text-amber-950 font-black px-2 py-1 rounded-lg">M,L,E,É,A,Á,S,O,Ó</button>
+                  <button onclick="applyPreset('autumn')" class="bg-teal-100 text-teal-900 font-black px-2 py-1 rounded-lg">Podzim</button>
+                  <button onclick="applyPreset('all')" class="bg-indigo-100 text-indigo-900 font-black px-2 py-1 rounded-lg">Všechna</button>
+                </div>
+              </div>
+              <div id="alphabet-grid-container" class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-1 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-48 overflow-y-auto"></div>
+            </div>
+          </div>
+
         </div>
 
-        <div class="bg-white border-2 border-slate-200 rounded-2xl p-3.5">
-          <div class="flex flex-wrap items-center justify-between gap-1.5 mb-2">
-            <h4 class="font-black text-slate-800 text-sm">Aktivní písmenka pro čtení:</h4>
-            <div class="flex flex-wrap gap-1 text-[11px]">
-              <button onclick="applyPreset('base5')" class="bg-amber-100 text-amber-900 font-black px-2 py-1 rounded-lg">M,L,E,A,S</button>
-              <button onclick="applyPreset('diacritics5')" class="bg-amber-200 text-amber-950 font-black px-2 py-1 rounded-lg">M,L,E,É,A,Á,S,O,Ó</button>
-              <button onclick="applyPreset('autumn')" class="bg-teal-100 text-teal-900 font-black px-2 py-1 rounded-lg">Podzim</button>
-              <button onclick="applyPreset('all')" class="bg-indigo-100 text-indigo-900 font-black px-2 py-1 rounded-lg">Všechna</button>
-            </div>
-          </div>
-          <div id="alphabet-grid-container" class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-1 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-48 overflow-y-auto">
-          </div>
-        </div>
       </div>
 
     </div>
   </div>
 
-  <!-- MODAL 1: QR & TEXTOVÝ KÓD PRO DRUHÉ ZAŘÍZENÍ (PERFEKTNĚ VYCENTROVÁNO) -->
+  <!-- MODAL 1: QR & TEXTOVÝ KÓD PRO DRUHÉ ZAŘÍZENÍ (PERFEKTNĚ VYCENTROVANÉ) -->
   <div id="sync-export-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3">
     <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-4 border-indigo-600 shadow-2xl text-center flex flex-col items-center">
       <div class="flex items-center justify-between w-full border-b pb-2 mb-3">
@@ -1404,9 +1519,9 @@
         Namiřte kamerou z druhého mobilu nebo zkopírujte kód do PC:
       </p>
 
-      <!-- Kontejner pro vygenerovaný QR kód (vycentrováno s pevnou šířkou) -->
-      <div class="w-full flex items-center justify-center p-3 bg-white border-3 border-indigo-200 rounded-2xl shadow-inner">
-        <div id="sync-qrcode-display" class="w-[200px] h-[200px] flex items-center justify-center mx-auto"></div>
+      <!-- Bílý rámeček pro vygenerovaný QR kód (vycentrováno flexboxem) -->
+      <div class="w-full flex items-center justify-center p-4 bg-slate-50 border-2 border-indigo-200 rounded-2xl shadow-inner">
+        <div id="sync-qrcode-display" class="w-[210px] h-[210px] flex items-center justify-center mx-auto bg-white p-2 rounded-xl border border-slate-200"></div>
       </div>
 
       <!-- Textový kód pro ruční přepsání na PC bez kamery -->
@@ -1434,8 +1549,7 @@
 
       <p class="text-xs text-slate-600 font-bold mb-2">Namiřte hledáček na QR kód zobrazený na tabletu:</p>
 
-      <div id="sync-camera-scanner-view" class="w-full aspect-square bg-black rounded-2xl overflow-hidden border-2 border-cyan-400">
-      </div>
+      <div id="sync-camera-scanner-view" class="w-full aspect-square bg-black rounded-2xl overflow-hidden border-2 border-cyan-400"></div>
 
       <div id="sync-camera-status" class="text-xs font-bold text-cyan-800 mt-2">
         Spouštím kameru... 🎥

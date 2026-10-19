@@ -39,7 +39,7 @@ const DEFAULT_REWARDS = {
   math:    { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 1.00, 7: 0.00 }
 };
 
-// Výchozí konfigurace pro Výjimečnou / Legendární truhlu[cite: 12]
+// Výchozí konfigurace pro Výjimečnou / Legendární truhlu
 const DEFAULT_LEGENDARY_CHEST = {
   active: false,
   title: 'ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE',
@@ -47,7 +47,7 @@ const DEFAULT_LEGENDARY_CHEST = {
   claimed: false
 };
 
-// Výchozí konfigurace pro denní zkoušku (TEST)[cite: 12]
+// Výchozí konfigurace pro denní zkoušku (TEST) - rozšířená o výběr témat
 const DEFAULT_TEST_CONFIG = {
   taskCount: 8,
   thresholds: [
@@ -56,10 +56,26 @@ const DEFAULT_TEST_CONFIG = {
     { minPercent: 65, diamonds: 2, label: 'Dobře (3)' },
     { minPercent: 50, diamonds: 1, label: 'Dostatečně (4)' },
     { minPercent: 0,  diamonds: 0, label: 'Zkus to znovu zítra' }
-  ]
+  ],
+  enabledTopics: {
+    // Okruhy ČTENÍ
+    reading_1: true, // 1. Písmena
+    reading_2: true, // 2. Slabiky
+    reading_3: true, // 3. Jednoslabičná slova
+    reading_4: true, // 4. Dvouslabičná slova
+    reading_5: true, // 5. Shluky / OU
+    reading_6: true, // 6. DĚ / TĚ / NĚ
+    reading_7: true, // 7. Celé věty
+    // Okruhy MATEMATIKA
+    math_1: true,    // 1. Počty / Desítky
+    math_2: true,    // 2. Porovnávání (<, =, >)
+    math_3: true,    // 3. Číselná řada
+    math_4: true,    // 4. Počítadlo (+/-)
+    math_5: true,    // 5. Rozklad čísel
+    math_6: true     // 6. Slovní úlohy
+  }
 };
 
-// Synchronizační verze a prefix pro rozpoznání platného řetězce
 const SYNC_PROTOCOL_VERSION = 'SKOLAK_SYNC_V1';
 
 const SVG_BENCH = `
@@ -83,7 +99,7 @@ const SVG_SHOVEL = `
   </svg>
 `;
 
-/* REVIDOVANÁ DATABÁZE HLÁSKOVÁNÍ[cite: 12] */
+/* REVIDOVANÁ DATABÁZE HLÁSKOVÁNÍ */
 const SPELLING_WORDS_DATABASE = [
   { w: 'MÁMA', e: '👩', syllables: 2 }, { w: 'TÁTA', e: '👨', syllables: 2 },
   { w: 'LÍPA', e: '🌳', syllables: 2 }, { w: 'VODA', e: '💧', syllables: 2 },
@@ -140,7 +156,7 @@ const SPELLING_WORDS_DATABASE = [
   { w: 'KOŠÍČEK', e: '🧺', syllables: 3 }, { w: 'PANENKA', e: '🪆', syllables: 3 }
 ];
 
-/* 3. ZÁLOŽKA: JEDNOSLABIČNÁ SMYSLUPLNÁ SLOVA (CVC)[cite: 12] */
+/* 3. ZÁLOŽKA: JEDNOSLABIČNÁ SMYSLUPLNÁ SLOVA (CVC) */
 const RAW_LEVEL_3_WORDS = [
   { t: 'LES', e: '🌲' }, { t: 'PES', e: '🐶' }, { t: 'PAS', e: '🛂' }, { t: 'PÁV', e: '🦚' },
   { t: 'PUK', e: '🏒' }, { t: 'PEC', e: '🧱' }, { t: 'POT', e: '💦' }, { t: 'PÍT', e: '🥛' },
@@ -164,7 +180,7 @@ const RAW_LEVEL_3_WORDS = [
   { t: 'VÝR', e: '🦉' }, { t: 'VŮZ', e: '🚗' }, { t: 'ŽÁR', e: '🔥' }
 ];
 
-/* 4. ZÁLOŽKA: DVOUSLABIČNÁ SKUTEČNÁ SLOVA[cite: 12] */
+/* 4. ZÁLOŽKA: DVOUSLABIČNÁ SKUTEČNÁ SLOVA */
 const RAW_LEVEL_4_WORDS = [
   { t: 'POLE', e: '🌾' }, { t: 'PUSA', e: '💋' }, { t: 'PÍŠE', e: '✍️' }, { t: 'PILA', e: '🪚' },
   { t: 'PATA', e: '🦶' }, { t: 'PÁRA', e: '💨' }, { t: 'PÁLÍ', e: '🔥' }, { t: 'PEPA', e: '👦' },
@@ -190,7 +206,7 @@ const RAW_LEVEL_4_WORDS = [
   { t: 'NULA', e: '0️⃣' }, { t: 'ŘEKA', e: '🌊' }, { t: 'ŽENA', e: '👩' }, { t: 'ŽITO', e: '🌾' }
 ];
 
-/* 5. ZÁLOŽKA: SOUHLÁSKOVÉ SHLUKY A DVOJHLÁSKA OU[cite: 12] */
+/* 5. ZÁLOŽKA: SOUHLÁSKOVÉ SHLUKY A DVOJHLÁSKA OU */
 const RAW_LEVEL_5_WORDS = [
   { t: 'MÁSLO', e: '🧈' }, { t: 'AUTO', e: '🚗' }, { t: 'MOUKA', e: '🌾' }, { t: 'KOULE', e: '⚪' },
   { t: 'BOUDA', e: '🐶' }, { t: 'MOUCHA', e: '🪰' }, { t: 'FOUKÁ', e: '💨' }, { t: 'LOUKA', e: '🌼' },
@@ -204,7 +220,7 @@ const RAW_LEVEL_5_WORDS = [
   { t: 'STOPA', e: '🐾' }, { t: 'TRÁVA', e: '🌱' }, { t: 'STROM', e: '🌳' }
 ];
 
-/* 6. ZÁLOŽKA: MĚKČENÉ HLÁSKY (DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ)[cite: 12] */
+/* 6. ZÁLOŽKA: MĚKČENÉ HLÁSKY (DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ) */
 const RAW_LEVEL_6_WORDS = [
   { t: 'DĚDA', e: '👴' }, { t: 'DĚTI', e: '🧒' }, { t: 'TĚLO', e: '🧍' }, { t: 'KOTĚ', e: '🐱' },
   { t: 'KONĚ', e: '🐎' }, { t: 'VĚTEV', e: '🌿' }, { t: 'MĚSTO', e: '🏙️' }, { t: 'BĚŽÍ', e: '🏃' },
@@ -216,7 +232,7 @@ const RAW_LEVEL_6_WORDS = [
   { t: 'CIBULE', e: '🧅' }, { t: 'TICHO', e: '🤫' }
 ];
 
-/* 7. ZÁLOŽKA: REVIDOVANÉ VĚTY ZE SLABIKÁŘE[cite: 12] */
+/* 7. ZÁLOŽKA: REVIDOVANÉ VĚTY ZE SLABIKÁŘE */
 const RAW_LEVEL_7_SENTENCES = [
   { t: 'EMA MÁ MÁSLO.', e: '👧🧈' }, { t: 'MÁMA MELE MASO.', e: '👩⚙️' },
   { t: 'EMA MÁ MASO.', e: '👧🥩' }, { t: 'ÁLA MELE MASO.', e: '👧🥣' },
