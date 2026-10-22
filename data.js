@@ -1,8 +1,10 @@
 /* ============================================================
    data.js - Školácká Mise
    Didaktická databáze pro 1. třídu ZŠ:
-   Slovní zásoba, slabiky, věty, Pokémoni, odměny, TEST modul
-   a synchronizační struktury
+   - Slovní úlohy s celočíselnou dělitelností, násobením i odčítáním bez zbytků
+   - Vektorové skiny Minecraft, Pokémon & Sonic postaviček pro 3D šatník
+   - Tapetová grafická témata (Minecraft, Pokémon, Sonic světy)
+   - Fanfárové a melodické zvukové balíčky
    ============================================================ */
 
 const FULL_CZECH_ALPHABET = [
@@ -31,7 +33,7 @@ const NATURAL_CONSONANTS = [
   'D', 'Ď', 'K', 'C', 'Č', 'B', 'H', 'CH', 'R', 'Ř', 'F', 'G'
 ];
 
-const MATH_EMOJIS = ['🍎', '🍐', '🚗', '⭐', '🎈', '🐶', '🐱', '⚽', '🍬', '🦊', '🚀'];
+const MATH_EMOJIS = ['🍎', '🍐', '🚗', '⭐', '🎈', '🐶', '🐱', '⚽', '🍬', '🦊', '🚀', '⛏️', '⚡', '💍'];
 
 const DEFAULT_REWARDS = {
   questRate: 1.0,
@@ -39,7 +41,6 @@ const DEFAULT_REWARDS = {
   math:    { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 1.00, 7: 0.00 }
 };
 
-// Výchozí konfigurace pro Výjimečnou / Legendární truhlu
 const DEFAULT_LEGENDARY_CHEST = {
   active: false,
   title: 'ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE',
@@ -47,7 +48,6 @@ const DEFAULT_LEGENDARY_CHEST = {
   claimed: false
 };
 
-// Výchozí konfigurace pro denní zkoušku (TEST) - rozšířená o výběr témat
 const DEFAULT_TEST_CONFIG = {
   taskCount: 8,
   thresholds: [
@@ -58,25 +58,510 @@ const DEFAULT_TEST_CONFIG = {
     { minPercent: 0,  diamonds: 0, label: 'Zkus to znovu zítra' }
   ],
   enabledTopics: {
-    // Okruhy ČTENÍ
-    reading_1: true, // 1. Písmena
-    reading_2: true, // 2. Slabiky
-    reading_3: true, // 3. Jednoslabičná slova
-    reading_4: true, // 4. Dvouslabičná slova
-    reading_5: true, // 5. Shluky / OU
-    reading_6: true, // 6. DĚ / TĚ / NĚ
-    reading_7: true, // 7. Celé věty
-    // Okruhy MATEMATIKA
-    math_1: true,    // 1. Počty / Desítky
-    math_2: true,    // 2. Porovnávání (<, =, >)
-    math_3: true,    // 3. Číselná řada
-    math_4: true,    // 4. Počítadlo (+/-)
-    math_5: true,    // 5. Rozklad čísel
-    math_6: true     // 6. Slovní úlohy
+    reading_1: true,
+    reading_2: true,
+    reading_3: true,
+    reading_4: true,
+    reading_5: true,
+    reading_6: true,
+    reading_7: true,
+    math_1: true,
+    math_2: true,
+    math_3: true,
+    math_4: true,
+    math_5: true,
+    math_6: true
   }
 };
 
-const SYNC_PROTOCOL_VERSION = 'SKOLAK_SYNC_V1';
+/* ============================================================
+   DIDAKTICKÁ DATABÁZE SLOVNÍCH ÚLOH S CELOČÍSELNÝM DĚLENÍM A NÁSOBENÍM
+   Garantuje celá čísla pro limity: do 10, 20, 30, 40
+   ============================================================ */
+
+function getRandomDivisiblePair(maxLimit, minUnits = 2, maxUnits = 6) {
+  const unitsCount = Math.floor(Math.random() * (maxUnits - minUnits + 1)) + minUnits;
+  const validPrices = [2, 3, 4, 5, 6, 8, 10].filter(p => p * unitsCount <= maxLimit);
+  const price = validPrices.length > 0 
+    ? validPrices[Math.floor(Math.random() * validPrices.length)]
+    : 2;
+  const total = unitsCount * price;
+  return { units: unitsCount, price: price, total: total };
+}
+
+const WORD_PROBLEMS_TEMPLATES = [
+  // 1. NÁKUP BALENÍ / BONBÓNŮ (Dělení beze zbytku: celkem Kč / cena za kus)
+  {
+    type: 'division_purchase',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const pair = getRandomDivisiblePair(limit, 2, limit >= 30 ? 6 : 4);
+      return {
+        story: `Eliška chtěla koupit bonbóny. Jeden bonbón stojí ${pair.price} Kč. Maminka jí dala do obchodu ${pair.total} Kč. Kolik bonbónů si mohla Eliška koupit?`,
+        formula: `${pair.total} ÷ ${pair.price} = ?`,
+        a: pair.total,
+        b: pair.price,
+        op: '÷',
+        correctAnswer: pair.units.toString()
+      };
+    }
+  },
+  // 2. SPOČÍTÁNÍ BALÍČKŮ S NÁLEPKAMI
+  {
+    type: 'division_stickers',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const pair = getRandomDivisiblePair(limit, 2, 5);
+      return {
+        story: `V papírnictví mají balíček Pokémon samolepek za ${pair.price} Kč. Míša má našetřeno přesně ${pair.total} Kč. Kolik balíčků si může koupit?`,
+        formula: `${pair.total} ÷ ${pair.price} = ?`,
+        a: pair.total,
+        b: pair.price,
+        op: '÷',
+        correctAnswer: pair.units.toString()
+      };
+    }
+  },
+  // 3. ROZDĚLENÍ PŘEDMĚTŮ ROVNÝM DÍLEM (Dělení do skupin/kapes/truhel)
+  {
+    type: 'group_distribution',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const pair = getRandomDivisiblePair(limit, 2, 4);
+      return {
+        story: `Steve vytěžil v dole ${pair.total} diamantů 💎 a chce je rozdělit rovným dílem do ${pair.units} svých truhel. Kolik diamantů dá do každé truhly?`,
+        formula: `${pair.total} ÷ ${pair.units} = ?`,
+        a: pair.total,
+        b: pair.units,
+        op: '÷',
+        correctAnswer: pair.price.toString()
+      };
+    }
+  },
+  // 4. POKÉMON BALL ROZDĚLENÍ MEZI TRENÉRY
+  {
+    type: 'pokemon_division',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const pair = getRandomDivisiblePair(limit, 2, 4);
+      return {
+        story: `Trenér Ash měl ${pair.total} Pokéballů a rozdělil je spravedlivě mezi ${pair.units} kamarády. Kolik Pokéballů dostal každý z nich?`,
+        formula: `${pair.total} ÷ ${pair.units} = ?`,
+        a: pair.total,
+        b: pair.units,
+        op: '÷',
+        correctAnswer: pair.price.toString()
+      };
+    }
+  },
+  // 5. NÁSOBENÍ - KOUPI N KUSŮ ZA X KČ
+  {
+    type: 'multiplication_cost',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const pair = getRandomDivisiblePair(limit, 2, 5);
+      return {
+        story: `Míša koupil do školy ${pair.units} sešity. Každý sešit stál ${pair.price} Kč. Kolik korun zaplatil u pokladny celkem?`,
+        formula: `${pair.units} × ${pair.price} = ?`,
+        a: pair.units,
+        b: pair.price,
+        op: '×',
+        correctAnswer: pair.total.toString()
+      };
+    }
+  },
+  // 6. ODČÍTÁNÍ - KOLIK PENĚZ NEBO VĚCÍ ZBYLO
+  {
+    type: 'subtraction_change',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const total = Math.floor(Math.random() * (limit - 6)) + 6;
+      const spent = Math.floor(Math.random() * (total - 3)) + 2;
+      return {
+        story: `Eliška měla v peněžence ${total} Kč. V obchodě utratila za sladké lízátko ${spent} Kč. Kolik korun jí v peněžence zbylo?`,
+        formula: `${total} − ${spent} = ?`,
+        a: total,
+        b: spent,
+        op: '−',
+        correctAnswer: (total - spent).toString()
+      };
+    }
+  },
+  // 7. POROVNÁVÁNÍ ROZDÍLEM (O kolik více / méně)
+  {
+    type: 'difference_comparison',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const a = Math.floor(Math.random() * (limit - 8)) + 8;
+      const b = Math.floor(Math.random() * (a - 3)) + 2;
+      return {
+        story: `Míša posbíral ve hře ${a} zlatých prstenů 💍 a táta posbíral ${b} prstenů. O kolik prstenů má Míša více než táta?`,
+        formula: `${a} − ${b} = ?`,
+        a: a,
+        b: b,
+        op: '−',
+        correctAnswer: (a - b).toString()
+      };
+    }
+  },
+  // 8. MINECRAFT STAVBA (Sčítání na celek)
+  {
+    type: 'addition_building',
+    make: (maxVal) => {
+      const limit = Math.min(Math.max(10, maxVal), 40);
+      const a = Math.floor(Math.random() * (limit - 5)) + 2;
+      const b = Math.floor(Math.random() * (limit - a - 1)) + 1;
+      return {
+        story: `Alex položila na střechu ${a} kamenných bloků a ${b} dřevěných trámů. Kolik kostek použila na celou střechu?`,
+        formula: `${a} + ${b} = ?`,
+        a: a,
+        b: b,
+        op: '+',
+        correctAnswer: (a + b).toString()
+      };
+    }
+  }
+];
+
+/* ============================================================
+   ROZŠÍŘENÁ DATABÁZE GRAFICKÝCH SKINŮ PRO 3D ŠATNÍK
+   (Minecraft, Pokémon, Sonic)
+   ============================================================ */
+
+const AVATAR_SKINS_DATABASE = [
+  {
+    id: 'steve',
+    name: 'Steve (Minecraft)',
+    category: 'minecraft',
+    price: 0,
+    accentColor: '#0284c7',
+    description: 'Klasický hrdina v tyrkysovém tričku z Minecraftu.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#0284c7"/>
+        <rect x="4" y="2" width="8" height="8" fill="#c68b59"/>
+        <rect x="4" y="2" width="8" height="2" fill="#452817"/>
+        <rect x="4" y="2" width="2" height="4" fill="#452817"/>
+        <rect x="10" y="2" width="2" height="4" fill="#452817"/>
+        <rect x="4" y="5" width="2" height="1" fill="#ffffff"/>
+        <rect x="5" y="5" width="1" height="1" fill="#4338ca"/>
+        <rect x="10" y="5" width="2" height="1" fill="#ffffff"/>
+        <rect x="10" y="5" width="1" height="1" fill="#4338ca"/>
+        <rect x="7" y="6" width="2" height="1" fill="#99583b"/>
+        <rect x="6" y="7" width="4" height="1" fill="#452817"/>
+        <rect x="3" y="10" width="10" height="6" fill="#06b6d4"/>
+      </svg>
+    `
+  },
+  {
+    id: 'alex',
+    name: 'Alex (Minecraft)',
+    category: 'minecraft',
+    price: 5,
+    accentColor: '#16a34a',
+    description: 'Bojovnice se zrzavými vlasy a zeleným oblekem.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#15803d"/>
+        <rect x="4" y="2" width="8" height="8" fill="#fbcfe8"/>
+        <rect x="3" y="2" width="10" height="3" fill="#ea580c"/>
+        <rect x="3" y="2" width="3" height="6" fill="#ea580c"/>
+        <rect x="11" y="2" width="2" height="6" fill="#ea580c"/>
+        <rect x="5" y="5" width="2" height="1" fill="#ffffff"/>
+        <rect x="6" y="5" width="1" height="1" fill="#16a34a"/>
+        <rect x="9" y="5" width="2" height="1" fill="#ffffff"/>
+        <rect x="9" y="5" width="1" height="1" fill="#16a34a"/>
+        <rect x="3" y="10" width="10" height="6" fill="#65a30d"/>
+      </svg>
+    `
+  },
+  {
+    id: 'creeper',
+    name: 'Creeper (Minecraft)',
+    category: 'minecraft',
+    price: 8,
+    accentColor: '#22c55e',
+    description: 'Zelený kamarád s pixelovým úsměvem.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#166534"/>
+        <rect x="2" y="2" width="12" height="12" fill="#22c55e"/>
+        <rect x="4" y="4" width="2" height="2" fill="#052e16"/>
+        <rect x="10" y="4" width="2" height="2" fill="#052e16"/>
+        <rect x="7" y="6" width="2" height="3" fill="#052e16"/>
+        <rect x="6" y="7" width="4" height="4" fill="#052e16"/>
+        <rect x="5" y="9" width="2" height="3" fill="#052e16"/>
+        <rect x="9" y="9" width="2" height="3" fill="#052e16"/>
+      </svg>
+    `
+  },
+  {
+    id: 'enderman',
+    name: 'Enderman (Minecraft)',
+    category: 'minecraft',
+    price: 10,
+    accentColor: '#a855f7',
+    description: 'Tajemný noční tvor s fialovýma zářícíma očima.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#0b0f19"/>
+        <rect x="2" y="2" width="12" height="12" fill="#090d16"/>
+        <rect x="3" y="7" width="4" height="2" fill="#c084fc"/>
+        <rect x="4" y="7" width="2" height="2" fill="#fdf4ff"/>
+        <rect x="9" y="7" width="4" height="2" fill="#c084fc"/>
+        <rect x="10" y="7" width="2" height="2" fill="#fdf4ff"/>
+      </svg>
+    `
+  },
+  {
+    id: 'wolf_mc',
+    name: 'Ochočený Vlk (Minecraft)',
+    category: 'minecraft',
+    price: 12,
+    accentColor: '#ef4444',
+    description: 'Věrný vlk s červeným obojkem.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#475569"/>
+        <polygon points="3,2 5,5 3,5" fill="#cbd5e1"/>
+        <polygon points="13,2 11,5 13,5" fill="#cbd5e1"/>
+        <rect x="4" y="3" width="8" height="7" fill="#e2e8f0"/>
+        <rect x="5" y="5" width="1.5" height="1.5" fill="#0f172a"/>
+        <rect x="9.5" y="5" width="1.5" height="1.5" fill="#0f172a"/>
+        <rect x="6.5" y="7" width="3" height="2" fill="#334155"/>
+        <rect x="3" y="10" width="10" height="2" fill="#ef4444"/>
+        <rect x="4" y="12" width="8" height="4" fill="#cbd5e1"/>
+      </svg>
+    `
+  },
+  {
+    id: 'pikachu_avatar',
+    name: 'Pikachu (Pokémon)',
+    category: 'pokemon',
+    price: 6,
+    accentColor: '#facc15',
+    description: 'Oblíbený bleskový parťák se žlutými oušky a červenými tvářičkami.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#ca8a04"/>
+        <polygon points="2,1 5,5 3,6" fill="#eab308"/>
+        <polygon points="2,1 3,3 2,3" fill="#0f172a"/>
+        <polygon points="14,1 11,5 13,6" fill="#eab308"/>
+        <polygon points="14,1 13,3 14,3" fill="#0f172a"/>
+        <circle cx="8" cy="9" r="6" fill="#facc15"/>
+        <circle cx="5" cy="8" r="1.2" fill="#0f172a"/>
+        <circle cx="5.2" cy="7.8" r="0.4" fill="#ffffff"/>
+        <circle cx="11" cy="8" r="1.2" fill="#0f172a"/>
+        <circle cx="11.2" cy="7.8" r="0.4" fill="#ffffff"/>
+        <circle cx="3.5" cy="10" r="1.4" fill="#ef4444"/>
+        <circle cx="12.5" cy="10" r="1.4" fill="#ef4444"/>
+        <circle cx="8" cy="9.2" r="0.5" fill="#713f12"/>
+        <path d="M7 10.5 Q8 11.5 9 10.5" stroke="#713f12" stroke-width="0.8" fill="none"/>
+      </svg>
+    `
+  },
+  {
+    id: 'eevee_avatar',
+    name: 'Eevee (Pokémon)',
+    category: 'pokemon',
+    price: 8,
+    accentColor: '#b45309',
+    description: 'Roztomilý hnědý Pokémon s hebkým límečkem.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#78350f"/>
+        <polygon points="1,2 6,5 2,6" fill="#92400e"/>
+        <polygon points="15,2 10,5 14,6" fill="#92400e"/>
+        <circle cx="8" cy="8.5" r="5.5" fill="#b45309"/>
+        <circle cx="6" cy="8" r="1" fill="#0f172a"/>
+        <circle cx="10" cy="8" r="1" fill="#0f172a"/>
+        <circle cx="8" cy="9.5" r="0.5" fill="#0f172a"/>
+        <ellipse cx="8" cy="13.5" rx="5" ry="2.5" fill="#fef08a"/>
+      </svg>
+    `
+  },
+  {
+    id: 'squirtle_avatar',
+    name: 'Squirtle (Pokémon)',
+    category: 'pokemon',
+    price: 9,
+    accentColor: '#38bdf8',
+    description: 'Vodní želvička s modrým krunýřem.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#0369a1"/>
+        <circle cx="8" cy="8" r="6.5" fill="#7dd3fc"/>
+        <ellipse cx="5.5" cy="7.5" rx="1" ry="1.5" fill="#7c2d12"/>
+        <circle cx="5.5" cy="7" r="0.4" fill="#ffffff"/>
+        <ellipse cx="10.5" cy="7.5" rx="1" ry="1.5" fill="#7c2d12"/>
+        <circle cx="10.5" cy="7" r="0.4" fill="#ffffff"/>
+        <path d="M6 10 Q8 11.5 10 10" stroke="#0369a1" stroke-width="1" fill="none"/>
+      </svg>
+    `
+  },
+  {
+    id: 'gengar_avatar',
+    name: 'Gengar (Pokémon)',
+    category: 'pokemon',
+    price: 11,
+    accentColor: '#7e22ce',
+    description: 'Fialový stínový rošťák se zubatým úsměvem.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#4c1d95"/>
+        <polygon points="3,1 5,4 2,4" fill="#6b21a8"/>
+        <polygon points="13,1 11,4 14,4" fill="#6b21a8"/>
+        <circle cx="8" cy="8.5" r="6" fill="#7e22ce"/>
+        <polygon points="4,6 7,7 5,8" fill="#ef4444"/>
+        <polygon points="12,6 9,7 11,8" fill="#ef4444"/>
+        <path d="M4 10 Q8 14 12 10 Z" fill="#ffffff"/>
+        <line x1="6" y1="10" x2="6" y2="12" stroke="#4c1d95" stroke-width="0.8"/>
+        <line x1="8" y1="10" x2="8" y2="12.5" stroke="#4c1d95" stroke-width="0.8"/>
+        <line x1="10" y1="10" x2="10" y2="12" stroke="#4c1d95" stroke-width="0.8"/>
+      </svg>
+    `
+  },
+  {
+    id: 'sonic_avatar',
+    name: 'Ježek Sonic',
+    category: 'sonic',
+    price: 12,
+    accentColor: '#2563eb',
+    description: 'Nejrychlejší modrý ježek na světě.',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#1e3a8a"/>
+        <polygon points="2,1 6,4 2,5" fill="#2563eb"/>
+        <polygon points="0,5 5,7 1,8" fill="#2563eb"/>
+        <polygon points="1,9 5,10 1,12" fill="#2563eb"/>
+        <circle cx="9" cy="8" r="6" fill="#2563eb"/>
+        <ellipse cx="9" cy="7" rx="3.5" ry="3" fill="#ffffff"/>
+        <ellipse cx="9" cy="7" rx="1.5" ry="2" fill="#0284c7"/>
+        <circle cx="9" cy="7" r="0.8" fill="#0f172a"/>
+        <ellipse cx="10" cy="10" rx="3.5" ry="2.5" fill="#fed7aa"/>
+        <circle cx="12.5" cy="9.5" r="0.9" fill="#0f172a"/>
+      </svg>
+    `
+  },
+  {
+    id: 'diamond_knight',
+    name: 'Diamantový Rytíř',
+    category: 'minecraft',
+    price: 15,
+    accentColor: '#06b6d4',
+    description: 'Kompletní diamantové brnění s helmou!',
+    svg: `
+      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="16" height="16" rx="3" fill="#0e7490"/>
+        <rect x="3" y="2" width="10" height="9" fill="#06b6d4"/>
+        <rect x="5" y="4" width="6" height="2" fill="#083344"/>
+        <rect x="7" y="6" width="2" height="3" fill="#083344"/>
+        <rect x="2" y="11" width="12" height="5" fill="#22d3ee"/>
+      </svg>
+    `
+  }
+];
+
+/* ============================================================
+   GRAFICKÁ TÉMATA A TAPETY NA POZADÍ (3 NOVÉ SVĚTY)
+   ============================================================ */
+
+const APP_THEMES_DATABASE = [
+  {
+    id: 'theme-sky',
+    name: 'Modrá Obloha (Základní)',
+    price: 0,
+    class: 'theme-sky',
+    previewGradient: 'linear-gradient(180deg, #7dd3fc, #fef3c7)',
+    description: 'Příjemné čisté denní světlo s jemným přechodem.'
+  },
+  {
+    id: 'theme-wallpaper-minecraft',
+    name: 'Minecraft Svět (Tapeta) 🟩',
+    price: 10,
+    class: 'theme-wallpaper-minecraft',
+    previewGradient: 'linear-gradient(135deg, #1e3f17 0%, #2e5324 50%, #15803d 100%)',
+    description: 'Kvalitní zelená tapeta s rudami diamantů, Creeperem, Endermanem a kostkami.'
+  },
+  {
+    id: 'theme-wallpaper-pokemon',
+    name: 'Pokémon Svět (Tapeta) ⚡',
+    price: 10,
+    class: 'theme-wallpaper-pokemon',
+    previewGradient: 'linear-gradient(135deg, #bfdbfe 0%, #dbeafe 50%, #fef08a 100%)',
+    description: 'Jemná tapeta s Poké bally, siluetou Pikachu, blesky a Great bally.'
+  },
+  {
+    id: 'theme-wallpaper-sonic',
+    name: 'Sonicův Modrý Svět (Tapeta) 🌀',
+    price: 12,
+    class: 'theme-wallpaper-sonic',
+    previewGradient: 'linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #38bdf8 100%)',
+    description: 'Modrá stylová tapeta se zlatými prsteny (rings), Sonicem a bleskovou stopou.'
+  },
+  {
+    id: 'theme-space',
+    name: 'Hluboký Noční Vesmír',
+    price: 10,
+    class: 'theme-space',
+    previewGradient: 'radial-gradient(circle, #1e1b4b, #020617)',
+    description: 'Tmavé pozadí pro večerní čtení bez oslnění.'
+  },
+  {
+    id: 'theme-gold',
+    name: 'Zlatý Šampionský Palác',
+    price: 10,
+    class: 'theme-gold',
+    previewGradient: 'linear-gradient(180deg, #fde047, #d97706)',
+    description: 'Zlaté luxusní téma pro nejlepší počtáře.'
+  }
+];
+
+/* ============================================================
+   SPECIÁLNÍ ZVUKOVÉ BALÍČKY A FANFÁRY
+   ============================================================ */
+
+const SOUND_PACKS_DATABASE = [
+  {
+    id: 'sound-classic',
+    name: 'Jemný Fanfárový Tón',
+    price: 0,
+    description: 'Příjemné trojtónové cinknutí při správném řešení.'
+  },
+  {
+    id: 'sound-pikachu-voice',
+    name: 'Pikachu Pika-Pika! ⚡',
+    price: 8,
+    description: 'Radostný hlas Pikachu s jiskřivým akordem.'
+  },
+  {
+    id: 'sound-royal-fanfare',
+    name: 'Královská Pochvalná Fanfára 🎺',
+    price: 8,
+    description: 'Slavnostní trubková fanfára pro velké úspěchy.'
+  },
+  {
+    id: 'sound-sonic-ring',
+    name: 'Sonic Ring & Rychlost 💍',
+    price: 7,
+    description: 'Křišťálový zvuk sebrání zlatého prstýnku ježka Sonica.'
+  },
+  {
+    id: 'sound-mc-level',
+    name: 'Minecraft Level-Up Ding 🔔',
+    price: 7,
+    description: 'Ikonické cinknutí zkušeností a získání nového levelu.'
+  }
+];
+
+const DEFAULT_UNLOCKED_CUSTOMIZATIONS = {
+  activeSkin: 'steve',
+  activeTheme: 'theme-sky',
+  activeSound: 'sound-classic',
+  unlockedSkins: ['steve'],
+  unlockedThemes: ['theme-sky'],
+  unlockedSounds: ['sound-classic']
+};
 
 const SVG_BENCH = `
   <svg class="bench-icon-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -156,7 +641,7 @@ const SPELLING_WORDS_DATABASE = [
   { w: 'KOŠÍČEK', e: '🧺', syllables: 3 }, { w: 'PANENKA', e: '🪆', syllables: 3 }
 ];
 
-/* 3. ZÁLOŽKA: JEDNOSLABIČNÁ SMYSLUPLNÁ SLOVA (CVC) */
+/* 3. ZÁLOŽKA: JEDNOSLABIČNÁ SLOVA (CVC) */
 const RAW_LEVEL_3_WORDS = [
   { t: 'LES', e: '🌲' }, { t: 'PES', e: '🐶' }, { t: 'PAS', e: '🛂' }, { t: 'PÁV', e: '🦚' },
   { t: 'PUK', e: '🏒' }, { t: 'PEC', e: '🧱' }, { t: 'POT', e: '💦' }, { t: 'PÍT', e: '🥛' },
@@ -220,7 +705,7 @@ const RAW_LEVEL_5_WORDS = [
   { t: 'STOPA', e: '🐾' }, { t: 'TRÁVA', e: '🌱' }, { t: 'STROM', e: '🌳' }
 ];
 
-/* 6. ZÁLOŽKA: MĚKČENÉ HLÁSKY (DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ) */
+/* 6. ZÁLOŽKA: MĚKČENÉ HLÁSKY */
 const RAW_LEVEL_6_WORDS = [
   { t: 'DĚDA', e: '👴' }, { t: 'DĚTI', e: '🧒' }, { t: 'TĚLO', e: '🧍' }, { t: 'KOTĚ', e: '🐱' },
   { t: 'KONĚ', e: '🐎' }, { t: 'VĚTEV', e: '🌿' }, { t: 'MĚSTO', e: '🏙️' }, { t: 'BĚŽÍ', e: '🏃' },
@@ -232,7 +717,7 @@ const RAW_LEVEL_6_WORDS = [
   { t: 'CIBULE', e: '🧅' }, { t: 'TICHO', e: '🤫' }
 ];
 
-/* 7. ZÁLOŽKA: REVIDOVANÉ VĚTY ZE SLABIKÁŘE */
+/* 7. ZÁLOŽKA: VĚTY ZE SLABIKÁŘE */
 const RAW_LEVEL_7_SENTENCES = [
   { t: 'EMA MÁ MÁSLO.', e: '👧🧈' }, { t: 'MÁMA MELE MASO.', e: '👩⚙️' },
   { t: 'EMA MÁ MASO.', e: '👧🥩' }, { t: 'ÁLA MELE MASO.', e: '👧🥣' },
@@ -284,17 +769,5 @@ const POKEMON_ROSTER = [
   { id: 151, name: 'Mew', color: '#F9A8D4', stroke: '#DB2777' },
   { id: 175, name: 'Togepi', color: '#FEF08A', stroke: '#CA8A04' },
   { id: 54, name: 'Psyduck', color: '#FDE047', stroke: '#A16207' },
-  { id: 6, name: 'Charizard', color: '#EA580C', stroke: '#9A3412' },
-  { id: 9, name: 'Blastoise', color: '#38BDF8', stroke: '#0369A1' },
-  { id: 3, name: 'Venusaur', color: '#34D399', stroke: '#065F46' },
-  { id: 196, name: 'Espeon', color: '#C084FC', stroke: '#7E22CE' },
-  { id: 197, name: 'Umbreon', color: '#475569', stroke: '#0F172A' },
-  { id: 131, name: 'Lapras', color: '#38BDF8', stroke: '#0284C7' },
-  { id: 149, name: 'Dragonite', color: '#F59E0B', stroke: '#B45309' },
-  { id: 258, name: 'Mudkip', color: '#38BDF8', stroke: '#0369A1' },
-  { id: 393, name: 'Piplup', color: '#60A5FA', stroke: '#1E40AF' },
-  { id: 448, name: 'Lucario', color: '#0284C7', stroke: '#075985' },
-  { id: 150, name: 'Mewtwo', color: '#E2E8F0', stroke: '#64748B' },
-  { id: 252, name: 'Treecko', color: '#22C55E', stroke: '#15803D' },
-  { id: 255, name: 'Torchic', color: '#FB923C', stroke: '#C2410C' }
+  { id: 6, name: 'Charizard', color: '#EA580C', stroke: '#9A3412' }
 ];

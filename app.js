@@ -1,139 +1,14 @@
 /* ============================================================
    app.js - Školácká Mise
-   Herní logika, počítání úkolů, Duolingo řady (včetně 7. dne s gemy),
-   audio, grafická omalovánka, diamantový trh, legendární truhla,
-   MODULÁRNÍ TESTOVACÍ MODUL (bez obrázků) a SYNCHRONIZACE
+   Hlavní herní jádro:
+   - Didaktické procvičování čtení a matematiky pro 1. třídu ZŠ
+   - Skrývání a odkrývání nápovědného výpočtu u slovních úloh
+   - Denní výzvy, streak, truhly, obchod za mince i diamanty
+   - Administrace a modulární testování znalostí
    ============================================================ */
 
-const APP_VERSION = '5.0';
-const STORAGE_KEY = 'ctenarska_mise_v18_modular_admin';
-
-let audioCtx = null;
-function getAudioContext() {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  return audioCtx;
-}
-
-function playTone(freq = 440, duration = 0.1, type = 'sine', gainVal = 0.15) {
-  try {
-    const ctx = getAudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = type;
-    osc.frequency.setValueAtTime(freq, ctx.currentTime);
-    gain.gain.setValueAtTime(gainVal, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + duration);
-  } catch (e) {}
-}
-
-function soundSuccess() {
-  playTone(523.25, 0.1, 'triangle', 0.2);
-  setTimeout(() => playTone(659.25, 0.1, 'triangle', 0.2), 100);
-  setTimeout(() => playTone(783.99, 0.2, 'triangle', 0.25), 200);
-}
-
-function soundError() {
-  playTone(250, 0.12, 'sawtooth', 0.2);
-  setTimeout(() => playTone(180, 0.2, 'sawtooth', 0.2), 120);
-}
-
-function soundShuffle() {
-  playTone(400, 0.08, 'sine', 0.15);
-  setTimeout(() => playTone(300, 0.08, 'sine', 0.15), 60);
-}
-
-function soundPurchase() {
-  playTone(587.33, 0.08, 'square', 0.15);
-  setTimeout(() => playTone(880.00, 0.2, 'triangle', 0.25), 100);
-}
-
-function soundChestOpening() {
-  for (let i = 0; i < 4; i++) {
-    setTimeout(() => playTone(300 + i * 80, 0.09, 'sawtooth', 0.15), i * 140);
-  }
-}
-
-/* ČESKÁ VÝUKOVÁ VÝSLOVNOST (TTS) */
-function sanitizeForCzechPedagogicalTTS(text) {
-  if (!text) return '';
-  let clean = text.trim();
-  if (clean.includes(' ')) return clean.toLowerCase();
-
-  if (clean.length === 1) {
-    const singleLetterSounds = {
-      'A': 'á', 'Á': 'á', 'B': 'bé', 'C': 'cé', 'Č': 'čé',
-      'D': 'dé', 'Ď': 'ďé', 'E': 'é', 'É': 'é', 'Ě': 'je',
-      'F': 'ef', 'G': 'gé', 'H': 'há', 'CH': 'chá', 'I': 'í',
-      'Í': 'í', 'J': 'jé', 'K': 'ká', 'L': 'el', 'M': 'em',
-      'N': 'en', 'Ň': 'eň', 'O': 'ó', 'Ó': 'ó', 'P': 'pé',
-      'Q': 'kvé', 'R': 'er', 'Ř': 'eř', 'S': 'es', 'Š': 'eš',
-      'T': 'té', 'Ť': 'ťé', 'U': 'ú', 'Ú': 'ú', 'Ů': 'ú',
-      'V': 'vé', 'W': 'dvojité vé', 'X': 'iks', 'Y': 'ypsilon',
-      'Ý': 'dlouhé ypsilon', 'Z': 'zet', 'Ž': 'žet'
-    };
-    const u = clean.toUpperCase();
-    return singleLetterSounds[u] || clean.toLowerCase();
-  }
-
-  let phonetic = clean.toLowerCase();
-  phonetic = phonetic.replace(/ů/g, 'ú');
-  phonetic = phonetic
-    .replace(/^dě/, 'ďe')
-    .replace(/^tě/, 'ťe')
-    .replace(/^ně/, 'ňe')
-    .replace(/^di/, 'ďi')
-    .replace(/^ti/, 'ťi')
-    .replace(/^ni/, 'ňi')
-    .replace(/^dí/, 'ďí')
-    .replace(/^tí/, 'ťí')
-    .replace(/^ní/, 'ňí');
-
-  return phonetic;
-}
-
-function speakCzechWordWithCallback(text, rateModifier = 0.8, onEndCallback = null) {
-  if (!('speechSynthesis' in window)) {
-    if (onEndCallback) setTimeout(onEndCallback, 600);
-    return;
-  }
-  try {
-    window.speechSynthesis.cancel();
-    const speechText = sanitizeForCzechPedagogicalTTS(text);
-    const utterance = new SpeechSynthesisUtterance(speechText);
-    utterance.lang = 'cs-CZ';
-    utterance.rate = rateModifier; 
-    utterance.pitch = 1.0;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const czechVoice = voices.find(v => v.lang.startsWith('cs') || v.lang.includes('Czech') || v.lang.includes('cs_CZ'));
-    if (czechVoice) utterance.voice = czechVoice;
-
-    let handled = false;
-    utterance.onend = () => {
-      if (!handled) { handled = true; if (onEndCallback) onEndCallback(); }
-    };
-    utterance.onerror = () => {
-      if (!handled) { handled = true; if (onEndCallback) onEndCallback(); }
-    };
-    window.speechSynthesis.speak(utterance);
-    setTimeout(() => { if (!handled) { handled = true; if (onEndCallback) onEndCallback(); } }, 2500);
-  } catch (e) {
-    if (onEndCallback) onEndCallback();
-  }
-}
-
-function speakCzechWord(text, rateModifier = 0.8) {
-  speakCzechWordWithCallback(text, rateModifier, null);
-}
+const APP_VERSION = '5.2';
+const STORAGE_KEY = 'ctenarska_mise_v20_modular';
 
 function triggerConfetti() {
   const canvas = document.getElementById('confetti-canvas');
@@ -249,8 +124,12 @@ let state = {
   streakDays: 0,
   streakLastActiveDate: '',
   streakTodayCompleted: false,
-  streakClaimedDay7: false
+  streakClaimedDay7: false,
+  customizations: JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS)),
+  itemPrices: {}
 };
+
+window.state = state;
 
 function getMaxDailyDirectLimit() {
   return 15.0 + (state.bonusMaxLimitMinutes || 0);
@@ -491,33 +370,21 @@ function loadState() {
         });
       }
       state = { ...state, ...parsed };
-      
-      if (!state.rewards) {
-        state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
-      } else {
-        state.rewards.questRate = state.rewards.questRate || DEFAULT_REWARDS.questRate;
-        state.rewards.reading = { ...DEFAULT_REWARDS.reading, ...(state.rewards.reading || {}) };
-        state.rewards.math = { ...DEFAULT_REWARDS.math, ...(state.rewards.math || {}) };
-      }
+      window.state = state;
 
-      if (!state.legendaryChest) {
-        state.legendaryChest = JSON.parse(JSON.stringify(DEFAULT_LEGENDARY_CHEST));
+      if (!state.customizations) {
+        state.customizations = JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS));
       }
-      if (!state.testConfig) {
-        state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
-      } else {
-        if (!state.testConfig.enabledTopics) {
-          state.testConfig.enabledTopics = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG.enabledTopics));
-        }
-        if (!state.testConfig.taskCount) {
-          state.testConfig.taskCount = 8;
-        }
+      if (!state.itemPrices) {
+        state.itemPrices = {};
       }
     }
   } catch (e) {
     console.error('Chyba při načítání stavu:', e);
   }
   checkAndHandleDailyResets();
+  applyCurrentTheme();
+  updateTopAvatarDisplay();
 }
 
 function checkAndHandleDailyResets() {
@@ -818,21 +685,45 @@ function generateMathLevel5(maxVal) {
   return pool;
 }
 
+/* ============================================================
+   SLOVNÍ ÚLOHY S CELOČÍSELNÝM DĚLENÍM A NÁSOBENÍM
+   ============================================================ */
 function generateMathLevel6(maxVal) {
   const pool = [];
-  for (let i = 0; i < 6; i++) {
-    let a1 = randomInt(1, Math.min(10, Math.floor(maxVal * 0.5)));
-    let b1 = randomInt(1, Math.min(10, maxVal - a1));
-    let nounA1 = czechNounForm(a1, 'jablíčko', 'jablíčka', 'jablíček');
-    let nounB1 = czechNounForm(b1, 'jablíčko', 'jablíčka', 'jablíček');
+  const templates = [...WORD_PROBLEMS_TEMPLATES];
+  const shuffled = shuffleArray(templates);
+
+  shuffled.forEach(tmpl => {
+    const data = tmpl.make(maxVal || 10);
     pool.push({
       type: 'input',
       isWordProblem: true,
-      story: `Tomáš měl ${a1} ${nounA1}. Táta mu koupil ještě ${b1} ${nounB1}. Kolik jablek má celkem?`,
-      correctAnswer: (a1 + b1).toString()
+      story: data.story,
+      formula: data.formula,
+      a: data.a,
+      b: data.b,
+      op: data.op,
+      correctAnswer: data.correctAnswer
     });
-  }
+  });
+
   return pool;
+}
+
+function toggleWordProblemFormula(index) {
+  const el = document.getElementById(`word-problem-formula-${index}`);
+  const btn = document.getElementById(`formula-toggle-btn-${index}`);
+  if (!el || !btn) return;
+
+  if (el.classList.contains('hidden')) {
+    el.classList.remove('hidden');
+    btn.innerHTML = '🙈 Skrýt příklad';
+    playTone(520, 0.06, 'sine', 0.12);
+  } else {
+    el.classList.add('hidden');
+    btn.innerHTML = '👁️ Zobrazit příklad';
+    playTone(420, 0.06, 'sine', 0.12);
+  }
 }
 
 function generateSingleMathTask() {
@@ -1162,7 +1053,7 @@ function handlePokemonCompleted() {
   updateDailyQuestsProgress('math', 7);
   saveState();
 
-  soundSuccess();
+  playCustomSuccessSound();
   triggerConfetti();
   document.getElementById('coloring-complete-overlay').classList.remove('hidden');
   updateTopBadges();
@@ -1624,14 +1515,26 @@ function renderCurrentContent() {
           </div>
         `;
       } else if (item.isWordProblem) {
-        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-4 border-3 border-amber-300 shadow-game-card flex flex-col sm:flex-row items-center justify-between gap-2.5';
+        // Didaktická slovní úloha s tlačítkem pro zobrazení/skrytí příkladu
+        const formulaText = item.formula || `${item.a} ${item.op} ${item.b} = ?`;
+
+        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border-3 border-amber-400 shadow-game-card flex flex-col md:flex-row items-center justify-between gap-3';
         card.innerHTML = `
-          <div class="text-left flex-grow">
-            <p class="text-sm sm:text-base font-black text-slate-800 leading-snug">${item.story}</p>
+          <div class="text-left flex-grow w-full">
+            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
+              <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full">Slovní Úloha</span>
+              <button type="button" onclick="toggleWordProblemFormula(${index})" id="formula-toggle-btn-${index}" class="text-[10px] font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-300 transition-colors">
+                👁️ Zobrazit příklad
+              </button>
+            </div>
+            <p class="text-sm sm:text-base font-black text-slate-800 leading-relaxed font-nunito">${item.story}</p>
+            <div id="word-problem-formula-${index}" class="hidden text-xs font-black text-amber-900 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-xl inline-block mt-2">
+              Zápis příkladu: <strong>${formulaText}</strong>
+            </div>
           </div>
-          <div class="flex items-center gap-2 whitespace-nowrap self-end sm:self-center ml-auto">
-            <span class="text-xs font-black text-slate-500">Výsledek:</span>
-            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-14 sm:w-16 h-10 sm:h-12 text-center text-xl sm:text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+          <div class="flex items-center gap-2 whitespace-nowrap self-end md:self-center ml-auto pt-1 md:pt-0">
+            <span class="text-xs font-black text-slate-600">Výsledek:</span>
+            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-16 sm:w-20 h-11 sm:h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
             <span id="math-feedback-${index}" class="text-xl ml-1 w-6 text-center"></span>
           </div>
         `;
@@ -1775,13 +1678,13 @@ function evaluateMathTasks() {
     if (val === item.correctAnswer) {
       correctCount++;
       feedbackEl.textContent = '✅';
-      cardEl.classList.remove('border-amber-300', 'border-rose-400');
+      cardEl.classList.remove('border-amber-300', 'border-amber-400', 'border-rose-400');
       cardEl.classList.add('border-emerald-400', 'bg-emerald-50/40');
     } else {
       allCorrect = false;
       if (val !== '') {
         feedbackEl.textContent = '❌';
-        cardEl.classList.remove('border-amber-300', 'border-emerald-400');
+        cardEl.classList.remove('border-amber-300', 'border-amber-400', 'border-emerald-400');
         cardEl.classList.add('border-rose-400', 'bg-rose-50/40');
       } else {
         feedbackEl.textContent = '';
@@ -1805,7 +1708,7 @@ function evaluateMathTasks() {
     creditRewardMinutes(reward, `Matematika: ${catNames[lvl - 1]}`);
     updateDailyQuestsProgress('math', lvl);
     saveState();
-    soundSuccess();
+    playCustomSuccessSound();
     triggerConfetti();
 
     setTimeout(() => { generateLessonItems(); }, 1600);
@@ -1865,7 +1768,7 @@ function parentReview(isSuccess) {
     creditRewardMinutes(reward, `Čtení: ${catNames[lvl - 1]}`);
     updateDailyQuestsProgress('reading', lvl);
     saveState();
-    soundSuccess();
+    playCustomSuccessSound();
     triggerConfetti();
     setTimeout(() => { generateLessonItems(); }, 500);
   } else {
@@ -1875,7 +1778,7 @@ function parentReview(isSuccess) {
 }
 
 /* ============================================================
-   DUOLINGO STREAK / ŘADA - LOGIKA VČETNĚ 7. DNE (KLIKATELNÝ DIAMANT)
+   DENNÍ ŘADA (STREAK)
    ============================================================ */
 
 function checkStreakStatus() {
@@ -1887,14 +1790,13 @@ function checkStreakStatus() {
     state.streakLastActiveDate = today;
     state.streakDays = (state.streakDays || 0) + 1;
     
-    // Pokud tímto dnem vstupujeme do 7. dne cyklu, odemkne se možnost kliknout na diamant
     const currentDayInCycle = ((state.streakDays - 1) % 7) + 1;
     if (currentDayInCycle === 7) {
       state.streakClaimedDay7 = false;
     }
 
     alertUserFeedback(`🔥 Denní řada započtena! Pokračuješ na ${state.streakDays} ${czechNounForm(state.streakDays, 'den', 'dny', 'dní')}!`);
-    soundSuccess();
+    playCustomSuccessSound();
     triggerConfetti();
     saveState();
   }
@@ -1931,7 +1833,7 @@ function claimStreakDiamondDay7() {
   });
 
   saveState();
-  soundSuccess();
+  playCustomSuccessSound();
   triggerConfetti();
   updateBalanceUI();
   updateTopBadges();
@@ -2059,8 +1961,24 @@ function updateDailyQuestsProgress(subj, completedLvl) {
 }
 
 /* ============================================================
-   OBCHOD & MODAL POUKAZU NA STŘED
+   HERNÍ OBCHOD (LÍSTKY, SKINY, TAPETY, ZVUKY)
    ============================================================ */
+
+function getItemPrice(category, id, defaultPrice) {
+  const key = `${category}_${id}`;
+  if (state.itemPrices && state.itemPrices[key] !== undefined) {
+    return state.itemPrices[key];
+  }
+  return defaultPrice;
+}
+
+function setItemPrice(category, id, newPrice) {
+  if (!state.itemPrices) state.itemPrices = {};
+  state.itemPrices[`${category}_${id}`] = Math.max(0, parseInt(newPrice, 10) || 0);
+  saveState();
+  renderStoreSkinsUI();
+  updateAdminSkinsUI();
+}
 
 function showStoreTab(tabKey) {
   showView('store');
@@ -2069,24 +1987,454 @@ function showStoreTab(tabKey) {
 
 function switchStoreTab(tabKey) {
   const btnTickets = document.getElementById('store-tab-btn-tickets');
+  const btnSkins = document.getElementById('store-tab-btn-skins');
   const btnDiamonds = document.getElementById('store-tab-btn-diamonds');
+
   const contentTickets = document.getElementById('store-tab-content-tickets');
+  const contentSkins = document.getElementById('store-tab-content-skins');
   const contentDiamonds = document.getElementById('store-tab-content-diamonds');
 
-  if (tabKey === 'diamonds') {
-    btnDiamonds.className = 'flex-1 py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    btnTickets.className = 'flex-1 py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5';
-    contentTickets.classList.add('hidden');
+  [btnTickets, btnSkins, btnDiamonds].forEach(b => {
+    if (b) b.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5';
+  });
+
+  contentTickets.classList.add('hidden');
+  contentSkins.classList.add('hidden');
+  contentDiamonds.classList.add('hidden');
+
+  if (tabKey === 'skins') {
+    btnSkins.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm flex items-center justify-center gap-1.5';
+    contentSkins.classList.remove('hidden');
+    switchSkinsCategory('avatars');
+  } else if (tabKey === 'diamonds') {
+    btnDiamonds.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm flex items-center justify-center gap-1.5';
     contentDiamonds.classList.remove('hidden');
     updateDiamondMarketUI();
   } else {
-    btnTickets.className = 'flex-1 py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-pink-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    btnDiamonds.className = 'flex-1 py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5';
-    contentDiamonds.classList.add('hidden');
+    btnTickets.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-pink-500 text-white shadow-sm flex items-center justify-center gap-1.5';
     contentTickets.classList.remove('hidden');
   }
   playTone(520, 0.08, 'sine', 0.12);
 }
+
+function switchSkinsCategory(subCat) {
+  const btnAvatars = document.getElementById('skin-sub-btn-avatars');
+  const btnThemes = document.getElementById('skin-sub-btn-themes');
+  const btnSounds = document.getElementById('skin-sub-btn-sounds');
+
+  const contentAvatars = document.getElementById('skin-sub-content-avatars');
+  const contentThemes = document.getElementById('skin-sub-content-themes');
+  const contentSounds = document.getElementById('skin-sub-content-sounds');
+
+  [btnAvatars, btnThemes, btnSounds].forEach(b => {
+    if (b) b.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-white flex items-center justify-center gap-1';
+  });
+
+  contentAvatars.classList.add('hidden');
+  contentThemes.classList.add('hidden');
+  contentSounds.classList.add('hidden');
+
+  if (subCat === 'themes') {
+    btnThemes.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
+    contentThemes.classList.remove('hidden');
+  } else if (subCat === 'sounds') {
+    btnSounds.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
+    contentSounds.classList.remove('hidden');
+  } else {
+    btnAvatars.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
+    contentAvatars.classList.remove('hidden');
+  }
+  renderStoreSkinsUI();
+  playTone(540, 0.08, 'sine', 0.12);
+}
+
+function renderStoreSkinsUI() {
+  const diaCounter = document.getElementById('skins-diamonds-counter');
+  if (diaCounter) diaCounter.textContent = (state.goldDiamonds || 0).toString();
+
+  const custom = state.customizations || DEFAULT_UNLOCKED_CUSTOMIZATIONS;
+
+  // 1. Skiny
+  const avatarsContainer = document.getElementById('store-avatars-grid');
+  if (avatarsContainer) {
+    avatarsContainer.innerHTML = '';
+    AVATAR_SKINS_DATABASE.forEach(skin => {
+      const price = getItemPrice('skin', skin.id, skin.price);
+      const isUnlocked = custom.unlockedSkins.includes(skin.id);
+      const isActive = custom.activeSkin === skin.id;
+
+      const card = document.createElement('div');
+      card.className = `p-3 rounded-2xl border-3 flex flex-col justify-between text-center transition-all ${
+        isActive 
+          ? 'bg-amber-50 border-amber-400 ring-4 ring-amber-300 shadow-md' 
+          : isUnlocked 
+            ? 'bg-white border-emerald-300' 
+            : 'bg-white border-slate-200'
+      }`;
+
+      card.innerHTML = `
+        <div>
+          <div class="w-14 h-14 mx-auto mb-2 flex items-center justify-center rounded-2xl bg-slate-100 border border-slate-200 shadow-inner">
+            ${skin.svg}
+          </div>
+          <h4 class="text-xs sm:text-sm font-black text-slate-800">${skin.name}</h4>
+          <p class="text-[10px] text-slate-500 font-bold mt-0.5 line-clamp-2">${skin.description}</p>
+        </div>
+        <div class="mt-3">
+          ${
+            isActive 
+              ? `<span class="text-xs font-black text-amber-700 bg-amber-200/80 px-2.5 py-1 rounded-xl block">NASAZENO ⭐</span>`
+              : isUnlocked 
+                ? `<button onclick="equipSkin('${skin.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm">Nasadit skin</button>`
+                : `<button onclick="buySkinAction('${skin.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Koupit za ${price}</span> 💎</button>`
+          }
+        </div>
+      `;
+      avatarsContainer.appendChild(card);
+    });
+  }
+
+  // 2. Tapety a Grafická Témata
+  const themesContainer = document.getElementById('store-themes-grid');
+  if (themesContainer) {
+    themesContainer.innerHTML = '';
+    APP_THEMES_DATABASE.forEach(theme => {
+      const price = getItemPrice('theme', theme.id, theme.price);
+      const isUnlocked = custom.unlockedThemes.includes(theme.id);
+      const isActive = custom.activeTheme === theme.id;
+
+      const card = document.createElement('div');
+      card.className = `p-3 rounded-2xl border-3 flex flex-col justify-between text-center transition-all ${
+        isActive 
+          ? 'bg-amber-50 border-amber-400 ring-4 ring-amber-300 shadow-md' 
+          : isUnlocked 
+            ? 'bg-white border-emerald-300' 
+            : 'bg-white border-slate-200'
+      }`;
+
+      card.innerHTML = `
+        <div>
+          <div class="w-full h-12 rounded-xl mb-2 shadow-inner border border-black/10 flex items-center justify-center text-xs font-black text-white" style="background: ${theme.previewGradient};">
+            Náhled tapety
+          </div>
+          <h4 class="text-xs sm:text-sm font-black text-slate-800">${theme.name}</h4>
+          <p class="text-[10px] text-slate-500 font-bold mt-0.5 line-clamp-2">${theme.description}</p>
+        </div>
+        <div class="mt-3">
+          ${
+            isActive 
+              ? `<span class="text-xs font-black text-amber-700 bg-amber-200/80 px-2.5 py-1 rounded-xl block">AKTIVNÍ TAPETA 🌍</span>`
+              : isUnlocked 
+                ? `<button onclick="equipTheme('${theme.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm">Nastavit tapetu</button>`
+                : `<button onclick="buyThemeAction('${theme.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Koupit za ${price}</span> 💎</button>`
+          }
+        </div>
+      `;
+      themesContainer.appendChild(card);
+    });
+  }
+
+  // 3. Zvukové Balíčky
+  const soundsContainer = document.getElementById('store-sounds-grid');
+  if (soundsContainer) {
+    soundsContainer.innerHTML = '';
+    SOUND_PACKS_DATABASE.forEach(snd => {
+      const price = getItemPrice('sound', snd.id, snd.price);
+      const isUnlocked = custom.unlockedSounds.includes(snd.id);
+      const isActive = custom.activeSound === snd.id;
+
+      const card = document.createElement('div');
+      card.className = `p-3 rounded-2xl border-3 flex flex-col justify-between text-center transition-all ${
+        isActive 
+          ? 'bg-amber-50 border-amber-400 ring-4 ring-amber-300 shadow-md' 
+          : isUnlocked 
+            ? 'bg-white border-emerald-300' 
+            : 'bg-white border-slate-200'
+      }`;
+
+      card.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xl">🔔</span>
+            <button onclick="playSoundById('${snd.id}')" class="game-button bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-lg text-xs font-bold" title="Poslechnout zvuk">
+              Poslech 🔊
+            </button>
+          </div>
+          <h4 class="text-xs sm:text-sm font-black text-slate-800">${snd.name}</h4>
+          <p class="text-[10px] text-slate-500 font-bold mt-0.5">${snd.description}</p>
+        </div>
+        <div class="mt-3">
+          ${
+            isActive 
+              ? `<span class="text-xs font-black text-amber-700 bg-amber-200/80 px-2.5 py-1 rounded-xl block">AKTIVNÍ ZVUK 🔊</span>`
+              : isUnlocked 
+                ? `<button onclick="equipSound('${snd.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm">Zvolit zvuk</button>`
+                : `<button onclick="buySoundAction('${snd.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Koupit za ${price}</span> 💎</button>`
+          }
+        </div>
+      `;
+      soundsContainer.appendChild(card);
+    });
+  }
+}
+
+function buySkinAction(skinId) {
+  const skin = AVATAR_SKINS_DATABASE.find(s => s.id === skinId);
+  if (!skin) return;
+  const price = getItemPrice('skin', skin.id, skin.price);
+
+  if ((state.goldDiamonds || 0) < price) {
+    soundError();
+    alertUserFeedback(`Potřebuješ ${price} diamantů 💎 (máš jen ${state.goldDiamonds || 0}).`);
+    return;
+  }
+
+  state.goldDiamonds -= price;
+  if (!state.customizations.unlockedSkins.includes(skinId)) {
+    state.customizations.unlockedSkins.push(skinId);
+  }
+  state.customizations.activeSkin = skinId;
+
+  saveState();
+  soundPurchase();
+  triggerConfetti();
+  updateBalanceUI();
+  updateTopBadges();
+  updateTopAvatarDisplay();
+  renderStoreSkinsUI();
+  alertUserFeedback(`Skin "${skin.name}" odemčen a nasazen! 🥳`);
+}
+
+function equipSkin(skinId) {
+  state.customizations.activeSkin = skinId;
+  saveState();
+  updateTopAvatarDisplay();
+  renderStoreSkinsUI();
+  playTone(600, 0.1, 'sine', 0.15);
+  alertUserFeedback('Skin nasazen!');
+}
+
+function buyThemeAction(themeId) {
+  const theme = APP_THEMES_DATABASE.find(t => t.id === themeId);
+  if (!theme) return;
+  const price = getItemPrice('theme', theme.id, theme.price);
+
+  if ((state.goldDiamonds || 0) < price) {
+    soundError();
+    alertUserFeedback(`Potřebuješ ${price} diamantů 💎 (máš jen ${state.goldDiamonds || 0}).`);
+    return;
+  }
+
+  state.goldDiamonds -= price;
+  if (!state.customizations.unlockedThemes.includes(themeId)) {
+    state.customizations.unlockedThemes.push(themeId);
+  }
+  state.customizations.activeTheme = themeId;
+
+  saveState();
+  applyCurrentTheme();
+  soundPurchase();
+  triggerConfetti();
+  updateBalanceUI();
+  updateTopBadges();
+  renderStoreSkinsUI();
+  alertUserFeedback(`Tapeta "${theme.name}" odemčena a nastavena! 🌌`);
+}
+
+function equipTheme(themeId) {
+  state.customizations.activeTheme = themeId;
+  applyCurrentTheme();
+  saveState();
+  renderStoreSkinsUI();
+  playTone(600, 0.1, 'sine', 0.15);
+  alertUserFeedback('Tapeta nastavena!');
+}
+
+function buySoundAction(soundId) {
+  const snd = SOUND_PACKS_DATABASE.find(s => s.id === soundId);
+  if (!snd) return;
+  const price = getItemPrice('sound', snd.id, snd.price);
+
+  if ((state.goldDiamonds || 0) < price) {
+    soundError();
+    alertUserFeedback(`Potřebuješ ${price} diamantů 💎 (máš jen ${state.goldDiamonds || 0}).`);
+    return;
+  }
+
+  state.goldDiamonds -= price;
+  if (!state.customizations.unlockedSounds.includes(soundId)) {
+    state.customizations.unlockedSounds.push(soundId);
+  }
+  state.customizations.activeSound = soundId;
+
+  saveState();
+  playSoundById(soundId);
+  soundPurchase();
+  triggerConfetti();
+  updateBalanceUI();
+  updateTopBadges();
+  renderStoreSkinsUI();
+  alertUserFeedback(`Zvuk "${snd.name}" odemčen! 🔔`);
+}
+
+function equipSound(soundId) {
+  state.customizations.activeSound = soundId;
+  playSoundById(soundId);
+  saveState();
+  renderStoreSkinsUI();
+  alertUserFeedback('Oslavný zvuk aktivován!');
+}
+
+function applyCurrentTheme() {
+  const body = document.getElementById('app-body');
+  if (!body) return;
+  const current = state.customizations ? state.customizations.activeTheme : 'theme-sky';
+  
+  body.classList.remove(
+    'theme-sky', 'theme-gold', 'theme-space', 
+    'theme-wallpaper-minecraft', 'theme-wallpaper-pokemon', 'theme-wallpaper-sonic'
+  );
+  body.classList.add(current);
+}
+
+function updateTopAvatarDisplay() {
+  const container = document.getElementById('top-avatar-display');
+  if (!container) return;
+
+  const activeId = state.customizations ? state.customizations.activeSkin : 'steve';
+  const skin = AVATAR_SKINS_DATABASE.find(s => s.id === activeId) || AVATAR_SKINS_DATABASE[0];
+
+  container.innerHTML = skin.svg;
+}
+
+/* ============================================================
+   ADMIN MODUL PRO SKINY, TAPETY A CENY
+   ============================================================ */
+
+function updateAdminSkinsUI() {
+  const custom = state.customizations || DEFAULT_UNLOCKED_CUSTOMIZATIONS;
+
+  // 1. Skiny
+  const skinsList = document.getElementById('admin-skins-list-container');
+  if (skinsList) {
+    skinsList.innerHTML = '';
+    AVATAR_SKINS_DATABASE.forEach(s => {
+      const price = getItemPrice('skin', s.id, s.price);
+      const isUnlocked = custom.unlockedSkins.includes(s.id);
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between p-2 rounded-xl bg-white border border-pink-200 text-xs font-bold';
+      row.innerHTML = `
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 flex items-center justify-center">${s.svg}</div>
+          <span class="truncate max-w-[120px] text-slate-800">${s.name}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <input type="number" min="0" max="100" value="${price}" onchange="setItemPrice('skin', '${s.id}', this.value)" class="w-12 text-center font-black py-0.5 px-1 border border-pink-300 rounded-lg bg-pink-50 text-indigo-950 text-xs">
+          <span class="text-xs">💎</span>
+          <button onclick="adminToggleUnlockItem('skin', '${s.id}')" class="px-2 py-0.5 rounded-lg text-[10px] font-black ${isUnlocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+            ${isUnlocked ? 'Odemčeno' : 'Zamčeno'}
+          </button>
+        </div>
+      `;
+      skinsList.appendChild(row);
+    });
+  }
+
+  // 2. Tapety
+  const themesList = document.getElementById('admin-themes-list-container');
+  if (themesList) {
+    themesList.innerHTML = '';
+    APP_THEMES_DATABASE.forEach(t => {
+      const price = getItemPrice('theme', t.id, t.price);
+      const isUnlocked = custom.unlockedThemes.includes(t.id);
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between p-2 rounded-xl bg-white border border-pink-200 text-xs font-bold';
+      row.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="w-4 h-4 rounded-full border border-black/20" style="background: ${t.previewGradient}"></span>
+          <span class="truncate max-w-[120px] text-slate-800">${t.name}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <input type="number" min="0" max="100" value="${price}" onchange="setItemPrice('theme', '${t.id}', this.value)" class="w-12 text-center font-black py-0.5 px-1 border border-pink-300 rounded-lg bg-pink-50 text-indigo-950 text-xs">
+          <span class="text-xs">💎</span>
+          <button onclick="adminToggleUnlockItem('theme', '${t.id}')" class="px-2 py-0.5 rounded-lg text-[10px] font-black ${isUnlocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+            ${isUnlocked ? 'Odemčeno' : 'Zamčeno'}
+          </button>
+        </div>
+      `;
+      themesList.appendChild(row);
+    });
+  }
+
+  // 3. Zvuky
+  const soundsList = document.getElementById('admin-sounds-list-container');
+  if (soundsList) {
+    soundsList.innerHTML = '';
+    SOUND_PACKS_DATABASE.forEach(snd => {
+      const price = getItemPrice('sound', snd.id, snd.price);
+      const isUnlocked = custom.unlockedSounds.includes(snd.id);
+
+      const row = document.createElement('div');
+      row.className = 'flex items-center justify-between p-2 rounded-xl bg-white border border-pink-200 text-xs font-bold';
+      row.innerHTML = `
+        <div class="flex items-center gap-1">
+          <span>🔊</span>
+          <span class="truncate max-w-[120px] text-slate-800">${snd.name}</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <input type="number" min="0" max="100" value="${price}" onchange="setItemPrice('sound', '${snd.id}', this.value)" class="w-12 text-center font-black py-0.5 px-1 border border-pink-300 rounded-lg bg-pink-50 text-indigo-950 text-xs">
+          <span class="text-xs">💎</span>
+          <button onclick="adminToggleUnlockItem('sound', '${snd.id}')" class="px-2 py-0.5 rounded-lg text-[10px] font-black ${isUnlocked ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'}">
+            ${isUnlocked ? 'Odemčeno' : 'Zamčeno'}
+          </button>
+        </div>
+      `;
+      soundsList.appendChild(row);
+    });
+  }
+}
+
+function adminToggleUnlockItem(category, id) {
+  if (!state.customizations) state.customizations = JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS));
+  let list = [];
+  if (category === 'skin') list = state.customizations.unlockedSkins;
+  else if (category === 'theme') list = state.customizations.unlockedThemes;
+  else if (category === 'sound') list = state.customizations.unlockedSounds;
+
+  if (list.includes(id)) {
+    if (list.length > 1) {
+      const idx = list.indexOf(id);
+      list.splice(idx, 1);
+    }
+  } else {
+    list.push(id);
+  }
+
+  saveState();
+  updateAdminSkinsUI();
+  renderStoreSkinsUI();
+  playTone(550, 0.08, 'sine', 0.15);
+}
+
+function adminUnlockAllSkinsForTest(unlockAll = true) {
+  if (!state.customizations) state.customizations = JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS));
+  if (unlockAll) {
+    state.customizations.unlockedSkins = AVATAR_SKINS_DATABASE.map(s => s.id);
+    state.customizations.unlockedThemes = APP_THEMES_DATABASE.map(t => t.id);
+    state.customizations.unlockedSounds = SOUND_PACKS_DATABASE.map(s => s.id);
+    alertUserFeedback('Všechny skiny, tapety i zvuky odemčeny pro test! 🚀');
+  }
+  saveState();
+  updateAdminSkinsUI();
+  renderStoreSkinsUI();
+  playTone(660, 0.15, 'triangle', 0.25);
+}
+
+/* ============================================================
+   DIAMANTOVÝ TRH (LIMIT & PIN)
+   ============================================================ */
 
 function updateDiamondMarketUI() {
   const diamondsCount = document.getElementById('store-diamonds-count');
@@ -2145,7 +2493,7 @@ function buyLimitExtension() {
   updateBalanceUI();
   updateTopBadges();
   updateDiamondMarketUI();
-  alertUserFeedback(`Denní limit úspěšně navýšen na ${newMax} minut! 🚀`);
+  alertUserFeedback(`Denní limit navýšen na ${newMax} minut! 🚀`);
 }
 
 function revealSecretPinAction() {
@@ -2216,6 +2564,7 @@ function showView(viewName) {
     document.getElementById('store-balance-display').textContent = formatMinutes(state.minutesBalance).replace(' min', '');
     document.getElementById('vault-display').textContent = formatMinutes(state.vaultBalance || 0);
     updateDiamondMarketUI();
+    renderStoreSkinsUI();
   } else if (viewName === 'quests') {
     questsView.classList.remove('hidden');
     switchQuestsSubTab('tasks');
@@ -2293,7 +2642,7 @@ function updateTopBadges() {
 }
 
 /* ============================================================
-   TRUHLA MODAL (ZLATÁ HVĚZDA PRO MINUTY)
+   DENNÍ A VÝJIMEČNÁ TRUHLA
    ============================================================ */
 
 function openDailyBoxModal() {
@@ -2392,15 +2741,11 @@ function openChestAction() {
 
     saveState();
     triggerConfetti();
-    soundSuccess();
+    playCustomSuccessSound();
     updateTopBadges();
     isOpeningChest = false;
   }, 1000);
 }
-
-/* ============================================================
-   VÝJIMEČNÁ / LEGENDÁRNÍ TRUHLA
-   ============================================================ */
 
 function renderLegendaryChestTab() {
   const activeBox = document.getElementById('legend-chest-active-box');
@@ -2474,7 +2819,7 @@ function openLegendaryChestAction() {
 
     saveState();
     triggerConfetti();
-    soundSuccess();
+    playCustomSuccessSound();
     updateBalanceUI();
     updateTopBadges();
     updateDiamondMarketUI();
@@ -2530,7 +2875,7 @@ function updateAdminLegendaryUI() {
 }
 
 /* ============================================================
-   TESTOVACÍ MODUL (BEZ OBRÁZKŮ + DLE ZVOLENÝCH OKRUHŮ)
+   TESTOVACÍ MODUL
    ============================================================ */
 
 let testState = { tasks: [], currentIndex: 0, answers: [] };
@@ -2604,7 +2949,6 @@ function generateRandomReadingTaskForLevel(level) {
     item.label = 'Celá věta';
   }
 
-  // Zásadní změna: emoji/obrázky jsou v testu striktně zakázány! Syn musí číst.
   return { 
     category: 'reading', 
     subLabel: item.label, 
@@ -2639,7 +2983,7 @@ function generateRandomMathTaskForLevel(level) {
   } else {
     const tasks = generateMathLevel6(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Slovní úloha', renderType: 'story', story: t.story, correctAnswer: t.correctAnswer };
+    return { category: 'math', subLabel: 'Slovní úloha', renderType: 'story', story: t.story, a: t.a, b: t.b, op: t.op, correctAnswer: t.correctAnswer };
   }
 }
 
@@ -2662,7 +3006,7 @@ function startDailyTest() {
 
   if (activeReadingLevels.length === 0 && activeMathLevels.length === 0) {
     soundError();
-    alertUserFeedback('V administraci nemáš vybrané žádné okruhy pro test! Zaškrtni aspoň jeden.');
+    alertUserFeedback('V administraci nemáš vybrané žádné okruhy pro test!');
     return;
   }
 
@@ -2715,7 +3059,6 @@ function renderCurrentTestTask() {
 
     const card = document.createElement('div');
     card.className = 'flex flex-col items-center justify-center p-3 max-w-lg';
-    // ŽÁDNÉ OBRÁZKY ANI EMOJI V TESTU!
     card.innerHTML = `
       <h2 class="text-3xl sm:text-5xl font-black text-indigo-950 font-baloo tracking-wide leading-tight my-2">
         ${formatCase(cur.questionText)}
@@ -2773,27 +3116,12 @@ function renderCurrentTestTask() {
         const inp = document.getElementById('test-math-input');
         if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
       }, 50);
-    } else if (cur.renderType === 'story') {
+    } else {
       const card = document.createElement('div');
       card.className = 'flex flex-col items-center justify-center max-w-lg';
       card.innerHTML = `
-        <p class="text-sm sm:text-base font-black text-slate-800 leading-snug mb-3">${cur.story}</p>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-black text-slate-500">Výsledek:</span>
-          <input type="number" id="test-math-input" placeholder="?" class="w-16 h-11 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
-        </div>
-      `;
-      area.appendChild(card);
-      setTimeout(() => {
-        const inp = document.getElementById('test-math-input');
-        if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
-      }, 50);
-    } else {
-      const card = document.createElement('div');
-      card.className = 'flex flex-col items-center justify-center';
-      card.innerHTML = `
         <div class="flex items-center whitespace-nowrap overflow-x-auto select-none font-baloo mb-3 text-2xl sm:text-3xl">
-          ${cur.htmlContent}
+          ${cur.renderType === 'story' ? cur.story : cur.htmlContent}
         </div>
         <div class="flex items-center gap-2">
           <span class="text-xs font-black text-slate-500">Výsledek:</span>
@@ -2912,10 +3240,10 @@ function finishDailyTest() {
   updateDiamondMarketUI();
 
   if (diamondsAwarded >= 3) {
-    soundSuccess();
+    playCustomSuccessSound();
     triggerConfetti();
   } else if (diamondsAwarded > 0) {
-    soundSuccess();
+    playCustomSuccessSound();
   } else {
     soundShuffle();
   }
@@ -3004,30 +3332,26 @@ function adminResetTestToday() {
   updateTopBadges();
   updateAdminTestUI();
   playTone(600, 0.1, 'sine', 0.2);
-  alertUserFeedback('Dnešní test byl resetován a je znovu k dispozici!');
+  alertUserFeedback('Dnešní test byl resetován!');
 }
 
 function updateAdminTestUI() {
   const config = state.testConfig || DEFAULT_TEST_CONFIG;
   const topics = config.enabledTopics || DEFAULT_TEST_CONFIG.enabledTopics;
 
-  // Checkboxy pro ČTENÍ
   for (let i = 1; i <= 7; i++) {
     const cb = document.getElementById(`test-topic-reading_${i}`);
     if (cb) cb.checked = !!topics[`reading_${i}`];
   }
 
-  // Checkboxy pro MATEMATIKU
   for (let i = 1; i <= 6; i++) {
     const cb = document.getElementById(`test-topic-math_${i}`);
     if (cb) cb.checked = !!topics[`math_${i}`];
   }
 
-  // Počet otázek
   const countInp = document.getElementById('admin-test-task-count-input');
   if (countInp) countInp.value = config.taskCount || 8;
 
-  // Odznáčky počtu
   const rCount = [1,2,3,4,5,6,7].filter(i => topics[`reading_${i}`]).length;
   const mCount = [1,2,3,4,5,6].filter(i => topics[`math_${i}`]).length;
   const rBadge = document.getElementById('admin-test-reading-count-badge');
@@ -3035,7 +3359,6 @@ function updateAdminTestUI() {
   if (rBadge) rBadge.textContent = `${rCount} vybráno`;
   if (mBadge) mBadge.textContent = `${mCount} vybráno`;
 
-  // Pásma
   const container = document.getElementById('admin-test-thresholds-container');
   if (container) {
     container.innerHTML = '';
@@ -3104,7 +3427,7 @@ function saveAdminTestThreshold(index, field, val) {
 }
 
 /* ============================================================
-   ULTRA-KOMPAKTNÍ SYNCHRONIZAČNÍ PROTOKOL SM2
+   SYNCHRONIZACE MEZI ZAŘÍZENÍMI (PROTOKOL SM2)
    ============================================================ */
 
 function exportCurrentSyncPayload() {
@@ -3118,6 +3441,14 @@ function exportCurrentSyncPayload() {
   const tTotal = (state.testLastResult && state.testLastResult.total !== undefined) ? state.testLastResult.total : 8;
   const tPercent = (state.testLastResult && state.testLastResult.percent !== undefined) ? state.testLastResult.percent : 0;
   const tDiamonds = (state.testLastResult && state.testLastResult.diamonds !== undefined) ? state.testLastResult.diamonds : 0;
+
+  const custom = state.customizations || DEFAULT_UNLOCKED_CUSTOMIZATIONS;
+  const activeSkin = custom.activeSkin || 'steve';
+  const activeTheme = custom.activeTheme || 'theme-sky';
+  const activeSound = custom.activeSound || 'sound-classic';
+  const unlockedSkinsStr = (custom.unlockedSkins || []).join(',');
+  const unlockedThemesStr = (custom.unlockedThemes || []).join(',');
+  const unlockedSoundsStr = (custom.unlockedSounds || []).join(',');
 
   const parts = [
     'SM2',
@@ -3139,7 +3470,13 @@ function exportCurrentSyncPayload() {
     legActive,
     legDia,
     legTitle,
-    lettersShort
+    lettersShort,
+    activeSkin,
+    activeTheme,
+    activeSound,
+    unlockedSkinsStr,
+    unlockedThemesStr,
+    unlockedSoundsStr
   ];
 
   return parts.join('~');
@@ -3149,7 +3486,7 @@ function importSyncPayload(rawStr) {
   try {
     const text = rawStr.trim();
     if (!text.startsWith('SM1~') && !text.startsWith('SM2~')) {
-      throw new Error('Neplatný formát kódu (musí začínat SM1~ nebo SM2~).');
+      throw new Error('Neplatný formát kódu.');
     }
 
     const p = text.split('~');
@@ -3201,34 +3538,16 @@ function importSyncPayload(rawStr) {
         const ltrs = p[19].split(',').filter(x => x.length > 0);
         if (ltrs.length > 0) state.activeLetters = ltrs;
       }
-    } else {
-      // Zpětná kompatibilita s SM1
-      state.minutesBalance = parseFloat(p[1]) || 0;
-      state.dailyEarnedToday = parseFloat(p[2]) || 0;
-      state.vaultBalance = parseFloat(p[3]) || 0;
-      state.goldDiamonds = parseInt(p[4], 10) || 0;
-      state.bonusMaxLimitMinutes = parseInt(p[5], 10) || 0;
-      state.tabletSecretPin = p[6] || 'XXXX';
-      state.streakDays = parseInt(p[7], 10) || 0;
-      state.boxClaimed = (p[8] === '1');
-      state.testDoneToday = (p[9] === '1');
-      state.mathMax = parseInt(p[10], 10) || 10;
-      state.pokemonSegmentsCount = parseInt(p[11], 10) || 12;
 
-      const legActive = (p[12] === '1');
-      const legDia = parseInt(p[13], 10) || 10;
-      const legTitle = p[14] || 'ZA VÝBORNÉ VÝSLEDKY VE ŠKOLE';
+      if (p[20]) {
+        if (!state.customizations) state.customizations = JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS));
+        state.customizations.activeSkin = p[20] || 'steve';
+        state.customizations.activeTheme = p[21] || 'theme-sky';
+        state.customizations.activeSound = p[22] || 'sound-classic';
 
-      state.legendaryChest = {
-        active: legActive,
-        diamonds: legDia,
-        title: legTitle,
-        claimed: !legActive
-      };
-
-      if (p[15]) {
-        const ltrs = p[15].split(',').filter(x => x.length > 0);
-        if (ltrs.length > 0) state.activeLetters = ltrs;
+        if (p[23]) state.customizations.unlockedSkins = p[23].split(',');
+        if (p[24]) state.customizations.unlockedThemes = p[24].split(',');
+        if (p[25]) state.customizations.unlockedSounds = p[25].split(',');
       }
     }
 
@@ -3238,10 +3557,12 @@ function importSyncPayload(rawStr) {
       date: new Date().toLocaleDateString('cs-CZ'),
       type: 'synced',
       minutes: 0,
-      note: 'Stav úspěšně přenesen z druhého zařízení'
+      note: 'Stav načten z druhého zařízení'
     });
 
     saveState();
+    applyCurrentTheme();
+    updateTopAvatarDisplay();
     updateBalanceUI();
     updateTopBadges();
     updateDiamondMarketUI();
@@ -3257,9 +3578,9 @@ function importSyncPayload(rawStr) {
       openTestView();
     }
 
-    soundSuccess();
+    playCustomSuccessSound();
     triggerConfetti();
-    alertUserFeedback('Synchronizace hotova! Všechna data načtena. 🚀');
+    alertUserFeedback('Synchronizace hotova! 🚀');
     return true;
   } catch (err) {
     console.error('Chyba importu:', err);
@@ -3318,7 +3639,7 @@ function copySyncCodeAction() {
   input.setSelectionRange(0, 99999);
   try {
     navigator.clipboard.writeText(input.value);
-    alertUserFeedback('Kód byl zkopírován! 📋');
+    alertUserFeedback('Kód zkopírován! 📋');
   } catch (e) {
     document.execCommand('copy');
     alertUserFeedback('Kód zkopírován! 📋');
@@ -3360,9 +3681,9 @@ function openCameraScanModal() {
         importSyncPayload(decodedText);
       });
     },
-    (errorMessage) => {}
-  ).catch(err => {
-    statusEl.innerHTML = `<span class="text-rose-600">Nelze spustit kameru. Povolte fotoaparát v prohlížeči nebo použijte ruční kód.</span>`;
+    () => {}
+  ).catch(() => {
+    statusEl.innerHTML = `<span class="text-rose-600">Nelze spustit kameru. Povolte přístup nebo použijte kód.</span>`;
   });
 }
 
@@ -3549,7 +3870,7 @@ function claimQuestReward(questId) {
   creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`);
 
   saveState();
-  soundSuccess();
+  playCustomSuccessSound();
   triggerConfetti();
   checkStreakStatus();
   renderDailyQuests();
@@ -3557,7 +3878,7 @@ function claimQuestReward(questId) {
 }
 
 /* ============================================================
-   ADMIN MODUL (SIDEBAR MENU A MODULÁRNÍ NASTAVENÍ)
+   ADMIN MODUL
    ============================================================ */
 
 function saveDiamondRate(val) {
@@ -3616,7 +3937,7 @@ function adminFreezeStreak() {
   updateTopBadges();
   renderStreakView();
   playTone(650, 0.12, 'triangle', 0.2);
-  alertUserFeedback('Dnešek byl omluven a řada byla zachována! 🛡️');
+  alertUserFeedback('Dnešek byl omluven! 🛡️');
 }
 
 function adminResetQuests() {
@@ -3645,7 +3966,7 @@ function adminResetDailyDirectLimit() {
   state.dailyEarnedDate = getTodayDateString();
   saveState();
   playTone(700, 0.15, 'sine', 0.2);
-  alertUserFeedback('Dnešní vyčerpaný limit vynulován!');
+  alertUserFeedback('Dnešní limit vynulován!');
 }
 
 function adminTransferCustomVault() {
@@ -3671,7 +3992,7 @@ function adminTransferCustomVault() {
     date: new Date().toLocaleDateString('cs-CZ'),
     type: 'admin_transfer',
     minutes: val,
-    note: `Převod z trezoru do Můj čas (+${formatMinutes(val)})`
+    note: `Převod z trezoru (+${formatMinutes(val)})`
   });
 
   input.value = '';
@@ -3753,29 +4074,35 @@ function verifyParentPin() {
 
 function switchAdminTab(tabKey) {
   const btnGeneral = document.getElementById('admin-tab-btn-general');
+  const btnSkins = document.getElementById('admin-tab-btn-skins_admin');
   const btnTest = document.getElementById('admin-tab-btn-test');
   const btnLegend = document.getElementById('admin-tab-btn-legendary');
   const btnMath = document.getElementById('admin-tab-btn-math');
   const btnReading = document.getElementById('admin-tab-btn-reading');
 
   const contentGeneral = document.getElementById('admin-tab-content-general');
+  const contentSkins = document.getElementById('admin-tab-content-skins_admin');
   const contentTest = document.getElementById('admin-tab-content-test');
   const contentLegend = document.getElementById('admin-tab-content-legendary');
   const contentMath = document.getElementById('admin-tab-content-math');
   const contentReading = document.getElementById('admin-tab-content-reading');
 
-  // Reset stylů pro vertikální lištu na tabletu
-  [btnGeneral, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
+  [btnGeneral, btnSkins, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
     if (b) b.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left';
   });
 
   contentGeneral.classList.add('hidden');
+  contentSkins.classList.add('hidden');
   contentTest.classList.add('hidden');
   contentLegend.classList.add('hidden');
   contentMath.classList.add('hidden');
   contentReading.classList.add('hidden');
 
-  if (tabKey === 'test') {
+  if (tabKey === 'skins_admin') {
+    btnSkins.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left';
+    contentSkins.classList.remove('hidden');
+    updateAdminSkinsUI();
+  } else if (tabKey === 'test') {
     btnTest.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-purple-700 text-white shadow-sm flex items-center gap-2 text-left';
     contentTest.classList.remove('hidden');
     updateAdminTestUI();
@@ -3807,6 +4134,7 @@ function openAdminPanel() {
   updateAdminDiamondUI();
   updateAdminLegendaryUI();
   updateAdminTestUI();
+  updateAdminSkinsUI();
 
   const verTag = document.getElementById('admin-version-tag');
   if (verTag) verTag.textContent = `Verze: ${APP_VERSION}`;
@@ -3981,9 +4309,6 @@ function applyPreset(presetKey) {
   }
 }
 
-/* ============================================================
-   SYNCHRONIZOVANÁ ÚPRAVA MINUT
-   ============================================================ */
 function adjustMinutes(delta, note) {
   checkAndHandleDailyResets();
   state.minutesBalance = Math.max(0, Math.round((state.minutesBalance + delta) * 100) / 100);
@@ -3999,7 +4324,7 @@ function adjustMinutes(delta, note) {
     date: new Date().toLocaleDateString('cs-CZ'),
     type: delta >= 0 ? 'admin_add' : 'admin_deduct',
     minutes: delta,
-    note: note || (delta > 0 ? `Přidáno +${formatMinutes(delta)}` : `Odečteno ${formatMinutes(delta)} (limit uvolněn)`)
+    note: note || (delta > 0 ? `Přidáno +${formatMinutes(delta)}` : `Odečteno ${formatMinutes(delta)}`)
   });
 
   saveState();
@@ -4075,10 +4400,15 @@ function resetAllData() {
     streakDays: 0,
     streakLastActiveDate: '',
     streakTodayCompleted: false,
-    streakClaimedDay7: false
+    streakClaimedDay7: false,
+    customizations: JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS)),
+    itemPrices: {}
   };
+  window.state = state;
   saveState();
   closeAdminPanel();
+  applyCurrentTheme();
+  updateTopAvatarDisplay();
   setSubject('reading');
   setGridCount(8);
   switchLevel(1);
@@ -4087,6 +4417,7 @@ function resetAllData() {
   updateSpeechToggleUI();
   updateImageToggleUI();
   updateDiamondMarketUI();
+  renderStoreSkinsUI();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -4094,6 +4425,7 @@ window.addEventListener('DOMContentLoaded', () => {
   updateBalanceUI();
   updateTopBadges();
   updateDiamondMarketUI();
+  renderStoreSkinsUI();
   if (!state.gridCardCount) state.gridCardCount = 8;
   if (state.showImages === undefined) state.showImages = true;
   if (state.showSpeechButton === undefined) state.showSpeechButton = true;
@@ -4106,20 +4438,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (!state.tabletSecretPin) state.tabletSecretPin = 'XXXX';
   if (!state.customDailyLevelChoice) state.customDailyLevelChoice = 4;
   if (state.streakDays === undefined) state.streakDays = 0;
-  if (!state.legendaryChest) {
-    state.legendaryChest = JSON.parse(JSON.stringify(DEFAULT_LEGENDARY_CHEST));
-  }
-  if (!state.testConfig) {
-    state.testConfig = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG));
-  } else {
-    if (!state.testConfig.enabledTopics) {
-      state.testConfig.enabledTopics = JSON.parse(JSON.stringify(DEFAULT_TEST_CONFIG.enabledTopics));
-    }
-    if (!state.testConfig.taskCount) {
-      state.testConfig.taskCount = 8;
-    }
-  }
-  
+
   updateImageToggleUI();
   updateSpeechToggleUI();
   setSubject(state.subject || 'reading');
