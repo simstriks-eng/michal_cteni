@@ -1515,25 +1515,23 @@ function renderCurrentContent() {
           </div>
         `;
       } else if (item.isWordProblem) {
-        // Didaktická slovní úloha s tlačítkem pro zobrazení/skrytí příkladu
+        // OPRAVA BUGU: Zajištění dokonalého centrování a zarovnání textu slovní úlohy na střed
         const formulaText = item.formula || `${item.a} ${item.op} ${item.b} = ?`;
 
-        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border-3 border-amber-400 shadow-game-card flex flex-col md:flex-row items-center justify-between gap-3';
+        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-3 border-amber-400 shadow-game-card flex flex-col items-center justify-center text-center gap-3 w-full';
         card.innerHTML = `
-          <div class="text-left flex-grow w-full">
-            <div class="flex items-center gap-2 mb-1.5 flex-wrap">
-              <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full">Slovní Úloha</span>
-              <button type="button" onclick="toggleWordProblemFormula(${index})" id="formula-toggle-btn-${index}" class="text-[10px] font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-300 transition-colors">
-                👁️ Zobrazit příklad
-              </button>
-            </div>
-            <p class="text-sm sm:text-base font-black text-slate-800 leading-relaxed font-nunito">${item.story}</p>
-            <div id="word-problem-formula-${index}" class="hidden text-xs font-black text-amber-900 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-xl inline-block mt-2">
-              Zápis příkladu: <strong>${formulaText}</strong>
-            </div>
+          <div class="flex items-center justify-center gap-2 mb-1 flex-wrap">
+            <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full">Slovní Úloha</span>
+            <button type="button" onclick="toggleWordProblemFormula(${index})" id="formula-toggle-btn-${index}" class="text-[10px] font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-300 transition-colors">
+              👁️ Zobrazit příklad
+            </button>
           </div>
-          <div class="flex items-center gap-2 whitespace-nowrap self-end md:self-center ml-auto pt-1 md:pt-0">
-            <span class="text-xs font-black text-slate-600">Výsledek:</span>
+          <p class="text-base sm:text-xl font-black text-slate-800 leading-relaxed font-nunito max-w-2xl mx-auto">${item.story}</p>
+          <div id="word-problem-formula-${index}" class="hidden text-xs font-black text-amber-900 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-xl inline-block mt-1">
+            Zápis příkladu: <strong>${formulaText}</strong>
+          </div>
+          <div class="flex items-center justify-center gap-2 mt-2">
+            <span class="text-xs sm:text-sm font-black text-slate-600">Výsledek:</span>
             <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-16 sm:w-20 h-11 sm:h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
             <span id="math-feedback-${index}" class="text-xl ml-1 w-6 text-center"></span>
           </div>
@@ -2983,7 +2981,17 @@ function generateRandomMathTaskForLevel(level) {
   } else {
     const tasks = generateMathLevel6(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Slovní úloha', renderType: 'story', story: t.story, a: t.a, b: t.b, op: t.op, correctAnswer: t.correctAnswer };
+    // Úprava pro testové vygenerování slovní úlohy (pokud je typu word problem)
+    return { 
+      category: 'math', 
+      subLabel: 'Slovní úloha', 
+      renderType: 'story', 
+      story: t.story, 
+      a: t.a, 
+      b: t.b, 
+      op: t.op, 
+      correctAnswer: t.correctAnswer 
+    };
   }
 }
 
@@ -3116,12 +3124,29 @@ function renderCurrentTestTask() {
         const inp = document.getElementById('test-math-input');
         if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
       }, 50);
+    } else if (cur.renderType === 'story') {
+      // OPRAVA BUGU: Dokonalé vycentrování textu slovní úlohy uvnitř testovacího pole
+      const card = document.createElement('div');
+      card.className = 'flex flex-col items-center justify-center text-center max-w-xl mx-auto gap-4 py-2 w-full';
+      card.innerHTML = `
+        <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-3 py-1 rounded-full">Slovní Úloha v Testu</span>
+        <p class="text-base sm:text-2xl font-black text-indigo-950 leading-relaxed font-nunito px-2">${cur.story}</p>
+        <div class="flex items-center justify-center gap-2.5 mt-2">
+          <span class="text-xs sm:text-sm font-black text-slate-600">Výsledek:</span>
+          <input type="number" id="test-math-input" placeholder="?" class="w-20 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+        </div>
+      `;
+      area.appendChild(card);
+      setTimeout(() => {
+        const inp = document.getElementById('test-math-input');
+        if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
+      }, 50);
     } else {
       const card = document.createElement('div');
       card.className = 'flex flex-col items-center justify-center max-w-lg';
       card.innerHTML = `
         <div class="flex items-center whitespace-nowrap overflow-x-auto select-none font-baloo mb-3 text-2xl sm:text-3xl">
-          ${cur.renderType === 'story' ? cur.story : cur.htmlContent}
+          ${cur.htmlContent}
         </div>
         <div class="flex items-center gap-2">
           <span class="text-xs font-black text-slate-500">Výsledek:</span>
