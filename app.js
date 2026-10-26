@@ -1772,6 +1772,22 @@ function parentReview(isSuccess) {
 }
 
 /* ============================================================
+   HODNOCENÍ ČTENÍ: POUZE DO DENNÍCH MISÍ (BEZ MINUT)
+   ============================================================ */
+
+function parentReviewOnlyQuest() {
+  clearSpellingTimers();
+
+  const lvl = state.currentLevel;
+  updateDailyQuestsProgress('reading', lvl);
+  saveState();
+  playCustomSuccessSound();
+  triggerConfetti();
+  alertUserFeedback('Započteno do denních úkolů! 👍 (0 min)');
+  setTimeout(() => { generateLessonItems(); }, 500);
+}
+
+/* ============================================================
    DENNÍ ŘADA (STREAK)
    ============================================================ */
 
@@ -4287,7 +4303,6 @@ function renderAlphabetGrid() {
   const container = document.getElementById('alphabet-grid-container');
   container.innerHTML = '';
 
-  // POŽADAVEK 2: Přidání horní ovládací lišty s tlačítkem „Odznačit vše“ přímo nad mřížku v administraci čtení
   const headerBar = document.createElement('div');
   headerBar.className = 'col-span-full flex items-center justify-between pb-2 mb-1 border-b border-slate-200';
   headerBar.innerHTML = `
