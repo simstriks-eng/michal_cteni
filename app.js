@@ -685,9 +685,6 @@ function generateMathLevel5(maxVal) {
   return pool;
 }
 
-/* ============================================================
-   SLOVNÍ ÚLOHY S CELOČÍSELNÝM DĚLENÍM A NÁSOBENÍM
-   ============================================================ */
 function generateMathLevel6(maxVal) {
   const pool = [];
   const templates = [...WORD_PROBLEMS_TEMPLATES];
@@ -1515,7 +1512,6 @@ function renderCurrentContent() {
           </div>
         `;
       } else if (item.isWordProblem) {
-        // OPRAVA BUGU: Zajištění dokonalého centrování a zarovnání textu slovní úlohy na střed
         const formulaText = item.formula || `${item.a} ${item.op} ${item.b} = ?`;
 
         card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-3 border-amber-400 shadow-game-card flex flex-col items-center justify-center text-center gap-3 w-full';
@@ -2052,7 +2048,6 @@ function renderStoreSkinsUI() {
 
   const custom = state.customizations || DEFAULT_UNLOCKED_CUSTOMIZATIONS;
 
-  // 1. Skiny
   const avatarsContainer = document.getElementById('store-avatars-grid');
   if (avatarsContainer) {
     avatarsContainer.innerHTML = '';
@@ -2092,7 +2087,6 @@ function renderStoreSkinsUI() {
     });
   }
 
-  // 2. Tapety a Grafická Témata
   const themesContainer = document.getElementById('store-themes-grid');
   if (themesContainer) {
     themesContainer.innerHTML = '';
@@ -2132,7 +2126,6 @@ function renderStoreSkinsUI() {
     });
   }
 
-  // 3. Zvukové Balíčky
   const soundsContainer = document.getElementById('store-sounds-grid');
   if (soundsContainer) {
     soundsContainer.innerHTML = '';
@@ -2305,14 +2298,9 @@ function updateTopAvatarDisplay() {
   container.innerHTML = skin.svg;
 }
 
-/* ============================================================
-   ADMIN MODUL PRO SKINY, TAPETY A CENY
-   ============================================================ */
-
 function updateAdminSkinsUI() {
   const custom = state.customizations || DEFAULT_UNLOCKED_CUSTOMIZATIONS;
 
-  // 1. Skiny
   const skinsList = document.getElementById('admin-skins-list-container');
   if (skinsList) {
     skinsList.innerHTML = '';
@@ -2339,7 +2327,6 @@ function updateAdminSkinsUI() {
     });
   }
 
-  // 2. Tapety
   const themesList = document.getElementById('admin-themes-list-container');
   if (themesList) {
     themesList.innerHTML = '';
@@ -2366,7 +2353,6 @@ function updateAdminSkinsUI() {
     });
   }
 
-  // 3. Zvuky
   const soundsList = document.getElementById('admin-sounds-list-container');
   if (soundsList) {
     soundsList.innerHTML = '';
@@ -2429,10 +2415,6 @@ function adminUnlockAllSkinsForTest(unlockAll = true) {
   renderStoreSkinsUI();
   playTone(660, 0.15, 'triangle', 0.25);
 }
-
-/* ============================================================
-   DIAMANTOVÝ TRH (LIMIT & PIN)
-   ============================================================ */
 
 function updateDiamondMarketUI() {
   const diamondsCount = document.getElementById('store-diamonds-count');
@@ -2638,10 +2620,6 @@ function updateTopBadges() {
   const navTestBadge = document.getElementById('nav-test-badge');
   if (navTestBadge) navTestBadge.classList.toggle('hidden', state.testDoneToday);
 }
-
-/* ============================================================
-   DENNÍ A VÝJIMEČNÁ TRUHLA
-   ============================================================ */
 
 function openDailyBoxModal() {
   checkAndHandleDailyResets();
@@ -2873,7 +2851,7 @@ function updateAdminLegendaryUI() {
 }
 
 /* ============================================================
-   TESTOVACÍ MODUL
+   TESTOVACÍ MODUL (OPRAVA: UNIKÁTNOST POLOŽEK V JEDNOM TESTU)
    ============================================================ */
 
 let testState = { tasks: [], currentIndex: 0, answers: [] };
@@ -2952,7 +2930,8 @@ function generateRandomReadingTaskForLevel(level) {
     subLabel: item.label, 
     questionText: item.text, 
     emoji: '', 
-    correctAnswer: item.text 
+    correctAnswer: item.text,
+    uniqueKey: `reading_${level}_${item.text}`
   };
 }
 
@@ -2961,27 +2940,26 @@ function generateRandomMathTaskForLevel(level) {
   if (level === 1) {
     const tasks = generateMathLevel1(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Počty', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer };
+    return { category: 'math', subLabel: 'Počty', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer, uniqueKey: `math_1_${t.htmlRow}` };
   } else if (level === 2) {
     const tasks = generateMathLevel2(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Porovnávání (<, =, >)', renderType: 'compare', left: t.leftVal, right: t.rightVal, correctAnswer: t.correctAnswer };
+    return { category: 'math', subLabel: 'Porovnávání (<, =, >)', renderType: 'compare', left: t.leftVal, right: t.rightVal, correctAnswer: t.correctAnswer, uniqueKey: `math_2_${t.leftVal}_${t.rightVal}` };
   } else if (level === 3) {
     const tasks = generateMathLevel3(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Číselná řada', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer };
+    return { category: 'math', subLabel: 'Číselná řada', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer, uniqueKey: `math_3_${t.htmlRow}` };
   } else if (level === 4) {
     const tasks = generateMathLevel4(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Počítadlo (+/-)', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer };
+    return { category: 'math', subLabel: 'Počítadlo (+/-)', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer, uniqueKey: `math_4_${t.htmlRow}` };
   } else if (level === 5) {
     const tasks = generateMathLevel5(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Rozklad čísel', renderType: 'decomposition', topNum: t.topNum, leftNum: t.leftNum, rightNum: t.rightNum, missingSide: t.missingSide, correctAnswer: t.correctAnswer };
+    return { category: 'math', subLabel: 'Rozklad čísel', renderType: 'decomposition', topNum: t.topNum, leftNum: t.leftNum, rightNum: t.rightNum, missingSide: t.missingSide, correctAnswer: t.correctAnswer, uniqueKey: `math_5_${t.topNum}_${t.leftNum}_${t.missingSide}` };
   } else {
     const tasks = generateMathLevel6(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
-    // Úprava pro testové vygenerování slovní úlohy (pokud je typu word problem)
     return { 
       category: 'math', 
       subLabel: 'Slovní úloha', 
@@ -2990,7 +2968,8 @@ function generateRandomMathTaskForLevel(level) {
       a: t.a, 
       b: t.b, 
       op: t.op, 
-      correctAnswer: t.correctAnswer 
+      correctAnswer: t.correctAnswer,
+      uniqueKey: `math_6_${t.story}`
     };
   }
 }
@@ -3027,9 +3006,18 @@ function startDailyTest() {
   });
 
   const taskList = [];
-  for (let i = 0; i < targetCount; i++) {
+  const seenKeys = new Set();
+  let safetyCounter = 0;
+
+  while (taskList.length < targetCount && safetyCounter < 300) {
+    safetyCounter++;
     const pickGen = generators[Math.floor(Math.random() * generators.length)];
-    taskList.push(pickGen());
+    const task = pickGen();
+    
+    if (task && !seenKeys.has(task.uniqueKey)) {
+      seenKeys.add(task.uniqueKey);
+      taskList.push(task);
+    }
   }
 
   testState.tasks = taskList;
@@ -3125,7 +3113,6 @@ function renderCurrentTestTask() {
         if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
       }, 50);
     } else if (cur.renderType === 'story') {
-      // OPRAVA BUGU: Dokonalé vycentrování textu slovní úlohy uvnitř testovacího pole
       const card = document.createElement('div');
       card.className = 'flex flex-col items-center justify-center text-center max-w-xl mx-auto gap-4 py-2 w-full';
       card.innerHTML = `
@@ -3902,10 +3889,6 @@ function claimQuestReward(questId) {
   updateTopBadges();
 }
 
-/* ============================================================
-   ADMIN MODUL
-   ============================================================ */
-
 function saveDiamondRate(val) {
   const rate = Math.max(1, parseInt(val, 10) || 20);
   state.diamondExchangeRate = rate;
@@ -4304,6 +4287,17 @@ function renderAlphabetGrid() {
   const container = document.getElementById('alphabet-grid-container');
   container.innerHTML = '';
 
+  // POŽADAVEK 2: Přidání horní ovládací lišty s tlačítkem „Odznačit vše“ přímo nad mřížku v administraci čtení
+  const headerBar = document.createElement('div');
+  headerBar.className = 'col-span-full flex items-center justify-between pb-2 mb-1 border-b border-slate-200';
+  headerBar.innerHTML = `
+    <span class="text-xs font-black text-slate-700">Aktivní písmena pro čtení:</span>
+    <button onclick="unselectAllLetters()" class="game-button bg-rose-100 hover:bg-rose-200 text-rose-800 font-black px-2.5 py-1 rounded-xl text-xs transition-colors flex items-center gap-1 shadow-sm">
+      <span>❌</span> Odznačit vše
+    </button>
+  `;
+  container.appendChild(headerBar);
+
   FULL_CZECH_ALPHABET.forEach(char => {
     const isChecked = state.activeLetters.includes(char);
     const item = document.createElement('div');
@@ -4314,7 +4308,7 @@ function renderAlphabetGrid() {
 
     item.addEventListener('click', () => {
       if (state.activeLetters.includes(char)) {
-        if (state.activeLetters.length > 2) state.activeLetters = state.activeLetters.filter(l => l !== char);
+        if (state.activeLetters.length > 1) state.activeLetters = state.activeLetters.filter(l => l !== char);
       } else {
         state.activeLetters.push(char);
       }
@@ -4323,6 +4317,14 @@ function renderAlphabetGrid() {
     });
     container.appendChild(item);
   });
+}
+
+function unselectAllLetters() {
+  state.activeLetters = [];
+  saveState();
+  renderAlphabetGrid();
+  playTone(400, 0.1, 'sine', 0.15);
+  alertUserFeedback('Všechna písmenka byla odznačena.');
 }
 
 function applyPreset(presetKey) {
