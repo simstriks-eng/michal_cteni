@@ -227,12 +227,16 @@
       </div>
 
       <!-- Center Switcher: Čtení vs Matematika vs TEST -->
-      <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0 h-[42px] items-center">
+      <!-- Center Switcher: Čtení vs Matematika vs Hodiny vs TEST -->
+      <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0 h-[42px] items-center gap-1">
         <button onclick="setSubject('reading')" id="subject-btn-reading" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm">
           <span>📖</span> <span class="hidden sm:inline">Čtení</span>
         </button>
         <button onclick="setSubject('math')" id="subject-btn-math" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200">
           <span>🔢</span> <span class="hidden sm:inline">Matematika</span>
+        </button>
+        <button onclick="setClockView()" id="subject-btn-clocks" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200">
+          <span>⏰</span> <span class="hidden sm:inline">Hodiny</span>
         </button>
         <button onclick="openTestView()" id="subject-btn-test" class="h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative">
           <span>📝</span> <span class="font-black">TEST</span>
@@ -1819,9 +1823,12 @@
   </footer>
 
   <!-- Načtení všech modulů v přesném pořadí závislostí -->
+
   <script src="data.js"></script>
   <script src="audio.js"></script>
   <script src="wardrobe.js"></script>
+  <!-- PŘIDEJ TENTO ŘÁDEK SEM: -->
+  <script src="clocks.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

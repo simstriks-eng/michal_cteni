@@ -1310,46 +1310,84 @@ function speakCurrentCard(event) {
 
 function setSubject(newSubj) {
   state.subject = newSubj;
-  saveState();
+  if (typeof saveState === 'function') saveState();
 
   const btnReading = document.getElementById('subject-btn-reading');
   const btnMath = document.getElementById('subject-btn-math');
+  const btnClocks = document.getElementById('subject-btn-clocks');
   const btnTest = document.getElementById('subject-btn-test');
+  
   const readingTabs = document.getElementById('reading-tabs-container');
   const mathTabs = document.getElementById('math-tabs-container');
-  const caseWrapper = document.getElementById('control-case-wrapper');
-  const modeWrapper = document.getElementById('control-mode-wrapper');
-  const countWrapper = document.getElementById('tile-count-control');
-  const imagesWrapper = document.getElementById('control-images-wrapper');
-  const speechWrapper = document.getElementById('control-speech-wrapper');
+  const generalControlBar = document.getElementById('general-control-bar');
+  const readingReviewPanel = document.getElementById('reading-review-panel');
+  const mathEvalPanel = document.getElementById('math-eval-panel');
 
-  btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+  // Všechna tlačítka hodíme do výchozího stavu
+  if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnMath) btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnClocks) btnClocks.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnTest) btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
 
   if (newSubj === 'reading') {
-    btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
-    btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-    readingTabs.classList.remove('hidden');
-    mathTabs.classList.add('hidden');
-    caseWrapper.classList.remove('hidden');
-    modeWrapper.classList.remove('hidden');
-    countWrapper.classList.remove('hidden');
-    imagesWrapper.classList.remove('hidden');
-    speechWrapper.classList.remove('hidden');
+    if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
+    if (readingTabs) readingTabs.classList.remove('hidden');
+    if (mathTabs) mathTabs.classList.add('hidden');
+    if (generalControlBar) generalControlBar.classList.remove('hidden');
+    if (readingReviewPanel) readingReviewPanel.classList.remove('hidden');
+    if (mathEvalPanel) mathEvalPanel.classList.add('hidden');
   } else {
-    btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
-    btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-    mathTabs.classList.remove('hidden');
-    readingTabs.classList.add('hidden');
-    caseWrapper.classList.add('hidden');
-    modeWrapper.classList.add('hidden');
-    countWrapper.classList.add('hidden');
-    imagesWrapper.classList.add('hidden');
-    speechWrapper.classList.add('hidden');
+    if (btnMath) btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
+    if (mathTabs) mathTabs.classList.remove('hidden');
+    if (readingTabs) readingTabs.classList.add('hidden');
+    if (generalControlBar) generalControlBar.classList.remove('hidden');
+    if (mathEvalPanel) mathEvalPanel.classList.remove('hidden');
+    if (readingReviewPanel) readingReviewPanel.classList.add('hidden');
   }
 
-  showView('learn');
-  playTone(560, 0.1, 'sine', 0.2);
-  generateLessonItems();
+  // Ujistíme se, že grid pro hodiny je schovaný, když jsme v čtení/matematice
+  const clockContainer = document.getElementById('content-grid-view');
+  // Poznámka: pokud nejde o hodiny, renderClockSection se nespouští, ale zajistíme čistý stav
+  if (typeof showView === 'function') showView('learn');
+  if (typeof generateLessonItems === 'function') generateLessonItems();
+}
+
+function setClockView() {
+  const btnReading = document.getElementById('subject-btn-reading');
+  const btnMath = document.getElementById('subject-btn-math');
+  const btnClocks = document.getElementById('subject-btn-clocks');
+  const btnTest = document.getElementById('subject-btn-test');
+
+  // Správné rozsvícení tlačítka Hodiny v horní liště
+  if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnMath) btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnClocks) btnClocks.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
+  if (btnTest) btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+
+  if (typeof showView === 'function') showView('learn');
+  
+  const readingTabs = document.getElementById('reading-tabs-container');
+  const mathTabs = document.getElementById('math-tabs-container');
+  const generalControlBar = document.getElementById('general-control-bar');
+  const readingReviewPanel = document.getElementById('reading-review-panel');
+  const mathEvalPanel = document.getElementById('math-eval-panel');
+
+  // Schováme všechny panely z Čtení a Matematiky
+  if (readingTabs) readingTabs.classList.add('hidden');
+  if (mathTabs) mathTabs.classList.add('hidden');
+  if (generalControlBar) generalControlBar.classList.add('hidden');
+  if (readingReviewPanel) readingReviewPanel.classList.add('hidden');
+  if (mathEvalPanel) mathEvalPanel.classList.add('hidden');
+
+  // KLÍČOVÉ: Úplně vyčistíme hlavní kontejner od zděděných grid tříd ze čtení
+  const gridView = document.getElementById('content-grid-view');
+  if (gridView) {
+    gridView.className = 'w-full flex flex-col items-center justify-center';
+  }
+
+  if (typeof renderClockSection === 'function') {
+    renderClockSection();
+  }
 }
 
 function switchLevel(lvl) {
