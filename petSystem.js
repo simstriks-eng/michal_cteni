@@ -1,13 +1,14 @@
 /* ============================================================
    petSystem.js - Školácká Mise
    Modul: Aréna společníků (Pet RPG - Slayer Stage Progression)
-   - 4 unikátní petové (odemykají se v Obchodě, přepínají přes modální okno „Vyměň PETA“)
+   - Unikátní petové (odemykají se v Obchodě, přepínají přes modální okno „Vyměň PETA“)
+   - Každý pet má vlastní linii botů, vlastní Patro (stage) a soupeře striktně na svém vlastním levelu
    - Externí obrázky postav (HERO_SPRITES) načítané přes new Image() a vykreslované přes ctx.drawImage()
    - Stage / Patra (1, 2, 3...): každé 10. patro je BOSS (vyžaduje 4 Silné útoky a 0 chyb!)
    - Dynamické škálování HP a DMG tak, aby běžný boj trval max. 4 úkoly a Boss byl výzva
    - Zákaz duplicitních otázek v jednom boji + striktní dělení Lehký vs. Silný útok
    - Potvrzovací okno před oživením peta za diamanty, když dojdou Kameny oživení
-   - Loot z poražených botů: 15% šance na Kámen oživení (❤️‍🔥) a 10% šance na Bojový lístek (🎟️ +1 zápas dnes)
+   - Bojové lístky do Arény: použití okamžitě spustí další zápas a počítadlo zápasů zůstává 5/5
    ============================================================ */
 
 const HERO_SPRITES = {
@@ -92,16 +93,22 @@ function createHeroCanvasMarkup(heroId) {
 
 preloadHeroSprites();
 
-if (typeof window !== 'undefined' && typeof MutationObserver !== 'undefined') {
-  window.addEventListener('DOMContentLoaded', () => {
-    refreshAllHeroCanvases();
+function initHeroCanvasObserver() {
+  refreshAllHeroCanvases();
+  if (typeof MutationObserver !== 'undefined' && document.body) {
     const observer = new MutationObserver(() => {
       refreshAllHeroCanvases();
     });
-    if (document.body) {
-      observer.observe(document.body, { childList: true, subtree: true });
-    }
-  });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+}
+
+if (typeof window !== 'undefined') {
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initHeroCanvasObserver);
+  } else {
+    initHeroCanvasObserver();
+  }
 }
 
 const PETS_DATABASE = [
@@ -283,6 +290,15 @@ const ARENA_MONSTERS_ROSTER = [
   }
 ];
 
+// Každý pet má vlastní posun v rotaci botů, aby měl každý pet svou vlastní linii nepřátel
+const PET_BOT_OFFSETS = {
+  pikachu: 0,
+  bulbasaur: 1,
+  sonic: 2,
+  charmander: 3,
+  mewtwo: 4
+};
+
 function getPetTodayDateStr() {
   if (typeof getTodayDateString === 'function') return getTodayDateString();
   const d = new Date();
@@ -300,6 +316,8 @@ function createDefaultPetSystemState() {
       isKnockedOut: false,
       wins: 0,
       losses: 0,
+      currentStage: 1,
+      highestStage: 1,
       customPrice: p.price
     };
   });
@@ -310,6 +328,7 @@ function createDefaultPetSystemState() {
     lastArenaDate: getPetTodayDateStr(),
     battlesToday: 0,
     bonusBattlesToday: 0,
+    ticketMatchActive: false,
     battleTicketsCount: 0,
     currentStage: 1,
     highestStage: 1,
@@ -324,6 +343,7 @@ function createDefaultPetSystemState() {
       xpCurveMultiplier: 1.45,
       reviveCostDiamonds: 2,
       foodCostDiamonds: 1,
+      ticketCostDiamonds: 1,
       diamondsPerLevelUp: 3,
       foodPerWin: 1,
       maxDailyBattles: 5,
@@ -334,6 +354,7 @@ function createDefaultPetSystemState() {
 
 let arenaBattleState = {
   inProgress: false,
+  petId: null,
   monster: null,
   monsterLevel: 1,
   stage: 1,
@@ -360,8 +381,7 @@ function getEffectiveMaxDailyBattles() {
   if (!window.state || !window.state.petSystem) return 5;
   const ps = window.state.petSystem;
   const baseMax = (ps.config && ps.config.maxDailyBattles !== undefined) ? ps.config.maxDailyBattles : 5;
-  const bonus = ps.bonusBattlesToday || 0;
-  return baseMax + bonus;
+  return baseMax;
 }
 
 function ensurePetStateInitialized() {
@@ -379,6 +399,16 @@ function ensurePetStateInitialized() {
       PETS_DATABASE.forEach(p => {
         if (!ps.pets[p.id]) {
           ps.pets[p.id] = def.pets[p.id];
+        } else {
+          // Migrace: každý pet má své vlastní patro (currentStage / highestStage)
+          if (!ps.pets[p.id].currentStage || ps.pets[p.id].currentStage < 1) {
+            ps.pets[p.id].currentStage = (p.id === ps.activePetId && ps.currentStage && ps.currentStage >= 1)
+              ? ps.currentStage
+              : 1;
+          }
+          if (!ps.pets[p.id].highestStage || ps.pets[p.id].highestStage < ps.pets[p.id].currentStage) {
+            ps.pets[p.id].highestStage = ps.pets[p.id].currentStage;
+          }
         }
       });
     }
@@ -394,12 +424,19 @@ function ensurePetStateInitialized() {
 
     if (ps.battlesToday === undefined) ps.battlesToday = 0;
     if (ps.bonusBattlesToday === undefined) ps.bonusBattlesToday = 0;
+    if (ps.ticketMatchActive === undefined) ps.ticketMatchActive = false;
     if (ps.battleTicketsCount === undefined) ps.battleTicketsCount = 0;
+    if (ps.config.ticketCostDiamonds === undefined) ps.config.ticketCostDiamonds = 1;
     if (!ps.currentStage || ps.currentStage < 1) ps.currentStage = 1;
     if (!ps.highestStage || ps.highestStage < ps.currentStage) ps.highestStage = ps.currentStage;
 
     if (!ps.activePetId || !ps.pets[ps.activePetId] || !ps.pets[ps.activePetId].unlocked) {
       ps.activePetId = getFirstUnlockedPetId();
+    }
+
+    if (ps.activePetId && ps.pets[ps.activePetId]) {
+      ps.currentStage = ps.pets[ps.activePetId].currentStage || 1;
+      ps.highestStage = ps.pets[ps.activePetId].highestStage || ps.currentStage;
     }
   }
   checkAndHandlePetDailyReset();
@@ -418,6 +455,7 @@ function checkAndHandlePetDailyReset() {
     ps.lastArenaDate = today;
     ps.battlesToday = 0;
     ps.bonusBattlesToday = 0;
+    ps.ticketMatchActive = false;
 
     PETS_DATABASE.forEach(p => {
       const petData = ps.pets[p.id];
@@ -433,7 +471,8 @@ function checkAndHandlePetDailyReset() {
 
 /* ============================================================
    MATEMATIKA ŠKÁLOVÁNÍ (SLAYER STAGE PROGRESSION)
-   - Běžné patro (1–9): Soupeř má 2.0× až 3.0× HeavyDMG HP -> boj vždy max. na 3–4 úkoly!
+   - Každý pet má své vlastní patro (stage) a soupeře přesně na své vlastní úrovni (levelu)!
+   - Běžné patro (1–9): Soupeř má 2.0× až 2.8× HeavyDMG HP -> boj vždy max. na 3–4 úkoly!
    - Každé 10. patro = BOSS (10, 20, 30...):
      * Boss má přesně 4.0× HeavyDMG HP -> vyžaduje 4 Silné útoky!
      * Lehký útok (0.7× HeavyDMG) na zabití včas nestačí!
@@ -493,8 +532,8 @@ function updateTopPetCompanionWidget() {
   const activeId = ps.activePetId;
   const petData = activeId ? ps.pets[activeId] : null;
   const maxDaily = getEffectiveMaxDailyBattles();
-  const battlesToday = ps.battlesToday || 0;
-  const hasBattlesAvailable = battlesToday < maxDaily;
+  const battlesToday = Math.min(maxDaily, ps.battlesToday || 0);
+  const hasBattlesAvailable = (battlesToday < maxDaily) || !!ps.ticketMatchActive;
 
   if (!activeId || !petData || !petData.unlocked) {
     badgeContainer.innerHTML = `
@@ -517,7 +556,7 @@ function updateTopPetCompanionWidget() {
 
   badgeContainer.innerHTML = `
     ${showRedDiode ? `
-      <span class="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 z-10" title="Zbývá zápasů dnes: ${maxDaily - battlesToday}">
+      <span class="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 z-10" title="Zápas v Aréně připraven!">
         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-80"></span>
         <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-600 border-2 border-white shadow-sm"></span>
       </span>
@@ -541,14 +580,26 @@ function updateTopPetCompanionWidget() {
 }
 
 /* ============================================================
-   OTEVŘENÍ OBRAZOVKY ARÉNY A INICIALIZACE SOUBOJE DLE PATRA
+   OTEVŘENÍ OBRAZOVKY ARÉNY A INICIALIZACE SOUBOJE DLE PATRA PETA
    ============================================================ */
 
 function openArenaView() {
   ensurePetStateInitialized();
   if (typeof showView === 'function') showView('arena');
 
-  if (!arenaBattleState.inProgress && window.state.petSystem.activePetId) {
+  const ps = window.state.petSystem;
+  const activeId = ps.activePetId;
+  const petData = activeId ? ps.pets[activeId] : null;
+  const petStage = petData ? (petData.currentStage || 1) : 1;
+  const petLvl = petData ? (petData.level || 1) : 1;
+
+  if (
+    activeId &&
+    (!arenaBattleState.inProgress ||
+      arenaBattleState.petId !== activeId ||
+      arenaBattleState.stage !== petStage ||
+      arenaBattleState.monsterLevel !== petLvl)
+  ) {
     spawnNewArenaMonster();
   }
   renderArenaView();
@@ -562,24 +613,26 @@ function spawnNewArenaMonster() {
   const petData = activeId ? ps.pets[activeId] : null;
   const petLvl = petData ? (petData.level || 1) : 1;
 
-  const stage = Math.max(1, ps.currentStage || 1);
+  // Každý pet má své vlastní patro (currentStage) a svou vlastní linii botů!
+  const stage = Math.max(1, petData ? (petData.currentStage || 1) : 1);
+  ps.currentStage = stage;
+  ps.highestStage = Math.max(ps.highestStage || 1, petData ? (petData.highestStage || stage) : stage);
+
   const isBoss = (stage % 10 === 0);
   const subStage = stage % 10; // 1..9 pro běžná patra, 0 pro Boss patro
+  const botOffset = PET_BOT_OFFSETS[activeId] || 0;
 
-  // Výběr monstra (na Boss patře vybíráme prioritně Boss draka / titána)
   let chosenMonster;
   if (isBoss) {
     const bossPool = ARENA_MONSTERS_ROSTER.filter(m => m.isBossCandidate);
-    chosenMonster = bossPool[(Math.floor(stage / 10) - 1) % bossPool.length] || ARENA_MONSTERS_ROSTER[ARENA_MONSTERS_ROSTER.length - 1];
+    chosenMonster = bossPool[(Math.floor(stage / 10) - 1 + botOffset) % bossPool.length] || ARENA_MONSTERS_ROSTER[ARENA_MONSTERS_ROSTER.length - 1];
   } else {
     const normalPool = ARENA_MONSTERS_ROSTER;
-    chosenMonster = normalPool[(stage - 1) % normalPool.length];
+    chosenMonster = normalPool[(stage - 1 + botOffset) % normalPool.length];
   }
 
-  // Referenční síla: škáluje se podle levelu peta, ale pokud hráč stoupá do vysokých pater,
-  // každých 5 pater vyžaduje aspoň odpovídající minimální sílu
-  const minExpectedLvlForStage = Math.max(1, Math.floor((stage - 1) / 4) + 1);
-  const effectiveScaleLvl = Math.max(petLvl, minExpectedLvlForStage);
+  // Nepřítel je vždy striktně na stejné úrovni (levelu) jako aktuálně vybraný pet!
+  const effectiveScaleLvl = petLvl;
   const refHeavyDmg = getPetHeavyAttackBaseDamage(effectiveScaleLvl);
 
   let maxHp;
@@ -594,6 +647,7 @@ function spawnNewArenaMonster() {
 
   arenaBattleState = {
     inProgress: true,
+    petId: activeId,
     monster: chosenMonster,
     monsterLevel: effectiveScaleLvl,
     stage: stage,
@@ -605,7 +659,7 @@ function spawnNewArenaMonster() {
     usedTaskSignatures: [],
     turnLocked: false,
     battleLog: isBoss
-      ? `🔥 BOSS PATRO ${stage}: ${chosenMonster.name}! Útoč jen SILNÝM útokem a nesmíš udělat chybu!`
+      ? `🔥 BOSS PATRO ${stage}: ${chosenMonster.name} (Lv.${effectiveScaleLvl})! Útoč jen SILNÝM útokem a nesmíš udělat chybu!`
       : `🏰 Patro ${stage} • Soupeř: ${chosenMonster.name} (Lv.${effectiveScaleLvl})`
   };
 }
@@ -642,6 +696,7 @@ function renderArenaPetSwitchModal() {
     const isSelected = isUnlocked && pet.id === activeId;
     const isKo = pState && pState.isKnockedOut;
     const lvl = pState ? (pState.level || 1) : 1;
+    const petStage = pState ? (pState.currentStage || 1) : 1;
     const reqXp = getXpRequiredForNextLevel(lvl);
     const maxHp = getPetMaxHp(pet.id);
     const curHp = isKo ? 0 : Math.min(maxHp, pState ? pState.currentHp : maxHp);
@@ -672,7 +727,10 @@ function renderArenaPetSwitchModal() {
             ${pet.svg}
           </div>
           <div class="text-left flex-grow">
-            <h4 class="text-base font-black text-slate-800 font-baloo leading-tight">${pet.name}</h4>
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <h4 class="text-base font-black text-slate-800 font-baloo leading-tight">${pet.name}</h4>
+              ${isUnlocked ? `<span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300">🏰 Patro ${petStage}</span>` : ''}
+            </div>
             <div class="text-xs font-black ${isKo ? 'text-rose-600' : 'text-emerald-700'} mt-0.5">
               ❤️ HP: ${curHp} / ${maxHp}
             </div>
@@ -688,7 +746,7 @@ function renderArenaPetSwitchModal() {
           isSelected
             ? `<button onclick="closeArenaPetSwitchModal()" class="game-button w-full bg-amber-400 text-amber-950 font-black py-2 rounded-xl text-xs border-b-3 border-amber-600">✅ Právě v Aréně</button>`
             : isUnlocked
-              ? `<button onclick="selectActivePetInArena('${pet.id}'); closeArenaPetSwitchModal();" class="game-button w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 rounded-xl text-xs border-b-3 border-indigo-800 shadow-sm">⚔️ Nasadit do Arény</button>`
+              ? `<button onclick="selectActivePetInArena('${pet.id}'); closeArenaPetSwitchModal();" class="game-button w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 rounded-xl text-xs border-b-3 border-indigo-800 shadow-sm">⚔️ Nasadit do Arény (Patro ${petStage})</button>`
               : `<button onclick="closeArenaPetSwitchModal(); showStoreTab('pets');" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-2 rounded-xl text-xs border-b-3 border-cyan-700 shadow-sm">🛍️ Odemknout v Obchodě (${price} 💎)</button>`
         }
       </div>
@@ -709,6 +767,7 @@ function selectActivePetInArena(petId) {
   }
 
   window.state.petSystem.activePetId = petId;
+  window.state.petSystem.currentStage = petData.currentStage || 1;
   const maxHp = getPetMaxHp(petId);
   if (!petData.isKnockedOut && (petData.currentHp === undefined || petData.currentHp <= 0)) {
     petData.currentHp = maxHp;
@@ -722,7 +781,7 @@ function selectActivePetInArena(petId) {
 }
 
 /* ============================================================
-   POUŽITÍ BOJOVÉHO LÍSTKU (+1 ZÁPAS DNES JAKO V SHAKES & FIDGET)
+   POUŽITÍ BOJOVÉHO LÍSTKU (SPUSTÍ DALŠÍ ZÁPAS, POČÍTADLO ZŮSTÁVÁ 5/5)
    ============================================================ */
 
 function useArenaBattleTicketAction() {
@@ -732,20 +791,34 @@ function useArenaBattleTicketAction() {
   if ((ps.battleTicketsCount || 0) <= 0) {
     if (typeof soundError === 'function') soundError();
     if (typeof alertUserFeedback === 'function') {
-      alertUserFeedback('Nemáš žádný Bojový lístek 🎟️! Padá s 10% šancí za poražení soupeře v Aréně.');
+      alertUserFeedback('Nemáš žádný Bojový lístek 🎟️! Padá v Aréně, z Denní truhly nebo ho koupíš v Obchodě.');
+    }
+    return;
+  }
+
+  if (ps.ticketMatchActive) {
+    if (typeof soundError === 'function') soundError();
+    if (typeof alertUserFeedback === 'function') {
+      alertUserFeedback('🎟️ Další zápas z lístku už je spuštěný! Bojuj v Aréně! ⚔️');
     }
     return;
   }
 
   ps.battleTicketsCount--;
-  ps.bonusBattlesToday = (ps.bonusBattlesToday || 0) + 1;
+  ps.ticketMatchActive = true;
+
+  const winModal = document.getElementById('arena-victory-modal');
+  if (winModal) winModal.classList.add('hidden');
+
+  spawnNewArenaMonster();
 
   if (typeof saveState === 'function') saveState();
   if (typeof playCustomSuccessSound === 'function') playCustomSuccessSound();
   updateTopPetCompanionWidget();
   renderArenaView();
+  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
   if (typeof alertUserFeedback === 'function') {
-    alertUserFeedback(`🎟️ Bojový lístek použit! Dnešní limit zápasů navýšen na ${getEffectiveMaxDailyBattles()}! ⚔️`);
+    alertUserFeedback('🎟️ Bojový lístek použit! Další zápas byl spuštěn! ⚔️');
   }
 }
 
@@ -759,7 +832,9 @@ function renderArenaView() {
   const activeId = ps.activePetId;
   const maxDaily = getEffectiveMaxDailyBattles();
   const battlesToday = ps.battlesToday || 0;
-  const stage = ps.currentStage || 1;
+  const shownBattlesToday = Math.min(battlesToday, maxDaily);
+  const activePetData = activeId ? ps.pets[activeId] : null;
+  const stage = (activePetData && activePetData.currentStage) ? activePetData.currentStage : 1;
   const isBossStage = (stage % 10 === 0);
 
   // Aktualizace horního přehledu surovin v Aréně
@@ -793,9 +868,9 @@ function renderArenaView() {
   }
 
   if (dailyBadge) {
-    dailyBadge.textContent = `⚔️ Dnes: ${battlesToday} / ${maxDaily}`;
+    dailyBadge.textContent = `⚔️ Dnes: ${shownBattlesToday} / ${maxDaily}`;
     dailyBadge.className = `px-3 py-1.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 whitespace-nowrap shadow-inner ${
-      battlesToday >= maxDaily
+      battlesToday >= maxDaily && !ps.ticketMatchActive
         ? 'bg-rose-950/90 border-rose-400 text-rose-200'
         : 'bg-indigo-900/90 border-indigo-400 text-indigo-100'
     }`;
@@ -820,12 +895,19 @@ function renderArenaView() {
   if (lockedEmptyState) lockedEmptyState.classList.add('hidden');
   if (battleStage) battleStage.classList.remove('hidden');
 
-  if (!arenaBattleState.inProgress || !arenaBattleState.monster || arenaBattleState.stage !== stage) {
-    spawnNewArenaMonster();
-  }
-
   const petDef = PETS_DATABASE.find(p => p.id === activeId) || PETS_DATABASE[0];
   const petData = ps.pets[activeId];
+
+  // Kontrola, zda soupeř odpovídá aktuálně nasazenému petovi, jeho patru a jeho vlastnímu levelu
+  if (
+    !arenaBattleState.inProgress ||
+    !arenaBattleState.monster ||
+    arenaBattleState.petId !== activeId ||
+    arenaBattleState.stage !== stage ||
+    arenaBattleState.monsterLevel !== (petData.level || 1)
+  ) {
+    spawnNewArenaMonster();
+  }
 
   const maxHp = getPetMaxHp(activeId);
   if (petData.currentHp > maxHp) petData.currentHp = maxHp;
@@ -960,7 +1042,7 @@ function renderArenaView() {
     if (koOverlay) koOverlay.classList.remove('hidden');
     if (dailyLimitPanel) dailyLimitPanel.classList.add('hidden');
     if (attackControls) attackControls.classList.add('hidden');
-  } else if (battlesToday >= maxDaily) {
+  } else if (battlesToday >= maxDaily && !ps.ticketMatchActive) {
     if (koOverlay) koOverlay.classList.add('hidden');
     if (dailyLimitPanel) dailyLimitPanel.classList.remove('hidden');
     if (attackControls) attackControls.classList.add('hidden');
@@ -1093,16 +1175,11 @@ function completePetRevive(feedbackMsg) {
 
 /* ============================================================
    STRIKTNÍ DĚLENÍ LEHKÝ vs. SILNÝ ÚTOK + ZÁKAZ DUPLICIT V BOJI
-   - Lehký útok (Čtení): Písmeno, Slabika, Jednoslabičné slovo (např. KŮŇ, LES, MYŠ)
-   - Silný útok (Čtení): POUZE Dvouslabičná/víceslabičná slova a Celé věty!
-   - Lehký útok (Matematika): Lehčí sčítání a odčítání do 10
-   - Silný útok (Matematika): Slovní úlohy a těžší sčítání/odčítání
    ============================================================ */
 
 function countCzechSyllables(word) {
   if (!word) return 0;
   const cleaned = word.trim().toUpperCase();
-  // Samohlásky a dvojhlásky (OU, AU, EU počítáme jako 1 slabikotvorné jádro)
   const normalized = cleaned.replace(/OU|AU|EU/g, 'A');
   const vowelMatches = normalized.match(/[AEIOUYÁÉÍÓÚŮÝĚ]/g);
   return vowelMatches ? vowelMatches.length : 1;
@@ -1124,7 +1201,6 @@ function buildReadingCandidatesForAttack(attackType) {
   const poolLvl6 = (typeof LEVEL_6_SOFT !== 'undefined') ? LEVEL_6_SOFT.filter(w => canForm(w.letters)) : [];
   const poolLvl7 = (typeof LEVEL_7_SENTENCES !== 'undefined') ? LEVEL_7_SENTENCES.filter(s => canForm(s.letters)) : [];
 
-  // Unikátní logická slova z data.js filtrovaná podle aktivních písmen v Admin módu
   const seenTexts = new Set();
   const dedupWords = (arr) => arr.filter(w => {
     if (!w || !w.text || seenTexts.has(w.text)) return false;
@@ -1139,7 +1215,6 @@ function buildReadingCandidatesForAttack(attackType) {
   const candidates = [];
 
   if (attackType === 'heavy') {
-    // SILNÝ ÚTOK: Logická dvouslabičná/víceslabičná slova a celé věty z data.js (podle aktivních písmen)
     multiSyllableWords.forEach(w => {
       candidates.push({
         subject: 'reading',
@@ -1160,7 +1235,6 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     });
 
-    // Pokud z povolených písmen zatím nelze složit víceslabičné slovo ani větu, použijeme logická jednoslabičná slova z data.js
     if (candidates.length === 0) {
       oneSyllableWords.forEach(w => {
         candidates.push({
@@ -1173,7 +1247,6 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     }
 
-    // Nouzová pojistka pokud rodič vypnul téměř všechna písmena: pouze reálná slova z LEVEL_4_TWO_SYLLABLE_WORDS
     if (candidates.length === 0 && typeof LEVEL_4_TWO_SYLLABLE_WORDS !== 'undefined') {
       LEVEL_4_TWO_SYLLABLE_WORDS.slice(0, 15).forEach(w => {
         candidates.push({
@@ -1186,7 +1259,6 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     }
   } else {
-    // LEHKÝ ÚTOK: Logická jednoslabičná a dvouslabičná slova z data.js (podle aktivních písmen)
     oneSyllableWords.forEach(w => {
       candidates.push({
         subject: 'reading',
@@ -1197,7 +1269,6 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     });
 
-    // Přidáme i základní dvouslabičná slova z 4. kategorie, pokud je jednoslabičných málo
     if (candidates.length < 6) {
       poolLvl4.forEach(w => {
         if (!candidates.some(c => c.promptText === w.text)) {
@@ -1212,7 +1283,6 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     }
 
-    // Nouzová pojistka pokud rodič vypnul téměř všechna písmena: pouze reálná slova z LEVEL_3_CVC_WORDS
     if (candidates.length === 0 && typeof LEVEL_3_CVC_WORDS !== 'undefined') {
       LEVEL_3_CVC_WORDS.slice(0, 15).forEach(w => {
         candidates.push({
@@ -1233,7 +1303,6 @@ function generateSingleMathCandidate(attackType) {
   const maxVal = (window.state && window.state.mathMax) ? window.state.mathMax : 10;
 
   if (attackType === 'light') {
-    // LEHKÝ ÚTOK: Lehčí sčítání a odčítání s menšími čísly
     const lightMax = Math.min(maxVal, 10);
     const isPlus = Math.random() > 0.45;
     if (isPlus) {
@@ -1262,7 +1331,6 @@ function generateSingleMathCandidate(attackType) {
       };
     }
   } else {
-    // SILNÝ ÚTOK: Slovní úlohy nebo těžší sčítání / odčítání
     const useStory = Math.random() < 0.5 && typeof generateMathLevel6 === 'function';
     if (useStory) {
       const stories = generateMathLevel6(maxVal);
@@ -1326,7 +1394,6 @@ function generateArenaBattleTask(attackType) {
 
   if (subj === 'reading') {
     const allCandidates = buildReadingCandidatesForAttack(attackType);
-    // Odfiltrujeme již použité otázky v tomto boji
     const unused = allCandidates.filter(c => !used.includes(c.signature));
     const pool = unused.length > 0 ? unused : allCandidates;
     const chosen = pool[Math.floor(Math.random() * pool.length)];
@@ -1361,9 +1428,9 @@ function triggerArenaAttackModal(attackType) {
 
   const ps = window.state.petSystem;
   const maxDaily = getEffectiveMaxDailyBattles();
-  if ((ps.battlesToday || 0) >= maxDaily) {
+  if ((ps.battlesToday || 0) >= maxDaily && !ps.ticketMatchActive) {
     if (typeof soundError === 'function') soundError();
-    if (typeof alertUserFeedback === 'function') alertUserFeedback('Dnešní limit zápasů v Aréně je již vyčerpán! 🌙');
+    if (typeof alertUserFeedback === 'function') alertUserFeedback('Dnešní limit zápasů v Aréně je již vyčerpán! Použij Bojový lístek 🎟️ nebo počkej na zítřek.');
     renderArenaView();
     return;
   }
@@ -1515,20 +1582,17 @@ function executeMonsterCounterAttack(wasPlayerMiss) {
   const petData = ps.pets[activeId];
   const m = arenaBattleState.monster;
   const maxPetHp = getPetMaxHp(activeId);
+  const activeStage = (petData && petData.currentStage) ? petData.currentStage : 1;
 
   let rawDmg;
   if (arenaBattleState.isBoss) {
-    // BOSS MATEMATIKA:
-    // Při bezchybném boji na 4 Silné útoky stihne Boss zaútočit 3× (po 1., 2. a 3. tahu):
-    // 3 × 30 % = 90 % MaxHP -> pet přežije s ~10 % HP!
-    // Pokud dá hráč Lehký útok (Boss přežije 4. tah) nebo udělá chybu (45 % HP), pet padne!
     if (wasPlayerMiss) {
       rawDmg = Math.ceil(maxPetHp * 0.45);
     } else {
       rawDmg = Math.ceil(maxPetHp * 0.30);
     }
   } else {
-    const subStage = (ps.currentStage || 1) % 10;
+    const subStage = activeStage % 10;
     const pct = 0.14 + subStage * 0.008 + (wasPlayerMiss ? 0.08 : 0);
     rawDmg = Math.max(8, Math.round(maxPetHp * pct));
   }
@@ -1555,10 +1619,16 @@ function executeMonsterCounterAttack(wasPlayerMiss) {
   if (petData.currentHp <= 0) {
     petData.isKnockedOut = true;
     petData.losses = (petData.losses || 0) + 1;
-    ps.battlesToday = (ps.battlesToday || 0) + 1;
+    const maxDaily = getEffectiveMaxDailyBattles();
+    if (ps.ticketMatchActive) {
+      ps.ticketMatchActive = false;
+      ps.battlesToday = Math.min(maxDaily, ps.battlesToday || 0);
+    } else {
+      ps.battlesToday = Math.min(maxDaily, (ps.battlesToday || 0) + 1);
+    }
     if (typeof updateDailyQuestsProgress === 'function') updateDailyQuestsProgress('arena', 1);
     arenaBattleState.turnLocked = false;
-    arenaBattleState.battleLog = `💀 ${petData.name || 'Parťák'} padl v Patře ${ps.currentStage || 1}! Oživ ho nebo se přes noc uzdraví.`;
+    arenaBattleState.battleLog = `💀 ${petData.name || 'Parťák'} padl v Patře ${activeStage}! Oživ ho nebo se přes noc uzdraví.`;
     if (typeof saveState === 'function') saveState();
     updateTopPetCompanionWidget();
     renderArenaView();
@@ -1610,15 +1680,25 @@ function handleArenaVictory() {
   const petDef = PETS_DATABASE.find(p => p.id === activeId) || PETS_DATABASE[0];
   const petData = ps.pets[activeId];
 
-  const clearedStage = ps.currentStage || 1;
+  const clearedStage = petData.currentStage || 1;
   const wasBoss = (clearedStage % 10 === 0);
 
   petData.wins = (petData.wins || 0) + 1;
-  ps.battlesToday = (ps.battlesToday || 0) + 1;
+  const maxDaily = getEffectiveMaxDailyBattles();
+  if (ps.ticketMatchActive) {
+    ps.ticketMatchActive = false;
+    ps.battlesToday = Math.min(maxDaily, ps.battlesToday || 0);
+  } else {
+    ps.battlesToday = Math.min(maxDaily, (ps.battlesToday || 0) + 1);
+  }
   if (typeof updateDailyQuestsProgress === 'function') updateDailyQuestsProgress('arena', 1);
 
-  // Postup do vyššího patra (Slayer Stage Progression)
-  ps.currentStage = clearedStage + 1;
+  // Postup do vyššího patra pro tohoto konkrétního peta (Slayer Stage Progression)
+  petData.currentStage = clearedStage + 1;
+  if (petData.currentStage > (petData.highestStage || 1)) {
+    petData.highestStage = petData.currentStage;
+  }
+  ps.currentStage = petData.currentStage;
   if (ps.currentStage > (ps.highestStage || 1)) {
     ps.highestStage = ps.currentStage;
   }
@@ -1635,7 +1715,7 @@ function handleArenaVictory() {
     ps.revivePotionsCount = (ps.revivePotionsCount || 0) + 1;
   }
 
-  // LOOT DROP #2: 10% šance na Bojový lístek (🎟️ +1 zápas dnes)
+  // LOOT DROP #2: 10% šance na Bojový lístek (🎟️ spuštění dalšího zápasu)
   const droppedBattleTicket = Math.random() < 0.10;
   if (droppedBattleTicket) {
     ps.battleTicketsCount = (ps.battleTicketsCount || 0) + 1;
@@ -1674,7 +1754,7 @@ function handleArenaVictory() {
     winSummary.innerHTML = `
       <div class="text-sm font-bold text-slate-600 mb-3">
         Pokoril jsi <strong>${wasBoss ? `🔥 BOSSE PATRA ${clearedStage}` : `Patro ${clearedStage}`} (${arenaBattleState.monster.name})</strong>!<br>
-        <span class="text-xs font-black text-indigo-700">Postupuješ do Patra ${ps.currentStage}! 🏰</span>
+        <span class="text-xs font-black text-indigo-700">${petDef.name} postupuje do Patra ${petData.currentStage}! 🏰</span>
       </div>
       <div class="grid grid-cols-2 gap-3 text-center my-2">
         <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3">
@@ -1697,7 +1777,7 @@ function handleArenaVictory() {
       ${droppedBattleTicket ? `
         <div class="mt-2.5 p-3 rounded-2xl bg-emerald-50 border-2 border-emerald-400 text-emerald-900 font-black text-xs flex items-center justify-center gap-2 shadow-sm">
           <span class="text-xl">🎟️</span>
-          <span>BONUSOVÝ LOOT (10%): Padl ti <strong>+1 Bojový lístek</strong> na extra zápas!</span>
+          <span>BONUSOVÝ LOOT (10%): Padl ti <strong>+1 Bojový lístek</strong> na další zápas!</span>
         </div>
       ` : ''}
       ${levelsGained > 0 ? `
@@ -1766,7 +1846,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
     }
 
     if (typeof playTone === 'function') {
-      // Mystický psychický zvuk: probuzení očí -> telekinetická rezonance -> kosmický úder
       playTone(310, 0.22, 'sine', 0.24);
       setTimeout(() => playTone(620, 0.22, 'triangle', 0.26), 110);
       setTimeout(() => playTone(930, 0.25, 'sine', 0.28), 220);
@@ -1795,7 +1874,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
     const totalFrames = attackType === 'heavy' ? 56 : 44;
     let frame = 0;
 
-    // Vygenerujeme částice pro psychickou spirálu a supernovu
     const orbs = Array.from({ length: attackType === 'heavy' ? 28 : 18 }, (_, idx) => ({
       angleOffset: (idx / 14) * Math.PI * 2,
       radiusOffset: 16 + (idx % 4) * 9,
@@ -1805,7 +1883,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
 
     function drawGlowingEye(cx, cy, intensity, isHeavyAttack) {
       ctx.save();
-      // Vnější psychická záře oka
       const grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, 22 * intensity);
       grad.addColorStop(0, '#ffffff');
       grad.addColorStop(0.25, isHeavyAttack ? '#38bdf8' : '#e879f9');
@@ -1816,7 +1893,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
       ctx.arc(cx, cy, 22 * intensity, 0, Math.PI * 2);
       ctx.fill();
 
-      // Ostré světelné paprsky z očí (křížový záblesk)
       ctx.strokeStyle = isHeavyAttack ? '#bae6fd' : '#f5d0fe';
       ctx.lineWidth = 2.5 * intensity;
       ctx.shadowColor = '#e879f9';
@@ -1829,7 +1905,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
       ctx.lineTo(cx, cy + rayLen * 0.65);
       ctx.stroke();
 
-      // Jádro oka
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.ellipse(cx, cy, 5.5 * intensity, 3.2 * intensity, -0.15, 0, Math.PI * 2);
@@ -1841,7 +1916,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       const t = frame / totalFrames;
 
-      // Jemné mystické zatmění arény během kouzlení
       const bgAlpha = Math.sin(t * Math.PI) * (attackType === 'heavy' ? 0.38 : 0.22);
       ctx.save();
       const bgGrad = ctx.createRadialGradient(
@@ -1854,13 +1928,11 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.restore();
 
-      // Levitující astrální projekce Mewtwoa s planoucíma očima
       const levitateY = -Math.sin(t * Math.PI) * 18;
       const spriteSize = attackType === 'heavy' ? 118 : 102;
       const petCenterX = startX;
       const petCenterY = startY + levitateY;
 
-      // Telekinetická aura kolem Mewtwoa
       ctx.save();
       for (let r = 0; r < 3; r++) {
         const ringProgress = ((t * 2.5 + r * 0.33) % 1);
@@ -1889,7 +1961,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
         ctx.restore();
       }
 
-      // FÁZE 1 & 2: ROZSVÍCENÉ OČI MEWTWOA (intenzivní záře v prvních 75 % animace)
       if (t < 0.82) {
         const eyePulse = t < 0.3
           ? (t / 0.3) * 1.25
@@ -1902,13 +1973,11 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
         drawGlowingEye(rightEyeX, eyesY, eyePulse, attackType === 'heavy');
       }
 
-      // FÁZE 2: EPICKÝ PSYCHICKÝ PAPRSEK A SPIRÁLA (t od 0.22 do 0.88)
       if (t >= 0.20) {
         const strikeT = Math.min(1, (t - 0.20) / 0.55);
         const headX = startX + (endX - startX) * strikeT;
         const headY = startY + (endY - startY) * strikeT;
 
-        // Hlavní dimenzionální paprsek (Psystrike Beam)
         if (attackType === 'heavy') {
           ctx.save();
           const beamWidth = 22 * Math.sin(Math.min(1, (t - 0.2) / 0.7) * Math.PI);
@@ -1927,7 +1996,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
           ctx.shadowBlur = 25;
           ctx.stroke();
 
-          // Vnitřní bílé jádro paprsku
           ctx.beginPath();
           ctx.moveTo(startX, petCenterY);
           ctx.lineTo(headX, headY);
@@ -1935,7 +2003,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
           ctx.lineWidth = Math.max(2, beamWidth * 0.38);
           ctx.stroke();
 
-          // Psychické blesky křižující paprsek
           ctx.beginPath();
           const segs = 7;
           for (let s = 0; s <= segs; s++) {
@@ -1953,7 +2020,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
           ctx.restore();
         }
 
-        // Rotující galaktické/psychické energetické koule letící k cíli
         ctx.save();
         orbs.forEach((orb, idx) => {
           const orbLag = (idx / orbs.length) * 0.35;
@@ -1973,7 +2039,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
           ctx.fill();
         });
 
-        // Hlavní psychická sféra v čele útoku
         const coreRadius = (attackType === 'heavy' ? 30 : 20) * (1 + 0.25 * Math.sin(frame * 0.8));
         const sphereGrad = ctx.createRadialGradient(headX, headY, 2, headX, headY, coreRadius);
         sphereGrad.addColorStop(0, '#ffffff');
@@ -1987,14 +2052,12 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
         ctx.restore();
       }
 
-      // FÁZE 3: SUPERNOVA EXPLOZE NA CÍLI (t >= 0.68)
       if (t >= 0.68) {
         const impactT = (t - 0.68) / 0.32;
         const maxBlast = attackType === 'heavy' ? 115 : 75;
         const blastRadius = impactT * maxBlast;
 
         ctx.save();
-        // Tlaková vlna #1 (Fuchsia/Violet)
         ctx.beginPath();
         ctx.arc(endX, endY, blastRadius, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(232, 121, 249, ${Math.max(0, 1 - impactT)})`;
@@ -2003,14 +2066,12 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
         ctx.shadowBlur = 24;
         ctx.stroke();
 
-        // Tlaková vlna #2 (Neon Cyan)
         ctx.beginPath();
         ctx.arc(endX, endY, blastRadius * 0.7, 0, Math.PI * 2);
         ctx.strokeStyle = `rgba(56, 189, 248, ${Math.max(0, 1 - impactT)})`;
         ctx.lineWidth = 6 * (1 - impactT);
         ctx.stroke();
 
-        // Záblesk v místě dopadu
         const flashGrad = ctx.createRadialGradient(endX, endY, 2, endX, endY, blastRadius * 0.85);
         flashGrad.addColorStop(0, `rgba(255, 255, 255, ${Math.max(0, 0.95 - impactT)})`);
         flashGrad.addColorStop(0.45, `rgba(217, 70, 239, ${Math.max(0, 0.75 - impactT * 0.8)})`);
@@ -2128,7 +2189,6 @@ function playPetAttackCanvasAnimation(elementKey, attackType, onComplete) {
     if (frame <= totalFrames) {
       requestAnimationFrame(step);
     } else {
-      ctx.clearRect(0, 0, canvas.width, canvas.width);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (onComplete) onComplete();
     }
@@ -2147,10 +2207,12 @@ function renderStorePetsUI() {
   const diaCounter = document.getElementById('store-pets-diamonds-counter');
   const revivePriceLabel = document.getElementById('store-revive-price-label');
   const foodPriceLabel = document.getElementById('store-food-price-label');
+  const ticketPriceLabel = document.getElementById('store-ticket-price-label');
 
   if (diaCounter) diaCounter.textContent = (window.state.goldDiamonds || 0).toString();
   if (revivePriceLabel) revivePriceLabel.textContent = `${ps.config.reviveCostDiamonds ?? 2} 💎`;
   if (foodPriceLabel) foodPriceLabel.textContent = `${ps.config.foodCostDiamonds ?? 1} 💎`;
+  if (ticketPriceLabel) ticketPriceLabel.textContent = `${ps.config.ticketCostDiamonds ?? 1} 💎`;
 
   if (!grid) return;
   grid.innerHTML = '';
@@ -2161,6 +2223,7 @@ function renderStorePetsUI() {
     const isUnlocked = pState && pState.unlocked;
     const isActive = isUnlocked && ps.activePetId === pet.id;
     const reqXp = getXpRequiredForNextLevel(pState ? pState.level : 1);
+    const petStage = pState ? (pState.currentStage || 1) : 1;
 
     const card = document.createElement('div');
     card.className = `p-4 rounded-3xl border-3 bg-gradient-to-b ${pet.cardBg} bg-white flex flex-col justify-between text-center shadow-md transition-all ${
@@ -2171,7 +2234,7 @@ function renderStorePetsUI() {
       <div>
         <div class="flex items-center justify-between mb-2">
           <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${pet.badgeClass}">${pet.element}</span>
-          <span class="text-xs font-black text-slate-700">${isUnlocked ? `Lv.${pState.level} (${pState.xp}/${reqXp} XP)` : `🔒 ${price} 💎`}</span>
+          <span class="text-xs font-black text-slate-700">${isUnlocked ? `Lv.${pState.level} • Patro ${petStage}` : `🔒 ${price} 💎`}</span>
         </div>
         <div class="w-24 h-24 mx-auto my-2 flex items-center justify-center ${!isUnlocked ? ' opacity-85' : ''}">
           ${pet.svg}
@@ -2215,7 +2278,12 @@ function buyPetFromStore(petId) {
   ps.pets[petId].unlocked = true;
   ps.pets[petId].currentHp = getPetMaxHp(petId);
   ps.pets[petId].isKnockedOut = false;
+  if (!ps.pets[petId].currentStage) ps.pets[petId].currentStage = 1;
+  if (!ps.pets[petId].highestStage) ps.pets[petId].highestStage = 1;
   ps.activePetId = petId;
+  ps.currentStage = ps.pets[petId].currentStage;
+
+  spawnNewArenaMonster();
 
   if (typeof saveState === 'function') saveState();
   if (typeof soundPurchase === 'function') soundPurchase();
@@ -2232,9 +2300,12 @@ function equipPetFromStore(petId) {
   const pData = window.state.petSystem.pets[petId];
   if (!pData || !pData.unlocked) return;
   window.state.petSystem.activePetId = petId;
+  window.state.petSystem.currentStage = pData.currentStage || 1;
+  spawnNewArenaMonster();
   if (typeof saveState === 'function') saveState();
   updateTopPetCompanionWidget();
   renderStorePetsUI();
+  renderArenaView();
   if (typeof playTone === 'function') playTone(600, 0.1, 'sine', 0.15);
   if (typeof alertUserFeedback === 'function') alertUserFeedback('Parťák nasazen!');
 }
@@ -2291,6 +2362,29 @@ function buyPetFoodFromStore() {
   if (typeof alertUserFeedback === 'function') alertUserFeedback('🍖 Koupeno +2× Krmivo pro pety!');
 }
 
+function buyArenaTicketFromStore() {
+  ensurePetStateInitialized();
+  const ps = window.state.petSystem;
+  const cost = ps.config.ticketCostDiamonds ?? 1;
+
+  if ((window.state.goldDiamonds || 0) < cost) {
+    if (typeof soundError === 'function') soundError();
+    if (typeof alertUserFeedback === 'function') alertUserFeedback(`Potřebuješ ${cost} 💎 na Lístek do Arény!`);
+    return;
+  }
+
+  window.state.goldDiamonds -= cost;
+  ps.battleTicketsCount = (ps.battleTicketsCount || 0) + 1;
+
+  if (typeof saveState === 'function') saveState();
+  if (typeof soundPurchase === 'function') soundPurchase();
+  if (typeof updateBalanceUI === 'function') updateBalanceUI();
+  if (typeof updateTopBadges === 'function') updateTopBadges();
+  renderStorePetsUI();
+  renderArenaView();
+  if (typeof alertUserFeedback === 'function') alertUserFeedback('🎟️ Koupen +1× Lístek do Arény!');
+}
+
 /* ============================================================
    ADMINISTRACE: ZÁLOŽKA „PETI & ARÉNA“
    ============================================================ */
@@ -2299,17 +2393,20 @@ function updateAdminPetsUI() {
   ensurePetStateInitialized();
   const ps = window.state.petSystem;
   const cfg = ps.config;
+  const activePet = ps.activePetId ? ps.pets[ps.activePetId] : null;
+  const activeStage = activePet ? (activePet.currentStage || 1) : (ps.currentStage || 1);
 
   const setVal = (id, val) => {
     const el = document.getElementById(id);
     if (el) el.value = val;
   };
 
-  setVal('admin-pet-current-stage', ps.currentStage ?? 1);
+  setVal('admin-pet-current-stage', activeStage);
   setVal('admin-pet-monster-hp', cfg.monsterBaseHp ?? 100);
   setVal('admin-pet-monster-hp-lvl', cfg.monsterHpPerLevel ?? 22);
   setVal('admin-pet-xp-win', cfg.xpPerWin ?? 35);
   setVal('admin-pet-revive-cost', cfg.reviveCostDiamonds ?? 2);
+  setVal('admin-pet-ticket-cost', cfg.ticketCostDiamonds ?? 1);
   setVal('admin-pet-levelup-diamonds', cfg.diamondsPerLevelUp ?? 3);
   setVal('admin-pet-max-daily-battles', cfg.maxDailyBattles ?? 5);
   setVal('admin-pet-win-food', cfg.foodPerWin ?? 1);
@@ -2317,7 +2414,8 @@ function updateAdminPetsUI() {
 
   const battlesLabel = document.getElementById('admin-arena-battles-today-label');
   if (battlesLabel) {
-    battlesLabel.textContent = `${ps.battlesToday || 0} / ${getEffectiveMaxDailyBattles()}`;
+    const maxDaily = getEffectiveMaxDailyBattles();
+    battlesLabel.textContent = `${Math.min(maxDaily, ps.battlesToday || 0)} / ${maxDaily}`;
   }
 
   const listContainer = document.getElementById('admin-pets-stats-list');
@@ -2329,6 +2427,7 @@ function updateAdminPetsUI() {
     const reqXp = getXpRequiredForNextLevel(pState.level);
     const maxHp = getPetMaxHp(pet.id);
     const price = getPetPrice(pet.id);
+    const petStage = pState.currentStage || 1;
 
     const card = document.createElement('div');
     card.className = 'bg-white p-3 rounded-2xl border-2 border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs';
@@ -2338,9 +2437,10 @@ function updateAdminPetsUI() {
           ${pet.svg}
         </div>
         <div>
-          <div class="font-black text-slate-800 text-sm flex items-center gap-1.5">
+          <div class="font-black text-slate-800 text-sm flex items-center gap-1.5 flex-wrap">
             <span>${pet.name}</span>
             <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-900">Lv.${pState.level}</span>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">🏰 Patro ${petStage}</span>
             ${pState.isKnockedOut ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-rose-500 text-white">K.O.</span>' : ''}
           </div>
           <div class="text-[11px] font-bold text-slate-500">
@@ -2354,6 +2454,10 @@ function updateAdminPetsUI() {
           <span class="text-[10px] font-bold text-slate-500">Cena:</span>
           <input type="number" min="0" max="200" value="${price}" onchange="adminSetPetPrice('${pet.id}', this.value)" class="w-11 text-center font-black bg-white border border-slate-300 rounded px-1 py-0.5 text-xs">
           <span>💎</span>
+        </div>
+        <div class="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
+          <span class="text-[10px] font-bold text-amber-800">Patro:</span>
+          <input type="number" min="1" max="999" value="${petStage}" onchange="adminSetPetStage('${pet.id}', this.value)" class="w-12 text-center font-black bg-white border border-amber-300 rounded px-1 py-0.5 text-xs">
         </div>
         <button onclick="adminAdjustPetLevel('${pet.id}', 1)" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-black px-2 py-1 rounded-lg text-[10px]">+1 Lvl</button>
         <button onclick="adminAdjustPetLevel('${pet.id}', -1)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black px-2 py-1 rounded-lg text-[10px]">-1 Lvl</button>
@@ -2369,16 +2473,45 @@ function updateAdminPetsUI() {
   refreshAllHeroCanvases();
 }
 
+function adminSetPetStage(petId, val) {
+  ensurePetStateInitialized();
+  const ps = window.state.petSystem;
+  const pState = ps.pets[petId];
+  if (!pState) return;
+  const stageNum = Math.max(1, parseInt(val, 10) || 1);
+  pState.currentStage = stageNum;
+  if (stageNum > (pState.highestStage || 1)) {
+    pState.highestStage = stageNum;
+  }
+  if (ps.activePetId === petId) {
+    ps.currentStage = stageNum;
+    spawnNewArenaMonster();
+  }
+  if (typeof saveState === 'function') saveState();
+  updateAdminPetsUI();
+  renderStorePetsUI();
+  renderArenaView();
+  if (typeof playTone === 'function') playTone(580, 0.08, 'sine', 0.15);
+}
+
 function adminSetArenaStage(val) {
   ensurePetStateInitialized();
+  const ps = window.state.petSystem;
   const stageNum = Math.max(1, parseInt(val, 10) || 1);
-  window.state.petSystem.currentStage = stageNum;
-  if (stageNum > (window.state.petSystem.highestStage || 1)) {
-    window.state.petSystem.highestStage = stageNum;
+  ps.currentStage = stageNum;
+  if (stageNum > (ps.highestStage || 1)) {
+    ps.highestStage = stageNum;
+  }
+  if (ps.activePetId && ps.pets[ps.activePetId]) {
+    ps.pets[ps.activePetId].currentStage = stageNum;
+    if (stageNum > (ps.pets[ps.activePetId].highestStage || 1)) {
+      ps.pets[ps.activePetId].highestStage = stageNum;
+    }
   }
   if (typeof saveState === 'function') saveState();
   spawnNewArenaMonster();
   updateAdminPetsUI();
+  renderStorePetsUI();
   renderArenaView();
   if (typeof playTone === 'function') playTone(580, 0.08, 'sine', 0.15);
 }
@@ -2386,6 +2519,8 @@ function adminSetArenaStage(val) {
 function adminResetDailyArenaBattles() {
   ensurePetStateInitialized();
   window.state.petSystem.battlesToday = 0;
+  window.state.petSystem.bonusBattlesToday = 0;
+  window.state.petSystem.ticketMatchActive = false;
   window.state.petSystem.lastArenaDate = getPetTodayDateStr();
   if (typeof saveState === 'function') saveState();
   updateTopPetCompanionWidget();
@@ -2430,6 +2565,7 @@ function adminAdjustPetLevel(petId, delta) {
   spawnNewArenaMonster();
   updateTopPetCompanionWidget();
   updateAdminPetsUI();
+  renderStorePetsUI();
   renderArenaView();
 }
 
@@ -2455,6 +2591,7 @@ function adminTogglePetUnlock(petId) {
   } else if (!pState.unlocked && ps.activePetId === petId) {
     ps.activePetId = getFirstUnlockedPetId();
   }
+  spawnNewArenaMonster();
   if (typeof saveState === 'function') saveState();
   updateTopPetCompanionWidget();
   updateAdminPetsUI();
@@ -2464,7 +2601,19 @@ function adminTogglePetUnlock(petId) {
 
 function renderArenaMainUI() {
   ensurePetStateInitialized();
-  if (!arenaBattleState.inProgress && window.state.petSystem.activePetId) {
+  const ps = window.state.petSystem;
+  const activeId = ps.activePetId;
+  const petData = activeId ? ps.pets[activeId] : null;
+  const petStage = petData ? (petData.currentStage || 1) : 1;
+  const petLvl = petData ? (petData.level || 1) : 1;
+
+  if (
+    activeId &&
+    (!arenaBattleState.inProgress ||
+      arenaBattleState.petId !== activeId ||
+      arenaBattleState.stage !== petStage ||
+      arenaBattleState.monsterLevel !== petLvl)
+  ) {
     spawnNewArenaMonster();
   }
   renderArenaView();

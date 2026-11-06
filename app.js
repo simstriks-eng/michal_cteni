@@ -163,13 +163,15 @@ let state = {
   lastBoxReward: 0.0,
   lastBoxRewardText: '',
   dailyChestConfig: {
-    minutesChance: 50,
+    minutesChance: 40,
     minutesMin: 0.5,
     minutesMax: 1.0,
     foodChance: 20,
     foodAmount: 1,
     reviveChance: 15,
     reviveAmount: 1,
+    ticketChance: 10,
+    ticketAmount: 1,
     diaSmallChance: 5,
     diaSmallAmount: 2,
     diaMedChance: 0.9,
@@ -446,13 +448,15 @@ function loadState() {
       }
       if (!state.dailyChestConfig) {
         state.dailyChestConfig = {
-          minutesChance: 50,
+          minutesChance: 40,
           minutesMin: 0.5,
           minutesMax: 1.0,
           foodChance: 20,
           foodAmount: 1,
           reviveChance: 15,
           reviveAmount: 1,
+          ticketChance: 10,
+          ticketAmount: 1,
           diaSmallChance: 5,
           diaSmallAmount: 2,
           diaMedChance: 0.9,
@@ -460,6 +464,9 @@ function loadState() {
           diaJackpotChance: 0.1,
           diaJackpotAmount: 20
         };
+      } else {
+        if (state.dailyChestConfig.ticketChance === undefined) state.dailyChestConfig.ticketChance = 10;
+        if (state.dailyChestConfig.ticketAmount === undefined) state.dailyChestConfig.ticketAmount = 1;
       }
     }
   } catch (e) {
@@ -2861,13 +2868,15 @@ function switchChestSubTab(tabKey) {
 function getDailyChestConfig() {
   if (!state.dailyChestConfig) {
     state.dailyChestConfig = {
-      minutesChance: 50,
+      minutesChance: 40,
       minutesMin: 0.5,
       minutesMax: 1.0,
       foodChance: 20,
       foodAmount: 1,
       reviveChance: 15,
       reviveAmount: 1,
+      ticketChance: 10,
+      ticketAmount: 1,
       diaSmallChance: 5,
       diaSmallAmount: 2,
       diaMedChance: 0.9,
@@ -2876,6 +2885,8 @@ function getDailyChestConfig() {
       diaJackpotAmount: 20
     };
   }
+  if (state.dailyChestConfig.ticketChance === undefined) state.dailyChestConfig.ticketChance = 10;
+  if (state.dailyChestConfig.ticketAmount === undefined) state.dailyChestConfig.ticketAmount = 1;
   return state.dailyChestConfig;
 }
 
@@ -2961,17 +2972,16 @@ function rollDailyChestReward() {
   const wJackpot = Math.max(0, Number(cfg.diaJackpotChance) ?? 0.1);
   const wMed = Math.max(0, Number(cfg.diaMedChance) ?? 0.9);
   const wSmall = Math.max(0, Number(cfg.diaSmallChance) ?? 5);
+  const wTicket = Math.max(0, Number(cfg.ticketChance !== undefined ? cfg.ticketChance : 10));
   const wRevive = Math.max(0, Number(cfg.reviveChance) ?? 15);
   const wFood = Math.max(0, Number(cfg.foodChance) ?? 20);
-  const wMinutes = Math.max(0, Number(cfg.minutesChance) ?? 50);
+  const wMinutes = Math.max(0, Number(cfg.minutesChance) ?? 40);
 
-  const sumWeights = wJackpot + wMed + wSmall + wRevive + wFood + wMinutes;
+  const sumWeights = wJackpot + wMed + wSmall + wTicket + wRevive + wFood + wMinutes;
   if (sumWeights <= 0) {
     return { type: 'minutes', amount: 0.5 };
   }
 
-  // Pokud je součet <= 100 a minuty jsou povoleny, zachováme přesné procentuální šance vzácných odměn (0,1 %, 0,9 %, 5 %, 15 %, 20 %)
-  // a zbytek padne na minuty; pokud rodič nastaví součet > 100 nebo 0 % na minuty, losujeme poměrově podle součtu vah.
   const totalScale = (wMinutes > 0 && sumWeights <= 100) ? 100 : sumWeights;
   const r = Math.random() * totalScale;
 
@@ -2986,6 +2996,10 @@ function rollDailyChestReward() {
   cursor += wSmall;
   if (r < cursor) {
     return { type: 'diamonds_small', amount: Math.max(1, Math.round(cfg.diaSmallAmount || 2)) };
+  }
+  cursor += wTicket;
+  if (r < cursor) {
+    return { type: 'ticket', amount: Math.max(1, Math.round(cfg.ticketAmount || 1)) };
   }
   cursor += wRevive;
   if (r < cursor) {
@@ -3083,6 +3097,25 @@ function openChestAction() {
         type: 'daily_chest_item',
         minutes: 0,
         note: `Denní Truhla: +${drop.amount}× Kámen oživení ❤️‍🔥`
+      });
+    } else if (drop.type === 'ticket') {
+      burstIcon = '🎟️';
+      burstShortLabel = `+${drop.amount}× Lístek`;
+      if (rewardIcon) rewardIcon.textContent = '🎟️';
+      if (state.petSystem) {
+        state.petSystem.battleTicketsCount = (state.petSystem.battleTicketsCount || 0) + drop.amount;
+      }
+      state.lastBoxReward = 0;
+      state.lastBoxRewardText = `+${drop.amount}× Lístek do Arény 🎟️`;
+      rewardAmount.textContent = `+${drop.amount}× Lístek do Arény!`;
+      if (rewardSubtext) rewardSubtext.textContent = 'Umožní tvému petovi okamžitě spustit další zápas v Aréně!';
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'daily_chest_item',
+        minutes: 0,
+        note: `Denní Truhla: +${drop.amount}× Lístek do Arény 🎟️`
       });
     } else {
       const isJackpot = drop.type === 'diamonds_jackpot';
@@ -3223,13 +3256,15 @@ function saveAdminDailyChestConfig() {
     return isNaN(val) ? fallback : Math.max(0, val);
   };
 
-  cfg.minutesChance = getNum('admin-dchest-chance-minutes', 50);
+  cfg.minutesChance = getNum('admin-dchest-chance-minutes', 40);
   cfg.minutesMin = Math.max(0.5, getNum('admin-dchest-min-minutes', 0.5));
   cfg.minutesMax = Math.max(cfg.minutesMin, getNum('admin-dchest-max-minutes', 1.0));
   cfg.foodChance = getNum('admin-dchest-chance-food', 20);
   cfg.foodAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-food', 1)));
   cfg.reviveChance = getNum('admin-dchest-chance-revive', 15);
   cfg.reviveAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-revive', 1)));
+  cfg.ticketChance = getNum('admin-dchest-chance-ticket', 10);
+  cfg.ticketAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-ticket', 1)));
   cfg.diaSmallChance = getNum('admin-dchest-chance-diasmall', 5);
   cfg.diaSmallAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-diasmall', 2)));
   cfg.diaMedChance = getNum('admin-dchest-chance-diamed', 0.9);
@@ -3244,13 +3279,15 @@ function saveAdminDailyChestConfig() {
 
 function adminResetDailyChestDefaults() {
   state.dailyChestConfig = {
-    minutesChance: 50,
+    minutesChance: 40,
     minutesMin: 0.5,
     minutesMax: 1.0,
     foodChance: 20,
     foodAmount: 1,
     reviveChance: 15,
     reviveAmount: 1,
+    ticketChance: 10,
+    ticketAmount: 1,
     diaSmallChance: 5,
     diaSmallAmount: 2,
     diaMedChance: 0.9,
@@ -3303,6 +3340,8 @@ function updateAdminLegendaryUI() {
   setVal('admin-dchest-amt-food', cfg.foodAmount);
   setVal('admin-dchest-chance-revive', cfg.reviveChance);
   setVal('admin-dchest-amt-revive', cfg.reviveAmount);
+  setVal('admin-dchest-chance-ticket', cfg.ticketChance !== undefined ? cfg.ticketChance : 10);
+  setVal('admin-dchest-amt-ticket', cfg.ticketAmount !== undefined ? cfg.ticketAmount : 1);
   setVal('admin-dchest-chance-diasmall', cfg.diaSmallChance);
   setVal('admin-dchest-amt-diasmall', cfg.diaSmallAmount);
   setVal('admin-dchest-chance-diamed', cfg.diaMedChance);
@@ -3312,7 +3351,8 @@ function updateAdminLegendaryUI() {
 
   const sumLabel = document.getElementById('admin-daily-chest-sum-label');
   if (sumLabel) {
-    const total = Math.round((cfg.minutesChance + cfg.foodChance + cfg.reviveChance + cfg.diaSmallChance + cfg.diaMedChance + cfg.diaJackpotChance) * 100) / 100;
+    const ticketChance = cfg.ticketChance !== undefined ? cfg.ticketChance : 10;
+    const total = Math.round((cfg.minutesChance + cfg.foodChance + cfg.reviveChance + ticketChance + cfg.diaSmallChance + cfg.diaMedChance + cfg.diaJackpotChance) * 100) / 100;
     sumLabel.textContent = `Součet šancí: ${total.toString().replace('.', ',')} %`;
   }
 
@@ -4560,23 +4600,15 @@ function alertUserFeedback(msg) {
   setTimeout(() => el.remove(), 3200);
 }
 
-let currentMathAnswer = null;
-
 function openParentModal() {
   const modal = document.getElementById('parent-pin-modal');
-  const challenge = document.getElementById('math-challenge');
   const err = document.getElementById('pin-error');
   const input = document.getElementById('pin-input');
-  err.classList.add('hidden');
-  input.value = '';
+  if (err) err.classList.add('hidden');
+  if (input) input.value = '';
 
-  const n1 = Math.floor(Math.random() * 5) + 6;
-  const n2 = Math.floor(Math.random() * 6) + 4;
-  currentMathAnswer = n1 * n2;
-  challenge.textContent = `Kolik je: ${n1} × ${n2} ?`;
-
-  modal.classList.remove('hidden');
-  setTimeout(() => input.focus(), 150);
+  if (modal) modal.classList.remove('hidden');
+  setTimeout(() => { if (input) input.focus(); }, 150);
 }
 
 function closeParentModal() {
@@ -4587,11 +4619,11 @@ function verifyParentPin() {
   const input = document.getElementById('pin-input').value.trim();
   const err = document.getElementById('pin-error');
 
-  if (parseInt(input) === currentMathAnswer || input === '1234') {
+  if (input === '2552') {
     closeParentModal();
     openAdminPanel();
   } else {
-    err.classList.remove('hidden');
+    if (err) err.classList.remove('hidden');
     soundError();
   }
 }
@@ -4973,7 +5005,7 @@ function resetAllData() {
   if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
 }
 
-window.addEventListener('DOMContentLoaded', () => {
+function initSkolackaMiseApp() {
   loadState();
   if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
@@ -5007,7 +5039,16 @@ window.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  document.getElementById('pin-input').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') verifyParentPin();
-  });
-});
+  const pinInput = document.getElementById('pin-input');
+  if (pinInput) {
+    pinInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') verifyParentPin();
+    });
+  }
+}
+
+if (document.readyState === 'loading') {
+  window.addEventListener('DOMContentLoaded', initSkolackaMiseApp);
+} else {
+  initSkolackaMiseApp();
+}
