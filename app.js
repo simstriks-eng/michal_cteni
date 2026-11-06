@@ -309,7 +309,7 @@ function renderSpellingLettersStrip() {
       </div>
       <div class="flex-grow flex items-center justify-center">
         <span class="text-3xl sm:text-4xl font-black game-font select-none ${isRevealed ? textColor : 'text-purple-300'}">
-          ${isRevealed ? formatCase(item.char) : '?'}
+          ${isRevealed ? (state.letterCase === 'mixed' ? (idx === 0 ? formatCase(item.char) : item.char.toLowerCase()) : formatCase(item.char)) : '?'}
         </span>
       </div>
       <div class="w-full text-center">
@@ -385,6 +385,8 @@ function loadState() {
   checkAndHandleDailyResets();
   applyCurrentTheme();
   updateTopAvatarDisplay();
+  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
 }
 
 function checkAndHandleDailyResets() {
@@ -432,6 +434,10 @@ function checkAndHandleDailyResets() {
         note: `Noční trezor odemčen novým dnem (+${formatMinutes(unlocked)})`
       });
     }
+  }
+
+  if (typeof checkAndHandlePetDailyReset === 'function') {
+    checkAndHandlePetDailyReset();
   }
 }
 
@@ -1232,7 +1238,11 @@ function updateReviewButtonLabel() {
 function formatCase(text) {
   if (!text) return '';
   if (state.subject === 'math') return text;
-  return (state.letterCase === 'lower') ? text.toLowerCase() : text.toUpperCase();
+  if (state.letterCase === 'lower') return text.toLowerCase();
+  if (state.letterCase === 'mixed') {
+    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+  }
+  return text.toUpperCase();
 }
 
 function updateActiveSummaryBadge() {
@@ -1324,10 +1334,10 @@ function setSubject(newSubj) {
   const mathEvalPanel = document.getElementById('math-eval-panel');
 
   // Všechna tlačítka hodíme do výchozího stavu
-  if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnMath) btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnClocks) btnClocks.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnTest) btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+  if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnTest) btnTest.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
 
   if (newSubj === 'reading') {
     if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
@@ -1359,10 +1369,10 @@ function setClockView() {
   const btnTest = document.getElementById('subject-btn-test');
 
   // Správné rozsvícení tlačítka Hodiny v horní liště
-  if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnMath) btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnClocks) btnClocks.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
-  if (btnTest) btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+  if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
+  if (btnTest) btnTest.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
 
   if (typeof showView === 'function') showView('learn');
   
@@ -1438,14 +1448,15 @@ function setLetterCase(caseMode) {
 
   const upperBtn = document.getElementById('case-btn-upper');
   const lowerBtn = document.getElementById('case-btn-lower');
+  const mixedBtn = document.getElementById('case-btn-mixed');
 
-  if (caseMode === 'upper') {
-    upperBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
-    lowerBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
-  } else {
-    lowerBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
-    upperBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
-  }
+  const activeClass = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
+  const inactiveClass = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
+
+  if (upperBtn) upperBtn.className = (caseMode === 'upper') ? activeClass : inactiveClass;
+  if (lowerBtn) lowerBtn.className = (caseMode === 'lower') ? activeClass : inactiveClass;
+  if (mixedBtn) mixedBtn.className = (caseMode === 'mixed') ? activeClass : inactiveClass;
+
   renderCurrentContent();
 }
 
@@ -2035,32 +2046,39 @@ function showStoreTab(tabKey) {
 
 function switchStoreTab(tabKey) {
   const btnTickets = document.getElementById('store-tab-btn-tickets');
+  const btnPets = document.getElementById('store-tab-btn-pets');
   const btnSkins = document.getElementById('store-tab-btn-skins');
   const btnDiamonds = document.getElementById('store-tab-btn-diamonds');
 
   const contentTickets = document.getElementById('store-tab-content-tickets');
+  const contentPets = document.getElementById('store-tab-content-pets');
   const contentSkins = document.getElementById('store-tab-content-skins');
   const contentDiamonds = document.getElementById('store-tab-content-diamonds');
 
-  [btnTickets, btnSkins, btnDiamonds].forEach(b => {
-    if (b) b.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5';
+  [btnTickets, btnPets, btnSkins, btnDiamonds].forEach(b => {
+    if (b) b.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5';
   });
 
-  contentTickets.classList.add('hidden');
-  contentSkins.classList.add('hidden');
-  contentDiamonds.classList.add('hidden');
+  if (contentTickets) contentTickets.classList.add('hidden');
+  if (contentPets) contentPets.classList.add('hidden');
+  if (contentSkins) contentSkins.classList.add('hidden');
+  if (contentDiamonds) contentDiamonds.classList.add('hidden');
 
-  if (tabKey === 'skins') {
-    btnSkins.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm flex items-center justify-center gap-1.5';
-    contentSkins.classList.remove('hidden');
+  if (tabKey === 'pets') {
+    if (btnPets) btnPets.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm flex items-center justify-center gap-1.5';
+    if (contentPets) contentPets.classList.remove('hidden');
+    if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+  } else if (tabKey === 'skins') {
+    if (btnSkins) btnSkins.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm flex items-center justify-center gap-1.5';
+    if (contentSkins) contentSkins.classList.remove('hidden');
     switchSkinsCategory('avatars');
   } else if (tabKey === 'diamonds') {
-    btnDiamonds.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    contentDiamonds.classList.remove('hidden');
+    if (btnDiamonds) btnDiamonds.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm flex items-center justify-center gap-1.5';
+    if (contentDiamonds) contentDiamonds.classList.remove('hidden');
     updateDiamondMarketUI();
   } else {
-    btnTickets.className = 'flex-1 min-w-[130px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-pink-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    contentTickets.classList.remove('hidden');
+    if (btnTickets) btnTickets.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-pink-500 text-white shadow-sm flex items-center justify-center gap-1.5';
+    if (contentTickets) contentTickets.classList.remove('hidden');
   }
   playTone(520, 0.08, 'sine', 0.12);
 }
@@ -2587,27 +2605,34 @@ function showView(viewName) {
   const storeView = document.getElementById('view-store');
   const questsView = document.getElementById('view-quests');
   const testView = document.getElementById('view-test');
+  const arenaView = document.getElementById('view-arena');
 
-  learnView.classList.add('hidden');
-  storeView.classList.add('hidden');
-  questsView.classList.add('hidden');
-  testView.classList.add('hidden');
+  if (learnView) learnView.classList.add('hidden');
+  if (storeView) storeView.classList.add('hidden');
+  if (questsView) questsView.classList.add('hidden');
+  if (testView) testView.classList.add('hidden');
+  if (arenaView) arenaView.classList.add('hidden');
 
   if (viewName === 'store') {
-    storeView.classList.remove('hidden');
+    if (storeView) storeView.classList.remove('hidden');
     document.getElementById('store-balance-display').textContent = formatMinutes(state.minutesBalance).replace(' min', '');
     document.getElementById('vault-display').textContent = formatMinutes(state.vaultBalance || 0);
     updateDiamondMarketUI();
     renderStoreSkinsUI();
+    if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
   } else if (viewName === 'quests') {
-    questsView.classList.remove('hidden');
+    if (questsView) questsView.classList.remove('hidden');
     switchQuestsSubTab('tasks');
   } else if (viewName === 'test') {
-    testView.classList.remove('hidden');
+    if (testView) testView.classList.remove('hidden');
+  } else if (viewName === 'arena') {
+    if (arenaView) arenaView.classList.remove('hidden');
+    if (typeof renderArenaMainUI === 'function') renderArenaMainUI();
   } else {
-    learnView.classList.remove('hidden');
+    if (learnView) learnView.classList.remove('hidden');
   }
   updateBalanceUI();
+  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
 }
 
 function updateBalanceUI() {
@@ -2916,11 +2941,13 @@ function openTestView() {
 
   const btnReading = document.getElementById('subject-btn-reading');
   const btnMath = document.getElementById('subject-btn-math');
+  const btnClocks = document.getElementById('subject-btn-clocks');
   const btnTest = document.getElementById('subject-btn-test');
 
-  btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  btnTest.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm relative';
+  if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
+  if (btnTest) btnTest.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm relative';
 
   const introBox = document.getElementById('test-intro-box');
   const runnerBox = document.getElementById('test-runner-box');
@@ -2950,33 +2977,51 @@ function openTestView() {
 
 function generateRandomReadingTaskForLevel(level) {
   let item = null;
+  const activeLetters = (state.activeLetters && state.activeLetters.length > 0) ? state.activeLetters : ['M', 'A', 'L', 'E', 'S', 'O'];
+  const sylls = generatePedagogicalOpenSyllables();
+
+  const pickStrictFallback = () => {
+    const pools = [
+      { list: LEVEL_7_SENTENCES.filter(s => isItemFormedByActive(s.letters)), label: 'Celá věta' },
+      { list: LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters)), label: 'Měkčení DĚ/TĚ/NĚ' },
+      { list: LEVEL_5_CLUSTERS.filter(w => isItemFormedByActive(w.letters)), label: 'Shluk / Dvojhláska' },
+      { list: LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters)), label: 'Dvouslabičné slovo' },
+      { list: LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters)), label: 'Jednoslabičné slovo' }
+    ].filter(p => p.list.length > 0);
+
+    if (pools.length > 0) {
+      const p = pools[0];
+      const chosen = p.list[Math.floor(Math.random() * p.list.length)];
+      return { text: chosen.text, label: p.label };
+    }
+    if (sylls.length > 0) {
+      const s = sylls[Math.floor(Math.random() * sylls.length)];
+      return { text: s.text, label: 'Slabika' };
+    }
+    const ch = activeLetters[Math.floor(Math.random() * activeLetters.length)];
+    return { text: ch, label: 'Písmeno' };
+  };
+
   if (level === 1) {
-    const char = state.activeLetters[Math.floor(Math.random() * state.activeLetters.length)] || 'M';
+    const char = activeLetters[Math.floor(Math.random() * activeLetters.length)];
     item = { text: char, label: 'Písmeno' };
   } else if (level === 2) {
-    const sylls = generatePedagogicalOpenSyllables();
-    item = sylls.length ? sylls[Math.floor(Math.random() * sylls.length)] : { text: 'MA' };
-    item.label = 'Slabika';
+    item = sylls.length ? { text: sylls[Math.floor(Math.random() * sylls.length)].text, label: 'Slabika' } : pickStrictFallback();
   } else if (level === 3) {
     const list = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'PES' };
-    item.label = 'Jednoslabičné slovo';
+    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Jednoslabičné slovo' } : pickStrictFallback();
   } else if (level === 4) {
     const list = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'MÁMA' };
-    item.label = 'Dvouslabičné slovo';
+    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Dvouslabičné slovo' } : pickStrictFallback();
   } else if (level === 5) {
     const list = LEVEL_5_CLUSTERS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'STŮL' };
-    item.label = 'Shluk / Dvojhláska';
+    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Shluk / Dvojhláska' } : pickStrictFallback();
   } else if (level === 6) {
     const list = LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'DĚDA' };
-    item.label = 'Měkčení DĚ/TĚ/NĚ';
+    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Měkčení DĚ/TĚ/NĚ' } : pickStrictFallback();
   } else {
     const list = LEVEL_7_SENTENCES.filter(sen => isItemFormedByActive(sen.letters));
-    item = list.length ? list[Math.floor(Math.random() * list.length)] : { text: 'MÁMA MÁ MÁSLO.' };
-    item.label = 'Celá věta';
+    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Celá věta' } : pickStrictFallback();
   }
 
   return { 
@@ -3967,7 +4012,23 @@ function adminAdjustDiamonds(delta) {
   updateTopBadges();
   updateAdminDiamondUI();
   updateDiamondMarketUI();
+  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+  if (typeof renderArenaView === 'function') renderArenaView();
   playTone(600, 0.1, 'sine', 0.15);
+}
+
+function adminSetDiamondsDirect(val) {
+  const num = Math.max(0, parseInt(val, 10) || 0);
+  state.goldDiamonds = num;
+  saveState();
+  updateBalanceUI();
+  updateTopBadges();
+  updateAdminDiamondUI();
+  updateDiamondMarketUI();
+  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+  if (typeof renderArenaView === 'function') renderArenaView();
+  playTone(600, 0.1, 'sine', 0.15);
+  alertUserFeedback(`Počet diamantů nastaven na ${num} 💎`);
 }
 
 function updateAdminDiamondUI() {
@@ -3976,6 +4037,9 @@ function updateAdminDiamondUI() {
 
   const diamondsIndicator = document.getElementById('admin-diamonds-indicator');
   if (diamondsIndicator) diamondsIndicator.textContent = `${state.goldDiamonds || 0} 💎`;
+
+  const diamondsDirectInp = document.getElementById('admin-diamonds-direct-input');
+  if (diamondsDirectInp) diamondsDirectInp.value = (state.goldDiamonds || 0).toString();
 
   const rateInput = document.getElementById('admin-diamond-rate-input');
   if (rateInput) rateInput.value = state.diamondExchangeRate || 20;
@@ -4137,6 +4201,7 @@ function verifyParentPin() {
 function switchAdminTab(tabKey) {
   const btnGeneral = document.getElementById('admin-tab-btn-general');
   const btnSkins = document.getElementById('admin-tab-btn-skins_admin');
+  const btnPets = document.getElementById('admin-tab-btn-pets_admin');
   const btnTest = document.getElementById('admin-tab-btn-test');
   const btnLegend = document.getElementById('admin-tab-btn-legendary');
   const btnMath = document.getElementById('admin-tab-btn-math');
@@ -4144,43 +4209,49 @@ function switchAdminTab(tabKey) {
 
   const contentGeneral = document.getElementById('admin-tab-content-general');
   const contentSkins = document.getElementById('admin-tab-content-skins_admin');
+  const contentPets = document.getElementById('admin-tab-content-pets_admin');
   const contentTest = document.getElementById('admin-tab-content-test');
   const contentLegend = document.getElementById('admin-tab-content-legendary');
   const contentMath = document.getElementById('admin-tab-content-math');
   const contentReading = document.getElementById('admin-tab-content-reading');
 
-  [btnGeneral, btnSkins, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
+  [btnGeneral, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
     if (b) b.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left';
   });
 
-  contentGeneral.classList.add('hidden');
-  contentSkins.classList.add('hidden');
-  contentTest.classList.add('hidden');
-  contentLegend.classList.add('hidden');
-  contentMath.classList.add('hidden');
-  contentReading.classList.add('hidden');
+  if (contentGeneral) contentGeneral.classList.add('hidden');
+  if (contentSkins) contentSkins.classList.add('hidden');
+  if (contentPets) contentPets.classList.add('hidden');
+  if (contentTest) contentTest.classList.add('hidden');
+  if (contentLegend) contentLegend.classList.add('hidden');
+  if (contentMath) contentMath.classList.add('hidden');
+  if (contentReading) contentReading.classList.add('hidden');
 
   if (tabKey === 'skins_admin') {
-    btnSkins.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left';
-    contentSkins.classList.remove('hidden');
+    if (btnSkins) btnSkins.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentSkins) contentSkins.classList.remove('hidden');
     updateAdminSkinsUI();
+  } else if (tabKey === 'pets_admin') {
+    if (btnPets) btnPets.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-rose-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentPets) contentPets.classList.remove('hidden');
+    if (typeof updateAdminPetsUI === 'function') updateAdminPetsUI();
   } else if (tabKey === 'test') {
-    btnTest.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-purple-700 text-white shadow-sm flex items-center gap-2 text-left';
-    contentTest.classList.remove('hidden');
+    if (btnTest) btnTest.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-purple-700 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentTest) contentTest.classList.remove('hidden');
     updateAdminTestUI();
   } else if (tabKey === 'legendary') {
-    btnLegend.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-cyan-600 text-white shadow-sm flex items-center gap-2 text-left';
-    contentLegend.classList.remove('hidden');
+    if (btnLegend) btnLegend.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-cyan-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentLegend) contentLegend.classList.remove('hidden');
     updateAdminLegendaryUI();
   } else if (tabKey === 'math') {
-    btnMath.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm flex items-center gap-2 text-left';
-    contentMath.classList.remove('hidden');
+    if (btnMath) btnMath.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentMath) contentMath.classList.remove('hidden');
   } else if (tabKey === 'reading') {
-    btnReading.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center gap-2 text-left';
-    contentReading.classList.remove('hidden');
+    if (btnReading) btnReading.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentReading) contentReading.classList.remove('hidden');
   } else {
-    btnGeneral.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2 text-left';
-    contentGeneral.classList.remove('hidden');
+    if (btnGeneral) btnGeneral.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentGeneral) contentGeneral.classList.remove('hidden');
   }
   playTone(520, 0.08, 'sine', 0.12);
 }
@@ -4197,6 +4268,7 @@ function openAdminPanel() {
   updateAdminLegendaryUI();
   updateAdminTestUI();
   updateAdminSkinsUI();
+  if (typeof updateAdminPetsUI === 'function') updateAdminPetsUI();
 
   const verTag = document.getElementById('admin-version-tag');
   if (verTag) verTag.textContent = `Verze: ${APP_VERSION}`;
@@ -4485,10 +4557,12 @@ function resetAllData() {
     itemPrices: {}
   };
   window.state = state;
+  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
   saveState();
   closeAdminPanel();
   applyCurrentTheme();
   updateTopAvatarDisplay();
+  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
   setSubject('reading');
   setGridCount(8);
   switchLevel(1);
@@ -4498,14 +4572,18 @@ function resetAllData() {
   updateImageToggleUI();
   updateDiamondMarketUI();
   renderStoreSkinsUI();
+  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   loadState();
+  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
   updateBalanceUI();
   updateTopBadges();
   updateDiamondMarketUI();
   renderStoreSkinsUI();
+  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
   if (!state.gridCardCount) state.gridCardCount = 8;
   if (state.showImages === undefined) state.showImages = true;
   if (state.showSpeechButton === undefined) state.showSpeechButton = true;
@@ -4521,6 +4599,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   updateImageToggleUI();
   updateSpeechToggleUI();
+  setLetterCase(state.letterCase || 'upper');
   setSubject(state.subject || 'reading');
   setGridCount(state.gridCardCount);
 
