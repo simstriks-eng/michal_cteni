@@ -2045,73 +2045,55 @@ function showStoreTab(tabKey) {
 }
 
 function switchStoreTab(tabKey) {
-  const btnTickets = document.getElementById('store-tab-btn-tickets');
-  const btnPets = document.getElementById('store-tab-btn-pets');
-  const btnSkins = document.getElementById('store-tab-btn-skins');
-  const btnDiamonds = document.getElementById('store-tab-btn-diamonds');
+  const tabs = ['skins', 'pets', 'themes', 'sounds', 'tickets', 'diamonds'];
+  const activeGradients = {
+    skins: 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md',
+    pets: 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md',
+    themes: 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md',
+    sounds: 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md',
+    tickets: 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md',
+    diamonds: 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+  };
 
-  const contentTickets = document.getElementById('store-tab-content-tickets');
-  const contentPets = document.getElementById('store-tab-content-pets');
-  const contentSkins = document.getElementById('store-tab-content-skins');
-  const contentDiamonds = document.getElementById('store-tab-content-diamonds');
+  const targetKey = tabs.includes(tabKey) ? tabKey : 'skins';
 
-  [btnTickets, btnPets, btnSkins, btnDiamonds].forEach(b => {
-    if (b) b.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5';
+  tabs.forEach(key => {
+    const btn = document.getElementById(`store-tab-btn-${key}`);
+    const content = document.getElementById(`store-tab-content-${key}`);
+    if (btn) {
+      if (key === targetKey) {
+        btn.className = `w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-start gap-2.5 text-left ${activeGradients[key]}`;
+      } else {
+        btn.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-white hover:shadow-sm flex items-center justify-start gap-2.5 text-left';
+      }
+    }
+    if (content) {
+      if (key === targetKey) {
+        content.classList.remove('hidden');
+      } else {
+        content.classList.add('hidden');
+      }
+    }
   });
 
-  if (contentTickets) contentTickets.classList.add('hidden');
-  if (contentPets) contentPets.classList.add('hidden');
-  if (contentSkins) contentSkins.classList.add('hidden');
-  if (contentDiamonds) contentDiamonds.classList.add('hidden');
-
-  if (tabKey === 'pets') {
-    if (btnPets) btnPets.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    if (contentPets) contentPets.classList.remove('hidden');
+  if (targetKey === 'pets') {
     if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
-  } else if (tabKey === 'skins') {
-    if (btnSkins) btnSkins.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-sm flex items-center justify-center gap-1.5';
-    if (contentSkins) contentSkins.classList.remove('hidden');
-    switchSkinsCategory('avatars');
-  } else if (tabKey === 'diamonds') {
-    if (btnDiamonds) btnDiamonds.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    if (contentDiamonds) contentDiamonds.classList.remove('hidden');
+  } else if (targetKey === 'skins' || targetKey === 'themes' || targetKey === 'sounds') {
+    renderStoreSkinsUI();
+  } else if (targetKey === 'diamonds') {
     updateDiamondMarketUI();
-  } else {
-    if (btnTickets) btnTickets.className = 'flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-pink-500 text-white shadow-sm flex items-center justify-center gap-1.5';
-    if (contentTickets) contentTickets.classList.remove('hidden');
   }
   playTone(520, 0.08, 'sine', 0.12);
 }
 
 function switchSkinsCategory(subCat) {
-  const btnAvatars = document.getElementById('skin-sub-btn-avatars');
-  const btnThemes = document.getElementById('skin-sub-btn-themes');
-  const btnSounds = document.getElementById('skin-sub-btn-sounds');
-
-  const contentAvatars = document.getElementById('skin-sub-content-avatars');
-  const contentThemes = document.getElementById('skin-sub-content-themes');
-  const contentSounds = document.getElementById('skin-sub-content-sounds');
-
-  [btnAvatars, btnThemes, btnSounds].forEach(b => {
-    if (b) b.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-white flex items-center justify-center gap-1';
-  });
-
-  contentAvatars.classList.add('hidden');
-  contentThemes.classList.add('hidden');
-  contentSounds.classList.add('hidden');
-
   if (subCat === 'themes') {
-    btnThemes.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
-    contentThemes.classList.remove('hidden');
+    switchStoreTab('themes');
   } else if (subCat === 'sounds') {
-    btnSounds.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
-    contentSounds.classList.remove('hidden');
+    switchStoreTab('sounds');
   } else {
-    btnAvatars.className = 'flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1';
-    contentAvatars.classList.remove('hidden');
+    switchStoreTab('skins');
   }
-  renderStoreSkinsUI();
-  playTone(540, 0.08, 'sine', 0.12);
 }
 
 function renderStoreSkinsUI() {
@@ -2615,8 +2597,10 @@ function showView(viewName) {
 
   if (viewName === 'store') {
     if (storeView) storeView.classList.remove('hidden');
-    document.getElementById('store-balance-display').textContent = formatMinutes(state.minutesBalance).replace(' min', '');
-    document.getElementById('vault-display').textContent = formatMinutes(state.vaultBalance || 0);
+    const storeBalEl = document.getElementById('store-balance-display');
+    if (storeBalEl) storeBalEl.textContent = formatMinutes(state.minutesBalance).replace(' min', '');
+    const vaultEl = document.getElementById('vault-display');
+    if (vaultEl) vaultEl.textContent = formatMinutes(state.vaultBalance || 0);
     updateDiamondMarketUI();
     renderStoreSkinsUI();
     if (typeof renderStorePetsUI === 'function') renderStorePetsUI();

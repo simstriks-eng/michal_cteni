@@ -9,6 +9,7 @@
   <meta property="og:description" content="Vzdělávací mise pro čtení, matematiku a hodiny pro žáky 1. třídy ZŠ." />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="referrer" content="no-referrer" />
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
@@ -237,22 +238,26 @@
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-4 border-amber-300 shadow-md header-safe pb-2">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
       
-      <!-- AVATAR & PROFIL HRÁČE + AKTIVNÍ PET SPOLEČNÍK -->
+      <!-- AVATAR & PROFIL HRÁČE + AKTIVNÍ PET SPOLEČNÍK (SYMETRICKÁ DVOJICE KARET) -->
       <div class="flex items-center gap-2 flex-shrink-0">
-        <div class="flex items-center gap-2 cursor-pointer" onclick="openWardrobeModal()" title="Klepni pro otevření šatníku a výběr výbavy">
-          <div id="top-avatar-frame" class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-amber-200 border-3 border-amber-500 shadow-sm flex items-center justify-center overflow-hidden hover:scale-105 active:scale-95 transition-transform p-1">
+        <!-- Karta 1: Školák Míša (Šatník) -->
+        <div onclick="openWardrobeModal()" title="Klepni pro otevření šatníku a výběr výbavy" class="cursor-pointer flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[44px] hover:scale-105 active:scale-95 transition-transform">
+          <div id="top-avatar-frame" class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-200 border-2 border-amber-500 shadow-inner flex items-center justify-center overflow-hidden p-0.5 flex-shrink-0">
             <div id="top-avatar-display" class="w-full h-full flex items-center justify-center select-none">
               <!-- Dynamický SVG skin avatara -->
             </div>
           </div>
-          <div class="flex items-center gap-1">
-            <h1 class="text-base sm:text-lg md:text-xl font-black text-amber-500 tracking-wide font-baloo leading-none" id="player-title-display">ŠKOLÁK MÍŠA</h1>
-            <span class="text-xs">✨</span>
+          <div class="flex flex-col justify-center leading-none pr-0.5">
+            <div class="flex items-center gap-1">
+              <h1 class="text-xs sm:text-sm font-black text-slate-800 tracking-wide font-baloo leading-none" id="player-title-display">ŠKOLÁK MÍŠA</h1>
+              <span class="text-[10px] leading-none">✨</span>
+            </div>
+            <span class="text-[9px] font-bold text-amber-700 leading-none mt-1">👕 Šatník hrdiny</span>
           </div>
         </div>
 
-        <!-- ŽIVÝ AKTIVNÍ PET VEDLE NÁPISU ŠKOLÁK MÍŠA -->
-        <div id="top-pet-companion-widget" onclick="openArenaView()" title="Klepni pro otevření Pet Arény!" class="cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-300 px-2 py-1 rounded-2xl shadow-sm hover:scale-105 active:scale-95 transition-transform">
+        <!-- Karta 2: Aktivní Pet Společník (Aréna + červená notifikační diodka) -->
+        <div id="top-pet-companion-widget" onclick="openArenaView()" title="Klepni pro otevření Pet Arény!" class="relative cursor-pointer flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[44px] hover:scale-105 active:scale-95 transition-transform">
           <!-- Renderováno z petSystem.js -->
         </div>
       </div>
@@ -298,29 +303,27 @@
           <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/10</span>
         </button>
 
-        <!-- 4. MODRÉ DIAMANTY -->
-        <div onclick="showStoreTab('skins')" title="Diamanty & Šatník" class="cursor-pointer bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-black px-2.5 rounded-2xl border-2 border-cyan-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px]">
-          <span class="text-base">💎</span>
-          <span class="text-xs sm:text-sm font-black" id="top-diamonds-display">0</span>
-        </div>
-
-        <!-- 5. HERNÍ ČAS NA TABLETU (MINUTY) -->
-        <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 rounded-2xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[42px]">
-          <span class="text-base animate-pulse">⭐</span>
-          <span class="text-xs sm:text-sm font-black whitespace-nowrap" id="top-balance-display">0 min</span>
-        </div>
-
-        <!-- 6. HERNÍ OBCHOD (LÍSTKY & SKINY) -->
+        <!-- 4. HERNÍ OBCHOD (LÍSTKY & SKINY) -->
         <button onclick="showStoreTab('skins')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold px-2.5 rounded-2xl border-b-3 border-pink-700 shadow-sm flex items-center gap-1.5 h-[42px]">
           <span class="text-base sm:text-lg">🛍️</span>
           <span class="font-black text-xs uppercase tracking-wider hidden md:inline">Obchod</span>
         </button>
+      </div>
+    </div>
 
-        <!-- 7. RODIČOVSKÁ SPRÁVA (ZÁMEK) -->
-        <button onclick="openParentModal()" title="Rodičovská správa" class="game-button bg-slate-700 hover:bg-slate-800 text-white font-bold px-2.5 rounded-2xl border-b-3 border-slate-900 shadow-sm flex items-center gap-1.5 h-[42px]">
-          <span class="text-base">🔒</span>
-          <span class="font-black text-xs uppercase tracking-wider hidden md:inline">Správa</span>
-        </button>
+    <!-- Druhý řádek hlavičky nalevo: Přehled diamantů a minut (hvězdiček) pod lištou s Čtením, Matematikou a Hodinami -->
+    <div class="max-w-7xl mx-auto flex items-center justify-start gap-2 mt-1.5 pt-1.5 border-t border-amber-200/80">
+      <!-- MODRÉ DIAMANTY -->
+      <div onclick="showStoreTab('skins')" title="Diamanty & Obchod" class="cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-3 py-1 rounded-xl border-2 border-cyan-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+        <span class="text-sm sm:text-base leading-none">💎</span>
+        <span class="text-xs sm:text-sm font-black leading-none" id="top-diamonds-display">0</span>
+        <span class="text-[10px] font-bold text-cyan-100 uppercase tracking-wider">Diamantů</span>
+      </div>
+
+      <!-- HERNÍ ČAS NA TABLETU (MINUTY / HVĚZDIČKY) -->
+      <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3 py-1 rounded-xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform">
+        <span class="text-sm sm:text-base leading-none animate-pulse">⭐</span>
+        <span class="text-xs sm:text-sm font-black whitespace-nowrap leading-none" id="top-balance-display">0 min</span>
       </div>
     </div>
   </header>
@@ -830,278 +833,264 @@
       </div>
     </section>
 
-    <!-- VIEW 3: STORE (OBCHOD S DIAMANTY & LÍSTKY & SKINNY) -->
-    <section id="view-store" class="hidden flex-grow flex flex-col space-y-3">
-      <div class="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white p-4 sm:p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div>
-          <span class="bg-white/20 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Tržiště a Odměny</span>
-          <h2 class="text-2xl sm:text-3xl font-black mt-1 font-baloo leading-tight">Herní Obchod 🛍️</h2>
-          <p class="text-pink-100 font-bold text-xs">Vyměň hvězdičky za hraní nebo diamanty za Minecraft & Pokémon skiny a témata!</p>
-        </div>
-        <div class="flex items-center gap-2.5">
-          <div class="bg-white text-purple-900 rounded-2xl p-2.5 sm:p-3 border-3 border-yellow-300 shadow-md text-center min-w-[110px]">
-            <div class="text-[9px] font-black uppercase text-slate-500">Máš nasbíráno:</div>
-            <div class="text-2xl sm:text-3xl font-black text-amber-500 font-baloo leading-none my-0.5" id="store-balance-display">0</div>
-            <div class="text-[9px] font-black text-slate-600">MINUT ⭐</div>
-          </div>
-          <div class="bg-slate-900 text-cyan-300 rounded-2xl p-2.5 sm:p-3 border-3 border-cyan-400 shadow-md text-center min-w-[100px]">
-            <div class="text-[9px] font-black uppercase text-slate-300">Diamanty:</div>
-            <div class="text-2xl sm:text-3xl font-black text-cyan-300 font-baloo leading-none my-0.5" id="store-diamonds-badge-top">0</div>
-            <div class="text-[9px] font-black text-cyan-200">DRAHOKAMŮ 💎</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- HLAVNÍ PŘEPÍNAČ V OBCHODĚ -->
-      <div class="flex items-center gap-1.5 p-1 bg-white/95 rounded-2xl border-2 border-indigo-200 shadow-sm flex-wrap">
-        <button onclick="switchStoreTab('tickets')" id="store-tab-btn-tickets" class="flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all bg-pink-500 text-white shadow-sm flex items-center justify-center gap-1.5">
-          <span>🎟️</span> Herní Lístky (⭐)
-        </button>
-        <button onclick="switchStoreTab('pets')" id="store-tab-btn-pets" class="flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5">
-          <span>🐾</span> PETI & Lektvary (💎)
-        </button>
-        <button onclick="switchStoreTab('skins')" id="store-tab-btn-skins" class="flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5">
-          <span>🛍️</span> Koupit Výbavu (💎)
-        </button>
-        <button onclick="switchStoreTab('diamonds')" id="store-tab-btn-diamonds" class="flex-1 min-w-[120px] py-2 px-2 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5">
-          <span>⏳</span> Výhody & PIN (💎)
-        </button>
-      </div>
-
-      <!-- ZÁLOŽKA OBCHODU 1: LÍSTKY (ZA MINUTY ⭐) -->
-      <div id="store-tab-content-tickets" class="space-y-3">
-        <div class="bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-200 border-3 border-amber-400 rounded-3xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md">
-          <div class="flex items-center gap-2.5">
-            <span class="text-3xl">🏦</span>
-            <div>
-              <h4 class="text-xs sm:text-sm font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
-              <p class="text-[11px] text-amber-900 font-bold">
-                Když dosáhneš denního limitu (<span id="vault-direct-limit-label" class="font-black">15 min</span>), další vyčtené minuty se ukládají do trezoru na zítra!
-              </p>
-            </div>
-          </div>
-          <div class="bg-white/90 border-2 border-amber-500 px-3 py-1.5 rounded-2xl text-center min-w-[110px]">
-            <span class="text-[9px] font-black uppercase text-amber-800 block">V trezoru máš:</span>
-            <span class="text-xl font-black text-amber-600 font-baloo" id="vault-display">0 min</span>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
-          <div class="bg-white border-3 border-sky-300 rounded-3xl p-3 sm:p-4 shadow-md flex flex-col justify-between text-center">
-            <div>
-              <div class="text-3xl mb-1">⏱️</div>
-              <h3 class="text-lg sm:text-xl font-black text-sky-800">5 MINUT</h3>
-              <p class="text-slate-500 text-[11px] font-bold mt-0.5">Rychlá pauza</p>
-            </div>
-            <div class="mt-3">
-              <div class="text-amber-500 font-black text-xs sm:text-sm mb-1.5">Cena: 5 hvězd ⭐</div>
-              <button onclick="buyTimePackage(5)" class="game-button w-full bg-sky-500 hover:bg-sky-600 text-white font-black py-2 rounded-xl border-b-3 border-sky-700 text-xs sm:text-sm shadow-md">
-                Koupit lístek
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-white border-3 border-emerald-300 rounded-3xl p-3 sm:p-4 shadow-md flex flex-col justify-between text-center">
-            <div>
-              <div class="text-3xl mb-1">🎮</div>
-              <h3 class="text-lg sm:text-xl font-black text-emerald-800">10 MINUT</h3>
-              <p class="text-slate-500 text-[11px] font-bold mt-0.5">Herní level</p>
-            </div>
-            <div class="mt-3">
-              <div class="text-amber-500 font-black text-xs sm:text-sm mb-1.5">Cena: 10 hvězd ⭐</div>
-              <button onclick="buyTimePackage(10)" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl border-b-3 border-emerald-700 text-xs sm:text-sm shadow-md">
-                Koupit lístek
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-white border-3 border-purple-300 rounded-3xl p-3 sm:p-4 shadow-md flex flex-col justify-between text-center">
-            <div>
-              <div class="text-3xl mb-1">🚀</div>
-              <h3 class="text-lg sm:text-xl font-black text-purple-800">15 MINUT</h3>
-              <p class="text-slate-500 text-[11px] font-bold mt-0.5">Velký balíček</p>
-            </div>
-            <div class="mt-3">
-              <div class="text-amber-500 font-black text-xs sm:text-sm mb-1.5">Cena: 15 hvězd ⭐</div>
-              <button onclick="buyTimePackage(15)" class="game-button w-full bg-purple-500 hover:bg-purple-600 text-white font-black py-2 rounded-xl border-b-3 border-purple-700 text-xs sm:text-sm shadow-md">
-                Koupit lístek
-              </button>
-            </div>
-          </div>
-
-          <div class="bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-orange-400 rounded-3xl p-3 sm:p-4 shadow-md flex flex-col justify-between text-center relative">
-            <div class="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Plná Porce</div>
-            <div>
-              <div class="text-3xl mb-1">👑</div>
-              <h3 class="text-lg sm:text-xl font-black text-orange-900" id="dynamic-package-title">15 MINUT</h3>
-              <p class="text-slate-500 text-[11px] font-bold mt-0.5">Maximum</p>
-            </div>
-            <div class="mt-3">
-              <div class="text-amber-600 font-black text-xs sm:text-sm mb-1.5" id="dynamic-package-cost">Cena: 15 hvězd ⭐</div>
-              <button onclick="buyDynamicTimePackage()" class="game-button w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-2 rounded-xl border-b-3 border-orange-700 text-xs sm:text-sm shadow-md">
-                Koupit Maximum
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ZÁLOŽKA OBCHODU 2: SKÍNY, TÉMATA & SPECIÁLNÍ ZVUKY (ZA 💎) -->
-      <div id="store-tab-content-skins" class="hidden space-y-3">
+    <!-- VIEW 3: STORE (PŘEHLEDNÝ OBCHOD S BOČNÍM MENU VLEVO JAKO V ADMIN MÓDU) -->
+    <section id="view-store" class="hidden flex-grow flex flex-col">
+      <div class="bg-white rounded-3xl border-4 border-pink-500 shadow-2xl flex-grow flex flex-col overflow-hidden min-h-[520px]">
         
-        <!-- Pod-záložky pro Skinový obchod -->
-        <div class="flex items-center gap-1.5 p-1 bg-indigo-50 border border-indigo-200 rounded-2xl">
-          <button onclick="switchSkinsCategory('avatars')" id="skin-sub-btn-avatars" class="flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1">
-            <span>👾</span> Skiny Avatara
-          </button>
-          <button onclick="switchSkinsCategory('themes')" id="skin-sub-btn-themes" class="flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-white flex items-center justify-center gap-1">
-            <span>🎨</span> Tapety & Světy
-          </button>
-          <button onclick="switchSkinsCategory('sounds')" id="skin-sub-btn-sounds" class="flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-white flex items-center justify-center gap-1">
-            <span>🔊</span> Fanfáry & Zvuky
-          </button>
-        </div>
-
-        <!-- 2A: SKINY AVATARA (MINECRAFT & POKÉMON) -->
-        <div id="skin-sub-content-avatars" class="space-y-3">
-          <div class="bg-white/95 rounded-2xl p-3 border border-indigo-100 flex items-center justify-between">
+        <!-- Horní lišta Obchodu (bez duplicitního počtu minut a diamantů) -->
+        <div class="flex items-center justify-between border-b px-4 sm:px-6 py-3.5 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 text-white flex-shrink-0">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl sm:text-3xl">🛍️</span>
             <div>
-              <h3 class="text-sm sm:text-base font-black text-slate-800">Obchod se Skiny:</h3>
-              <p class="text-[11px] text-slate-500 font-bold">Kup si novou postavičku do své sbírky za modré diamanty 💎!</p>
+              <h2 class="text-lg sm:text-2xl font-black font-baloo leading-tight">Herní Obchod & Tržiště</h2>
+              <p class="text-[10px] sm:text-xs text-pink-100 font-bold hidden sm:block">Vyber si kategorii v levém menu a nakupuj za hvězdičky ⭐ nebo diamanty 💎</p>
             </div>
-            <span class="text-xs font-black text-cyan-600 bg-cyan-50 border border-cyan-200 px-2.5 py-1 rounded-xl">
-              Máš: <span id="skins-diamonds-counter" class="font-black">0</span> 💎
-            </span>
           </div>
-          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="store-avatars-grid"></div>
+          <button onclick="showView('learn')" class="game-button bg-white text-indigo-800 hover:bg-indigo-50 font-black px-3.5 py-2 rounded-2xl text-xs shadow-md flex items-center gap-1.5">
+            <span>🎮</span> Zpět do Tréninku
+          </button>
         </div>
 
-        <!-- 2B: BAREVNÁ TÉMATA & SVĚTY -->
-        <div id="skin-sub-content-themes" class="hidden space-y-3">
-          <div class="bg-white/95 rounded-2xl p-3 border border-indigo-100 flex items-center justify-between">
-            <div>
-              <h3 class="text-sm sm:text-base font-black text-slate-800">Obchod s Tapetami:</h3>
-              <p class="text-[11px] text-slate-500 font-bold">Kup si tématickou tapetu Minecraftu, Pokémonů nebo Sonica na celou obrazovku!</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" id="store-themes-grid"></div>
-        </div>
-
-        <!-- 2C: SPECIÁLNÍ ZVUKY -->
-        <div id="skin-sub-content-sounds" class="hidden space-y-3">
-          <div class="bg-white/95 rounded-2xl p-3 border border-indigo-100 flex items-center justify-between">
-            <div>
-              <h3 class="text-sm sm:text-base font-black text-slate-800">Obchod s Fanfárami:</h3>
-              <p class="text-[11px] text-slate-500 font-bold">Kup si oslavnou melodii, Pikachu výkřik nebo retro fanfáru za správné odpovědi!</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3" id="store-sounds-grid"></div>
-        </div>
-
-      </div>
-
-      <!-- ZÁLOŽKA OBCHODU 3: VÝHODY & TAJNÝ PIN (ZA 💎) -->
-      <div id="store-tab-content-diamonds" class="hidden space-y-3">
-        <div class="bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 text-white border-3 border-cyan-300 rounded-3xl p-4 sm:p-5 shadow-xl flex flex-col gap-3">
-          <div class="flex flex-col sm:flex-row items-center justify-between gap-2.5 border-b border-white/20 pb-2.5">
-            <div class="flex items-center gap-2.5">
-              <span class="text-3xl sm:text-4xl">💎</span>
-              <div>
-                <span class="text-[10px] font-black bg-cyan-400 text-slate-900 px-2.5 py-0.5 rounded-full uppercase">Diamantové Výhody</span>
-                <h3 class="text-xl font-black mt-0.5 font-baloo">Máš k dispozici: <span id="store-diamonds-count" class="text-cyan-200">0</span> 💎</h3>
-              </div>
-            </div>
-            <div class="bg-white/10 px-3 py-1 rounded-xl border border-white/20 text-right">
-              <span class="text-[9px] uppercase font-black text-cyan-200 block">Dnešní přímý limit:</span>
-              <span class="text-lg font-black text-white font-baloo" id="store-current-max-limit-display">15 min</span>
-            </div>
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div class="bg-white/10 border-2 border-cyan-300/60 rounded-2xl p-3.5 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xl">⏳</span>
-                  <span class="bg-cyan-400 text-slate-900 text-[10px] font-black px-2 py-0.5 rounded-full uppercase" id="diamond-rate-badge">Cena: 20 💎</span>
-                </div>
-                <h4 class="text-base font-black text-white font-baloo">Navýšit denní limit o +1 minutu</h4>
-                <p class="text-xs text-cyan-100 font-bold mt-0.5">
-                  Zvyšuje trvale denní limit pro hraní i hodnotu maximálního poukazu.
-                </p>
-              </div>
-              <button onclick="buyLimitExtension()" class="game-button mt-3 w-full bg-cyan-400 hover:bg-cyan-300 text-slate-950 font-black py-2 rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5">
-                <span>💎</span> Koupit +1 minutu navíc
-              </button>
-            </div>
-
-            <div class="bg-white/10 border-2 border-cyan-300/60 rounded-2xl p-3.5 flex flex-col justify-between">
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="text-xl">🔐</span>
-                  <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">Cena: 50 💎</span>
-                </div>
-                <h4 class="text-base font-black text-white font-baloo">Tajný PIN k Tabletu</h4>
-                <p class="text-xs text-cyan-100 font-bold mt-0.5" id="pin-card-description">
-                  Po nasbírání 50 diamantů se odemkne tajný kód pro rodičovský zámek tabletu.
-                </p>
-              </div>
-              <div id="pin-unlock-box" class="mt-3">
-                <button onclick="revealSecretPinAction()" id="btn-unlock-pin" class="game-button w-full bg-amber-400 hover:bg-amber-300 text-slate-950 font-black py-2 rounded-xl text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5">
-                  <span>🔓</span> Odemknout PIN (50 💎)
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ZÁLOŽKA OBCHODU: PETI & LEKTVARY (ZA 💎) -->
-      <div id="store-tab-content-pets" class="hidden space-y-3">
-        <div class="bg-white/95 rounded-2xl p-3.5 border-2 border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-sm">
-          <div>
-            <h3 class="text-sm sm:text-base font-black text-slate-800">🐾 Obchod s Pety & Lektvary do Arény:</h3>
-            <p class="text-[11px] text-slate-500 font-bold">Kup si bojového společníka, krmivo nebo Kámen oživení za modré diamanty 💎!</p>
-          </div>
-          <span class="text-xs font-black text-cyan-700 bg-cyan-50 border border-cyan-200 px-3 py-1.5 rounded-xl self-start sm:self-auto">
-            Máš k dispozici: <span id="store-pets-diamonds-counter" class="font-black">0</span> 💎
-          </span>
-        </div>
-
-        <!-- 4 Startovní Peti -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" id="store-pets-grid"></div>
-
-        <!-- Lektvary a Krmivo -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          <div class="bg-gradient-to-r from-rose-50 to-pink-50 border-3 border-rose-300 rounded-3xl p-4 flex items-center justify-between gap-3 shadow-sm">
-            <div class="flex items-center gap-3">
-              <span class="text-4xl">❤️‍🔥</span>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h4 class="text-sm sm:text-base font-black text-rose-950 font-baloo">Kámen Oživení</h4>
-                  <span class="text-[10px] font-black bg-rose-200 text-rose-900 px-2 py-0.5 rounded-full" id="store-revive-price-label">2 💎</span>
-                </div>
-                <p class="text-[11px] text-rose-800 font-bold mt-0.5">Okamžitě probudí peta z K.O. stavu a doplní mu 100 % HP!</p>
-              </div>
-            </div>
-            <button onclick="buyRevivePotionFromStore()" class="game-button bg-rose-500 hover:bg-rose-600 text-white font-black px-4 py-2.5 rounded-2xl border-b-4 border-rose-700 text-xs whitespace-nowrap shadow-sm">
-              Koupit ❤️‍🔥
+        <!-- Hlavní tělo Obchodu: LEVÉ BOČNÍ MENU + PRAVÝ OBSAH -->
+        <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
+          
+          <!-- Levé svislé menu (stejný styl jako v Admin módu) -->
+          <nav class="w-full md:w-56 bg-slate-100/95 border-b-2 md:border-b-0 md:border-r-2 border-slate-200 p-2 sm:p-3 flex md:flex-col gap-1.5 flex-shrink-0 overflow-x-auto md:overflow-y-auto no-scrollbar">
+            <button onclick="switchStoreTab('skins')" id="store-tab-btn-skins" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-base">👾</span>
+              <span>Skiny Avatara</span>
             </button>
-          </div>
+            <button onclick="switchStoreTab('pets')" id="store-tab-btn-pets" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-base">🐾</span>
+              <span>Peti & Lektvary</span>
+            </button>
+            <button onclick="switchStoreTab('themes')" id="store-tab-btn-themes" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-base">🎨</span>
+              <span>Tapety & Světy</span>
+            </button>
+            <button onclick="switchStoreTab('sounds')" id="store-tab-btn-sounds" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-base">🔊</span>
+              <span>Fanfáry & Zvuky</span>
+            </button>
+            <button onclick="switchStoreTab('tickets')" id="store-tab-btn-tickets" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-base">🎟️</span>
+              <span>Herní Lístky (⭐)</span>
+            </button>
+            <button onclick="switchStoreTab('diamonds')" id="store-tab-btn-diamonds" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-base">⏳</span>
+              <span>Výhody & PIN</span>
+            </button>
+          </nav>
 
-          <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-3 border-amber-300 rounded-3xl p-4 flex items-center justify-between gap-3 shadow-sm">
-            <div class="flex items-center gap-3">
-              <span class="text-4xl">🍖</span>
-              <div>
-                <div class="flex items-center gap-2">
-                  <h4 class="text-sm sm:text-base font-black text-amber-950 font-baloo">2× Krmivo pro Pety</h4>
-                  <span class="text-[10px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full" id="store-food-price-label">1 💎</span>
+          <!-- Pravý obsah zvolené kategorie -->
+          <div class="flex-grow p-3 sm:p-5 overflow-y-auto bg-white">
+            
+            <!-- KATEGORIE 1: SKINY AVATARA -->
+            <div id="store-tab-content-skins" class="space-y-3">
+              <div class="border-b border-slate-200 pb-2">
+                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">👾 Skiny Avatara (Minecraft, Pokémon & Sonic)</h3>
+                <p class="text-xs text-slate-500 font-bold">Kup si novou postavičku do 3D šatníku za modré diamanty 💎</p>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="store-avatars-grid"></div>
+            </div>
+
+            <!-- KATEGORIE 2: PETI & LEKTVARY -->
+            <div id="store-tab-content-pets" class="hidden space-y-4">
+              <div class="border-b border-slate-200 pb-2">
+                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🐾 Bojovní Peti do Arény & Lektvary</h3>
+                <p class="text-xs text-slate-500 font-bold">Odemkni si bojového parťáka (včetně mystického Mewtwoa!) nebo dokup lektvary a krmivo za 💎</p>
+              </div>
+
+              <!-- Lektvary a Krmivo -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
+                  <div class="flex items-center gap-3">
+                    <span class="text-3xl">❤️‍🔥</span>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-black text-rose-950 font-baloo">Kámen Oživení</h4>
+                        <span class="text-[10px] font-black bg-rose-200 text-rose-900 px-2 py-0.5 rounded-full" id="store-revive-price-label">2 💎</span>
+                      </div>
+                      <p class="text-[11px] text-rose-800 font-bold mt-0.5">Okamžitě probudí peta z K.O. stavu na 100 % HP!</p>
+                    </div>
+                  </div>
+                  <button onclick="buyRevivePotionFromStore()" class="game-button bg-rose-500 hover:bg-rose-600 text-white font-black px-3.5 py-2 rounded-xl border-b-3 border-rose-700 text-xs whitespace-nowrap shadow-sm">
+                    Koupit ❤️‍🔥
+                  </button>
                 </div>
-                <p class="text-[11px] text-amber-800 font-bold mt-0.5">Doplní petovi +45 HP a přidá +10 XP zkušeností!</p>
+
+                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
+                  <div class="flex items-center gap-3">
+                    <span class="text-3xl">🍖</span>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <h4 class="text-sm font-black text-amber-950 font-baloo">2× Krmivo pro Pety</h4>
+                        <span class="text-[10px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full" id="store-food-price-label">1 💎</span>
+                      </div>
+                      <p class="text-[11px] text-amber-800 font-bold mt-0.5">Doplní petovi zdraví v Aréně!</p>
+                    </div>
+                  </div>
+                  <button onclick="buyPetFoodFromStore()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3.5 py-2 rounded-xl border-b-3 border-amber-700 text-xs whitespace-nowrap shadow-sm">
+                    Koupit 🍖
+                  </button>
+                </div>
+              </div>
+
+              <!-- 5 Petů včetně Mewtwo -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="store-pets-grid"></div>
+            </div>
+
+            <!-- KATEGORIE 3: TAPETY & SVĚTY -->
+            <div id="store-tab-content-themes" class="hidden space-y-3">
+              <div class="border-b border-slate-200 pb-2">
+                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎨 Tapety & Světy na Pozadí</h3>
+                <p class="text-xs text-slate-500 font-bold">Kup si tématickou tapetu Minecraftu, Pokémonů nebo Sonica na celou obrazovku</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="store-themes-grid"></div>
+            </div>
+
+            <!-- KATEGORIE 4: FANFÁRY & ZVUKY -->
+            <div id="store-tab-content-sounds" class="hidden space-y-3">
+              <div class="border-b border-slate-200 pb-2">
+                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🔊 Oslavné Fanfáry & Zvuky</h3>
+                <p class="text-xs text-slate-500 font-bold">Kup si oslavnou melodii, Pikachu výkřik nebo retro fanfáru za správné odpovědi</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="store-sounds-grid"></div>
+            </div>
+
+            <!-- KATEGORIE 5: HERNÍ LÍSTKY (ZA MINUTY ⭐) -->
+            <div id="store-tab-content-tickets" class="hidden space-y-4">
+              <div class="border-b border-slate-200 pb-2">
+                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎟️ Herní Lístky na Tablet (za hvězdičky ⭐)</h3>
+                <p class="text-xs text-slate-500 font-bold">Vyměň vyčtené minuty za lístek na hraní a ukaž ho rodičům</p>
+              </div>
+
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div class="bg-sky-50/60 border-3 border-sky-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center">
+                  <div>
+                    <div class="text-3xl mb-1">⏱️</div>
+                    <h3 class="text-lg sm:text-xl font-black text-sky-800">5 MINUT</h3>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Rychlá pauza</p>
+                  </div>
+                  <div class="mt-3">
+                    <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 5 hvězd ⭐</div>
+                    <button onclick="buyTimePackage(5)" class="game-button w-full bg-sky-500 hover:bg-sky-600 text-white font-black py-2 rounded-xl border-b-3 border-sky-700 text-xs shadow-sm">
+                      Koupit lístek
+                    </button>
+                  </div>
+                </div>
+
+                <div class="bg-emerald-50/60 border-3 border-emerald-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center">
+                  <div>
+                    <div class="text-3xl mb-1">🎮</div>
+                    <h3 class="text-lg sm:text-xl font-black text-emerald-800">10 MINUT</h3>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Herní level</p>
+                  </div>
+                  <div class="mt-3">
+                    <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 10 hvězd ⭐</div>
+                    <button onclick="buyTimePackage(10)" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl border-b-3 border-emerald-700 text-xs shadow-sm">
+                      Koupit lístek
+                    </button>
+                  </div>
+                </div>
+
+                <div class="bg-purple-50/60 border-3 border-purple-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center">
+                  <div>
+                    <div class="text-3xl mb-1">🚀</div>
+                    <h3 class="text-lg sm:text-xl font-black text-purple-800">15 MINUT</h3>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Velký balíček</p>
+                  </div>
+                  <div class="mt-3">
+                    <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 15 hvězd ⭐</div>
+                    <button onclick="buyTimePackage(15)" class="game-button w-full bg-purple-500 hover:bg-purple-600 text-white font-black py-2 rounded-xl border-b-3 border-purple-700 text-xs shadow-sm">
+                      Koupit lístek
+                    </button>
+                  </div>
+                </div>
+
+                <div class="bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-orange-400 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative">
+                  <div class="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Maximum</div>
+                  <div>
+                    <div class="text-3xl mb-1">👑</div>
+                    <h3 class="text-lg sm:text-xl font-black text-orange-900" id="dynamic-package-title">15 MINUT</h3>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Plná porce</p>
+                  </div>
+                  <div class="mt-3">
+                    <div class="text-amber-700 font-black text-xs mb-1.5" id="dynamic-package-cost">Cena: 15 hvězd ⭐</div>
+                    <button onclick="buyDynamicTimePackage()" class="game-button w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-2 rounded-xl border-b-3 border-orange-700 text-xs shadow-sm">
+                      Koupit Maximum
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Zlatý Noční Trezor -->
+              <div class="bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-200 border-2 border-amber-400 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">🏦</span>
+                  <div>
+                    <h4 class="text-xs sm:text-sm font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
+                    <p class="text-[11px] text-amber-900 font-bold">
+                      Po dosažení denního limitu (<span id="vault-direct-limit-label" class="font-black">15 min</span>) se další vyčtené minuty ukládají do trezoru na zítra!
+                    </p>
+                  </div>
+                </div>
+                <div class="bg-white/90 border-2 border-amber-500 px-3 py-1 rounded-xl text-center min-w-[100px]">
+                  <span class="text-[9px] font-black uppercase text-amber-800 block">V trezoru:</span>
+                  <span class="text-base font-black text-amber-600 font-baloo" id="vault-display">0 min</span>
+                </div>
               </div>
             </div>
-            <button onclick="buyPetFoodFromStore()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-4 py-2.5 rounded-2xl border-b-4 border-amber-700 text-xs whitespace-nowrap shadow-sm">
-              Koupit 🍖
-            </button>
+
+            <!-- KATEGORIE 6: VÝHODY & TAJNÝ PIN (ZA 💎) -->
+            <div id="store-tab-content-diamonds" class="hidden space-y-4">
+              <div class="border-b border-slate-200 pb-2 flex items-center justify-between flex-wrap gap-2">
+                <div>
+                  <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">⏳ Speciální Výhody & Tajný PIN</h3>
+                  <p class="text-xs text-slate-500 font-bold">Rozšiř si denní herní limit nebo odemkni tajný PIN k tabletu</p>
+                </div>
+                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl text-xs font-black text-indigo-900">
+                  Dnešní přímý limit: <span id="store-current-max-limit-display" class="text-indigo-600">15 min</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-gradient-to-b from-cyan-50 to-blue-50 border-3 border-cyan-300 rounded-3xl p-4 flex flex-col justify-between shadow-sm">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-2xl">⏳</span>
+                      <span class="bg-cyan-500 text-white text-xs font-black px-2.5 py-0.5 rounded-full uppercase" id="diamond-rate-badge">Cena: 20 💎</span>
+                    </div>
+                    <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo">Navýšit denní limit o +1 minutu</h4>
+                    <p class="text-xs text-slate-600 font-bold mt-1">
+                      Zvyšuje trvale denní limit pro hraní i hodnotu maximálního poukazu.
+                    </p>
+                  </div>
+                  <button onclick="buyLimitExtension()" class="game-button mt-4 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-cyan-700 text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5">
+                    <span>💎</span> Koupit +1 minutu navíc
+                  </button>
+                </div>
+
+                <div class="bg-gradient-to-b from-amber-50 to-yellow-50 border-3 border-amber-300 rounded-3xl p-4 flex flex-col justify-between shadow-sm">
+                  <div>
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-2xl">🔐</span>
+                      <span class="bg-amber-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded-full uppercase">Cena: 50 💎</span>
+                    </div>
+                    <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo">Tajný PIN k Tabletu</h4>
+                    <p class="text-xs text-slate-600 font-bold mt-1" id="pin-card-description">
+                      Po nasbírání 50 diamantů se odemkne tajný kód pro rodičovský zámek tabletu.
+                    </p>
+                  </div>
+                  <div id="pin-unlock-box" class="mt-4">
+                    <button onclick="revealSecretPinAction()" id="btn-unlock-pin" class="game-button w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-2.5 rounded-2xl border-b-4 border-amber-600 text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5">
+                      <span>🔓</span> Odemknout PIN (50 💎)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -1122,39 +1111,47 @@
 
     <!-- VIEW 5: PET RPG ARÉNA SPOLEČNÍKŮ -->
     <section id="view-arena" class="hidden flex-grow flex flex-col space-y-3">
-      <!-- Horní lišta Arény: Čistá hlavička bez textového balastu -->
-      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-3.5 sm:p-4 rounded-3xl border-3 border-amber-400 shadow-xl flex flex-col lg:flex-row items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <button onclick="showView('learn')" class="game-button bg-white/15 hover:bg-white/25 text-white font-black px-3 py-1.5 rounded-2xl border border-white/20 text-xs flex items-center gap-1.5">
-            <span>⬅️</span> <span>Učení</span>
-          </button>
-          <h2 class="text-xl sm:text-2xl font-black font-baloo leading-tight flex items-center gap-2">
-            <span>🐾</span> <span>Aréna</span>
-          </h2>
-          <span class="text-xs font-black bg-indigo-900/90 border border-indigo-400 text-indigo-200 px-2.5 py-1 rounded-xl" id="arena-daily-battles-badge">
+      <!-- Horní lišta Arény: Symetrická hlavička (ARÉNA + Patro + Limit | Vyměň PETA | Krmivo + Oživení + Lístky) -->
+      <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-4 py-3 rounded-3xl border-3 border-amber-400 shadow-xl flex flex-col lg:flex-row items-center justify-between gap-3">
+        <!-- Levá část: Nápis ARÉNA + Patro (Stage) + Denní limit -->
+        <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap justify-center lg:justify-start">
+          <div class="flex items-center gap-2 mr-1">
+            <span class="text-2xl leading-none">🐾</span>
+            <h2 class="text-xl sm:text-2xl font-black font-baloo tracking-wide text-amber-400 uppercase leading-none">
+              ARÉNA
+            </h2>
+          </div>
+          <span class="px-3 py-1.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 whitespace-nowrap bg-amber-500/20 border-amber-400 text-amber-200 shadow-inner" id="arena-stage-badge">
+            🏰 Patro 1
+          </span>
+          <span class="px-3 py-1.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 whitespace-nowrap bg-indigo-900/90 border-indigo-400 text-indigo-100 shadow-inner" id="arena-daily-battles-badge">
             ⚔️ Dnes: 0 / 5
           </span>
         </div>
 
-        <!-- Rychlý přepínač petů (každý se expí zvlášť) -->
-        <div class="flex items-center gap-2 flex-wrap justify-center" id="arena-pet-roster-bar"></div>
+        <!-- Střední část: Tlačítko „Vyměň PETA“ (otevře modální okno s výběrem) -->
+        <div class="flex items-center justify-center">
+          <button onclick="openArenaPetSwitchModal()" id="arena-open-pet-switch-btn" class="game-button bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 hover:from-indigo-500 hover:to-purple-500 text-white font-black px-5 py-2 rounded-2xl border-2 border-indigo-300 border-b-4 border-b-indigo-900 text-xs sm:text-sm flex items-center gap-2.5 shadow-lg whitespace-nowrap">
+            <div id="arena-switch-btn-pet-icon" class="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center p-0.5 flex-shrink-0">🐾</div>
+            <span>🔄 Vyměň PETA</span>
+          </button>
+        </div>
 
-        <!-- Zásoby: Krmivo, Lektvary, Diamanty -->
-        <div class="flex items-center gap-2">
-          <button id="arena-feed-btn" onclick="feedActivePetAction()" class="game-button bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-3 py-1.5 rounded-2xl border-b-3 border-amber-700 text-xs flex items-center gap-1.5 shadow-sm" title="Nakrmit peta (+45 HP, +10 XP)">
-            <span>🍖</span>
+        <!-- Pravá část: Krmivo + Kameny oživení + Bojové lístky -->
+        <div class="flex items-center gap-2 flex-wrap justify-center lg:justify-end">
+          <button id="arena-feed-btn" onclick="feedActivePetAction()" class="game-button bg-amber-400 hover:bg-amber-500 text-amber-950 font-black px-3.5 py-2 rounded-2xl border-b-3 border-amber-600 text-xs sm:text-sm flex items-center gap-1.5 shadow-md whitespace-nowrap" title="Nakrmit peta (+45 HP)">
+            <span class="text-base leading-none">🍖</span>
             <span>Krmivo (<span id="arena-food-count">2</span>)</span>
           </button>
-          <div class="bg-rose-950/90 border-2 border-rose-400 px-2.5 py-1 rounded-2xl text-xs font-black flex items-center gap-1 text-rose-200" title="Počet Kamenů oživení v batohu">
-            <span>❤️‍🔥</span>
-            <span id="arena-potion-count">1</span>
+
+          <div class="bg-rose-950/90 border-2 border-rose-400 px-3 py-1.5 rounded-2xl text-xs sm:text-sm font-black flex items-center gap-1.5 text-rose-100 whitespace-nowrap shadow-inner" title="Počet Kamenů oživení (15% šance na drop z bota)">
+            <span class="text-base leading-none">❤️‍🔥</span>
+            <span>Oživení: <strong id="arena-potion-count">1</strong></span>
           </div>
-          <div class="bg-cyan-950/90 border-2 border-cyan-400 px-2.5 py-1 rounded-2xl text-xs font-black flex items-center gap-1 text-cyan-200">
-            <span>💎</span>
-            <span id="arena-diamonds-count">0</span>
-          </div>
-          <button onclick="showStoreTab('pets')" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-black px-3 py-1.5 rounded-2xl border-b-3 border-pink-700 text-xs">
-            🛍️ Obchod
+
+          <button id="arena-ticket-btn" onclick="useArenaBattleTicketAction()" class="game-button bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-1.5 rounded-2xl border-2 border-emerald-400 border-b-3 border-b-emerald-800 text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap shadow-md" title="Bojový lístek: Klepni pro +1 extra zápas dnes (10% šance na drop z bota)">
+            <span class="text-base leading-none">🎟️</span>
+            <span>Lístky: <strong id="arena-tickets-count">0</strong></span>
           </button>
         </div>
       </div>
@@ -1286,22 +1283,77 @@
             <p class="text-xs font-bold text-indigo-100 mt-0.5">
               Přes noc si všichni tvoji peti odpočinou a automaticky se jim doplní 100 % HP.
             </p>
+            <div id="arena-daily-limit-ticket-box" class="mt-3 hidden">
+              <button onclick="useArenaBattleTicketAction()" class="game-button bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black px-5 py-2.5 rounded-2xl border-b-4 border-emerald-800 text-xs sm:text-sm shadow-lg inline-flex items-center gap-2">
+                <span>🎟️</span>
+                <span>Použít Bojový lístek (+1 zápas dnes)</span>
+              </button>
+            </div>
           </div>
 
           <!-- Panel K.O. (zobrazí se, když pet klesne na 0 HP) -->
           <div id="arena-ko-panel" class="hidden bg-rose-950/90 border-2 border-rose-400 rounded-2xl p-4 max-w-xl mx-auto text-white">
             <div class="text-3xl mb-1">💀</div>
             <h4 class="text-lg font-black font-baloo text-rose-200">Tvůj parťák je vyčerpaný (K.O.)!</h4>
-            <p class="text-xs font-bold text-rose-100 mt-0.5 mb-3">
-              Oživ ho Kamenem oživení (<span id="arena-revive-cost-label" class="underline font-black">2 💎</span>) nebo počkej do zítřka, kdy se přes noc sám uzdraví!
+            <p class="text-xs font-bold text-rose-100 mt-0.5 mb-3" id="arena-ko-description">
+              Oživ ho Kamenem oživení nebo za diamanty (<span id="arena-revive-cost-label" class="underline font-black">2 💎</span>), případně počkej do zítřka!
             </p>
-            <button onclick="reviveActivePetAction()" class="game-button bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black px-6 py-2.5 rounded-2xl border-b-4 border-emerald-800 text-sm shadow-lg">
+            <button onclick="reviveActivePetAction()" id="arena-ko-revive-btn" class="game-button bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white font-black px-6 py-2.5 rounded-2xl border-b-4 border-emerald-800 text-sm shadow-lg">
               ❤️‍🔥 Oživit Peta na 100 % HP!
             </button>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- MODAL: VÝBĚR / VÝMĚNA PETA DO ARÉNY -->
+    <div id="arena-pet-switch-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-4">
+      <div class="bg-white rounded-3xl max-w-2xl w-full p-5 sm:p-6 border-4 border-indigo-500 shadow-2xl">
+        <div class="flex items-center justify-between border-b pb-3 mb-4">
+          <div class="flex items-center gap-2.5">
+            <span class="text-2xl">🐾</span>
+            <div>
+              <h3 class="text-lg sm:text-xl font-black text-slate-800 font-baloo leading-tight">Vyber si parťáka do Arény</h3>
+              <p class="text-xs text-slate-500 font-bold">Každý pet má vlastní Level, XP a zdraví (HP)</p>
+            </div>
+          </div>
+          <button onclick="closeArenaPetSwitchModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center">✕</button>
+        </div>
+
+        <div id="arena-pet-switch-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[65vh] overflow-y-auto p-1"></div>
+
+        <div class="mt-4 pt-3 border-t flex items-center justify-between">
+          <button onclick="closeArenaPetSwitchModal(); showStoreTab('pets');" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-black px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-sm">
+            <span>🛍️</span> Obchod s Pety & Lektvary
+          </button>
+          <button onclick="closeArenaPetSwitchModal()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-5 py-2 rounded-xl text-xs">
+            Zavřít
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: UPOZORNĚNÍ NA OŽIVENÍ ZA DIAMANTY (KDYŽ DOŠLY KAMENY OŽIVENÍ) -->
+    <div id="arena-revive-confirm-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-4">
+      <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 border-4 border-rose-500 shadow-2xl text-center">
+        <div class="text-5xl mb-2">⚠️❤️‍🔥</div>
+        <h3 class="text-xl sm:text-2xl font-black text-slate-800 font-baloo">Nemáš žádný Kámen oživení!</h3>
+        <p class="text-xs sm:text-sm font-bold text-slate-600 mt-2 leading-relaxed">
+          V batohu ti došly Kameny oživení (❤️‍🔥). Chceš svého parťáka okamžitě oživit na 100 % HP za <strong class="text-cyan-700 font-black" id="arena-confirm-revive-cost">2 💎</strong>?
+        </p>
+        <div class="my-3 py-2 px-3 bg-cyan-50 border-2 border-cyan-200 rounded-2xl text-xs font-black text-cyan-900">
+          Tvůj zůstatek diamantů: <span id="arena-confirm-revive-balance">0</span> 💎
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <button onclick="closeArenaReviveConfirmModal()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black py-2.5 rounded-2xl border-b-4 border-slate-400 text-xs sm:text-sm">
+            Zrušit
+          </button>
+          <button onclick="confirmReviveWithDiamondsAction()" class="game-button bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-black py-2.5 rounded-2xl border-b-4 border-blue-800 text-xs sm:text-sm shadow-lg">
+            💎 Oživit za diamanty
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- MODAL: SOUBOJOVÝ ÚKOL V ARÉNĚ (ČTENÍ / MATEMATIKA) -->
     <div id="arena-task-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-4">
@@ -1322,7 +1374,7 @@
         <h3 class="text-2xl font-black text-slate-800 font-baloo">VÍTĚZSTVÍ V ARÉNĚ!</h3>
         <div id="arena-victory-summary" class="my-3"></div>
         <button onclick="nextArenaOpponentAction()" class="game-button w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black py-3 rounded-2xl border-b-4 border-emerald-800 text-sm sm:text-base shadow-lg">
-          ⚔️ Další Soupeř do Arény!
+          ⚔️ Další Patro Arény!
         </button>
       </div>
     </div>
@@ -1342,7 +1394,10 @@
             <p class="text-[11px] text-slate-500 font-bold">Přizpůsob si svého hrdinu, tapetu na pozadí i zvuky z odemčených věcí</p>
           </div>
         </div>
-        <button onclick="closeWardrobeModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-black flex items-center justify-center text-sm">✕</button>
+        <div class="flex items-center gap-2">
+          <button onclick="closeWardrobeModal(); openParentModal();" title="Rodičovská správa (Admin)" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-black flex items-center justify-center text-sm shadow-sm transition-transform hover:rotate-45">⚙️</button>
+          <button onclick="closeWardrobeModal()" class="w-8 h-8 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 font-black flex items-center justify-center text-sm">✕</button>
+        </div>
       </div>
 
       <!-- Obsah modalu: DVOU-SLOUPCOVÝ LAYOUT (VLEVO 3D NÁHLED, VPRAVO VÝBĚR ODEMČENÝCH POLOŽEK) -->
@@ -2083,12 +2138,12 @@
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                  <label class="text-[11px] font-black text-slate-700 block mb-1">Základní HP příšer (Lv.1):</label>
-                  <input type="number" id="admin-pet-monster-hp" min="40" max="500" value="100" onchange="saveAdminPetConfig('monsterBaseHp', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Aktuální Patro Arény (každé 10. = BOSS):</label>
+                  <input type="number" id="admin-pet-current-stage" min="1" max="500" value="1" onchange="adminSetArenaStage(this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
-                  <label class="text-[11px] font-black text-slate-700 block mb-1">Cena oživení (Kámen) v 💎:</label>
+                  <label class="text-[11px] font-black text-slate-700 block mb-1">Cena oživení (v 💎 bez kamene):</label>
                   <input type="number" id="admin-pet-revive-cost" min="1" max="50" value="2" onchange="saveAdminPetConfig('reviveCostDiamonds', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 

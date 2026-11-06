@@ -341,24 +341,7 @@ const AVATAR_SKINS_DATABASE = [
     price: 6,
     accentColor: '#facc15',
     description: 'Oblíbený bleskový parťák se žlutými oušky a červenými tvářičkami.',
-    svg: `
-      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="16" height="16" rx="3" fill="#ca8a04"/>
-        <polygon points="2,1 5,5 3,6" fill="#eab308"/>
-        <polygon points="2,1 3,3 2,3" fill="#0f172a"/>
-        <polygon points="14,1 11,5 13,6" fill="#eab308"/>
-        <polygon points="14,1 13,3 14,3" fill="#0f172a"/>
-        <circle cx="8" cy="9" r="6" fill="#facc15"/>
-        <circle cx="5" cy="8" r="1.2" fill="#0f172a"/>
-        <circle cx="5.2" cy="7.8" r="0.4" fill="#ffffff"/>
-        <circle cx="11" cy="8" r="1.2" fill="#0f172a"/>
-        <circle cx="11.2" cy="7.8" r="0.4" fill="#ffffff"/>
-        <circle cx="3.5" cy="10" r="1.4" fill="#ef4444"/>
-        <circle cx="12.5" cy="10" r="1.4" fill="#ef4444"/>
-        <circle cx="8" cy="9.2" r="0.5" fill="#713f12"/>
-        <path d="M7 10.5 Q8 11.5 9 10.5" stroke="#713f12" stroke-width="0.8" fill="none"/>
-      </svg>
-    `
+    svg: `<canvas data-hero-canvas="pikachu" width="120" height="120" class="w-full h-full drop-shadow-md object-contain"></canvas>`
   },
   {
     id: 'eevee_avatar',
@@ -428,20 +411,16 @@ const AVATAR_SKINS_DATABASE = [
     price: 12,
     accentColor: '#2563eb',
     description: 'Nejrychlejší modrý ježek na světě.',
-    svg: `
-      <svg class="w-full h-full" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="16" height="16" rx="3" fill="#1e3a8a"/>
-        <polygon points="2,1 6,4 2,5" fill="#2563eb"/>
-        <polygon points="0,5 5,7 1,8" fill="#2563eb"/>
-        <polygon points="1,9 5,10 1,12" fill="#2563eb"/>
-        <circle cx="9" cy="8" r="6" fill="#2563eb"/>
-        <ellipse cx="9" cy="7" rx="3.5" ry="3" fill="#ffffff"/>
-        <ellipse cx="9" cy="7" rx="1.5" ry="2" fill="#0284c7"/>
-        <circle cx="9" cy="7" r="0.8" fill="#0f172a"/>
-        <ellipse cx="10" cy="10" rx="3.5" ry="2.5" fill="#fed7aa"/>
-        <circle cx="12.5" cy="9.5" r="0.9" fill="#0f172a"/>
-      </svg>
-    `
+    svg: `<canvas data-hero-canvas="sonic" width="120" height="120" class="w-full h-full drop-shadow-md object-contain"></canvas>`
+  },
+  {
+    id: 'mewtwo_avatar',
+    name: 'Mewtwo (Mystický)',
+    category: 'pokemon',
+    price: 20,
+    accentColor: '#a855f7',
+    description: 'Mystický psychický Pokémon s neuvěřitelnou silou.',
+    svg: `<canvas data-hero-canvas="mewtwo" width="120" height="120" class="w-full h-full drop-shadow-md object-contain"></canvas>`
   },
   {
     id: 'diamond_knight',
