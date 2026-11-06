@@ -142,18 +142,87 @@
       animation: chestShake 0.9s cubic-bezier(0.36, 0.07, 0.19, 0.97) infinite;
     }
     @keyframes pulseGlow {
-      0%, 100% { filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.6)); }
-      50% { filter: drop-shadow(0 0 20px rgba(245, 158, 11, 0.95)); }
+      0%, 100% { filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.65)); transform: translateY(0px) scale(1); }
+      50% { filter: drop-shadow(0 0 24px rgba(245, 158, 11, 0.98)); transform: translateY(-4px) scale(1.03); }
     }
     .chest-ready {
       animation: pulseGlow 2.2s infinite ease-in-out;
     }
     @keyframes pulseGlowDiamond {
-      0%, 100% { filter: drop-shadow(0 0 10px rgba(6, 182, 212, 0.7)); }
-      50% { filter: drop-shadow(0 0 24px rgba(59, 130, 246, 0.95)); }
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(6, 182, 212, 0.75)); transform: translateY(0px) scale(1); }
+      50% { filter: drop-shadow(0 0 28px rgba(59, 130, 246, 1)); transform: translateY(-4px) scale(1.03); }
     }
     .chest-legend-ready {
       animation: pulseGlowDiamond 2s infinite ease-in-out;
+    }
+    @keyframes lootParticleBurst {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translate(0px, 0px) scale(0.3) rotate(0deg);
+      }
+      35% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translate(calc(var(--tx) * 0.65), var(--ty-peak)) scale(1.25) rotate(calc(var(--rot) * 0.6));
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translate(var(--tx), var(--ty-end)) scale(0.75) rotate(var(--rot));
+      }
+    }
+    .loot-burst-particle {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      pointer-events: none;
+      z-index: 30;
+      animation: lootParticleBurst 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+    @keyframes lootPrizeErupt {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) translateY(15px) scale(0.2);
+      }
+      45% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateY(-88px) scale(1.35);
+      }
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateY(-76px) scale(1.15);
+      }
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) translateY(-80px) scale(1.2);
+      }
+    }
+    .loot-prize-erupt-badge {
+      position: absolute;
+      left: 50%;
+      top: 54%;
+      pointer-events: none;
+      z-index: 35;
+      animation: lootPrizeErupt 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes chestShockwaveRing {
+      0% {
+        opacity: 0.95;
+        transform: translate(-50%, -50%) scale(0.25);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.35);
+      }
+    }
+    .chest-shockwave-ring {
+      position: absolute;
+      left: 50%;
+      top: 52%;
+      width: 110px;
+      height: 110px;
+      border-radius: 9999px;
+      pointer-events: none;
+      z-index: 25;
+      animation: chestShockwaveRing 0.7s ease-out forwards;
     }
     @keyframes flameFlicker {
       0%, 100% { transform: scale(1) rotate(-2deg); filter: drop-shadow(0 0 8px rgba(249, 115, 22, 0.7)); }
@@ -218,15 +287,8 @@
     .pet-float-anim {
       animation: petFloat 2.8s ease-in-out infinite;
     }
-    @keyframes arenaShake {
-      0%, 100% { transform: translate(0, 0) rotate(0deg); }
-      20% { transform: translate(-8px, -4px) rotate(-3deg); }
-      40% { transform: translate(8px, 4px) rotate(3deg); }
-      60% { transform: translate(-6px, 2px) rotate(-2deg); }
-      80% { transform: translate(6px, -2px) rotate(2deg); }
-    }
     .arena-shake-anim {
-      animation: arenaShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+      transform: none;
     }
   </style>
 </head>
@@ -291,7 +353,7 @@
 
         <!-- 2. TRUHLA -->
         <button onclick="openDailyBoxModal()" id="top-box-btn" title="Truhla Odměn" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold px-2.5 rounded-2xl border-b-3 border-amber-700 shadow-sm flex items-center gap-1.5 h-[42px]">
-          <span class="text-base sm:text-lg" id="top-box-icon">🎁</span>
+          <img src="https://i.imgur.com/t1cvXEh.png" referrerpolicy="no-referrer" alt="Truhla" id="top-box-icon" class="w-6 h-6 object-contain drop-shadow-sm">
           <span class="font-black text-xs uppercase tracking-wider hidden sm:inline">Truhla</span>
           <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
         </button>
@@ -300,11 +362,11 @@
         <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-2.5 rounded-2xl border-b-3 border-indigo-700 shadow-sm flex items-center gap-1.5 h-[42px]">
           <span class="text-base sm:text-lg">📋</span>
           <span class="font-black text-xs uppercase tracking-wider hidden sm:inline">Úkoly</span>
-          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/10</span>
+          <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/5</span>
         </button>
 
         <!-- 4. HERNÍ OBCHOD (LÍSTKY & SKINY) -->
-        <button onclick="showStoreTab('skins')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold px-2.5 rounded-2xl border-b-3 border-pink-700 shadow-sm flex items-center gap-1.5 h-[42px]">
+        <button onclick="showStoreTab('tickets')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold px-2.5 rounded-2xl border-b-3 border-pink-700 shadow-sm flex items-center gap-1.5 h-[42px]">
           <span class="text-base sm:text-lg">🛍️</span>
           <span class="font-black text-xs uppercase tracking-wider hidden md:inline">Obchod</span>
         </button>
@@ -794,7 +856,7 @@
 
       <div class="flex items-center gap-2 p-1 bg-white/90 rounded-2xl border-2 border-indigo-200 shadow-sm">
         <button onclick="switchQuestsSubTab('tasks')" id="subtab-btn-tasks" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5">
-          <span>📋</span> Seznam Úkolů (<span id="quests-subtab-badge">0/10</span>)
+          <span>📋</span> Seznam Úkolů (<span id="quests-subtab-badge">0/5</span>)
         </button>
         <button onclick="switchQuestsSubTab('streak')" id="subtab-btn-streak" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5">
           <span>🔥</span> Denní Řada (<span id="streak-subtab-badge">0 dní</span>)
@@ -812,7 +874,7 @@
             <div class="text-4xl sm:text-5xl font-black font-baloo mt-1 text-white drop-shadow-md" id="streak-hero-days">0 DNÍ</div>
             <h3 class="text-lg sm:text-xl font-black mt-0.5 text-amber-100 font-baloo">Tvoje tréninková řada</h3>
             <p class="text-xs font-bold text-orange-100 mt-0.5 max-w-sm" id="streak-hero-desc">
-              Splň dnes ještě aspoň <span id="streak-needed-today" class="underline font-black">5</span> úkolů k započtení dnešního dne!
+              Splň dnes 16× Čtení nebo 16× Matematiku k započtení dnešního dne!
             </p>
           </div>
         </div>
@@ -854,9 +916,16 @@
         <!-- Hlavní tělo Obchodu: LEVÉ BOČNÍ MENU + PRAVÝ OBSAH -->
         <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
           
-          <!-- Levé svislé menu (stejný styl jako v Admin módu) -->
-          <nav class="w-full md:w-56 bg-slate-100/95 border-b-2 md:border-b-0 md:border-r-2 border-slate-200 p-2 sm:p-3 flex md:flex-col gap-1.5 flex-shrink-0 overflow-x-auto md:overflow-y-auto no-scrollbar">
-            <button onclick="switchStoreTab('skins')" id="store-tab-btn-skins" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left whitespace-nowrap">
+          <!-- Levé svislé menu (stejný styl jako v Admin módu, Herní Lístky na 1. pozici a větší) -->
+          <nav class="w-full md:w-60 bg-slate-100/95 border-b-2 md:border-b-0 md:border-r-2 border-slate-200 p-2 sm:p-3 flex md:flex-col gap-2 flex-shrink-0 overflow-x-auto md:overflow-y-auto no-scrollbar">
+            <button onclick="switchStoreTab('tickets')" id="store-tab-btn-tickets" class="w-full py-3.5 px-3.5 rounded-2xl font-black text-sm sm:text-base transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 text-white shadow-lg border-2 border-amber-300 flex items-center gap-2.5 text-left whitespace-nowrap">
+              <span class="text-2xl leading-none">🎟️</span>
+              <div class="flex flex-col leading-tight">
+                <span class="font-black tracking-wide">Herní Lístky ⭐</span>
+                <span class="text-[10px] font-bold opacity-90">Vyměň hvězdy za hraní</span>
+              </div>
+            </button>
+            <button onclick="switchStoreTab('skins')" id="store-tab-btn-skins" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
               <span class="text-base">👾</span>
               <span>Skiny Avatara</span>
             </button>
@@ -872,10 +941,6 @@
               <span class="text-base">🔊</span>
               <span>Fanfáry & Zvuky</span>
             </button>
-            <button onclick="switchStoreTab('tickets')" id="store-tab-btn-tickets" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
-              <span class="text-base">🎟️</span>
-              <span>Herní Lístky (⭐)</span>
-            </button>
             <button onclick="switchStoreTab('diamonds')" id="store-tab-btn-diamonds" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
               <span class="text-base">⏳</span>
               <span>Výhody & PIN</span>
@@ -886,7 +951,7 @@
           <div class="flex-grow p-3 sm:p-5 overflow-y-auto bg-white">
             
             <!-- KATEGORIE 1: SKINY AVATARA -->
-            <div id="store-tab-content-skins" class="space-y-3">
+            <div id="store-tab-content-skins" class="hidden space-y-3">
               <div class="border-b border-slate-200 pb-2">
                 <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">👾 Skiny Avatara (Minecraft, Pokémon & Sonic)</h3>
                 <p class="text-xs text-slate-500 font-bold">Kup si novou postavičku do 3D šatníku za modré diamanty 💎</p>
@@ -959,7 +1024,7 @@
             </div>
 
             <!-- KATEGORIE 5: HERNÍ LÍSTKY (ZA MINUTY ⭐) -->
-            <div id="store-tab-content-tickets" class="hidden space-y-4">
+            <div id="store-tab-content-tickets" class="space-y-4">
               <div class="border-b border-slate-200 pb-2">
                 <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎟️ Herní Lístky na Tablet (za hvězdičky ⭐)</h3>
                 <p class="text-xs text-slate-500 font-bold">Vyměň vyčtené minuty za lístek na hraní a ukaž ho rodičům</p>
@@ -1471,68 +1536,77 @@
       <button onclick="closeDailyBoxModal()" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 font-black text-xl w-8 h-8 rounded-full flex items-center justify-center">✕</button>
       
       <div class="flex items-center gap-1.5 p-1 bg-amber-200/60 rounded-2xl border border-amber-300 mb-3 mt-1">
-        <button onclick="switchChestSubTab('daily')" id="chest-tab-btn-daily" class="flex-1 py-1 px-2 rounded-xl font-black text-xs transition-all bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5">
-          <span>🎁</span> Denní Truhla
+        <button onclick="switchChestSubTab('daily')" id="chest-tab-btn-daily" class="flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all bg-amber-500 text-white shadow-sm flex items-center justify-center gap-1.5">
+          <img src="https://i.imgur.com/t1cvXEh.png" referrerpolicy="no-referrer" alt="" class="w-5 h-5 object-contain">
+          <span>Denní Truhla</span>
         </button>
-        <button onclick="switchChestSubTab('legendary')" id="chest-tab-btn-legendary" class="flex-1 py-1 px-2 rounded-xl font-black text-xs transition-all text-amber-950 hover:bg-amber-200 flex items-center justify-center gap-1.5 relative">
-          <span>👑</span> Výjimečná Truhla
+        <button onclick="switchChestSubTab('legendary')" id="chest-tab-btn-legendary" class="flex-1 py-1.5 px-2 rounded-xl font-black text-xs transition-all text-amber-950 hover:bg-amber-200 flex items-center justify-center gap-1.5 relative">
+          <img src="https://i.imgur.com/E6kB6Sg.png" referrerpolicy="no-referrer" alt="" class="w-5 h-5 object-contain">
+          <span>Výjimečná Truhla</span>
           <span id="legendary-chest-badge" class="hidden w-2.5 h-2.5 rounded-full bg-cyan-500 animate-ping"></span>
         </button>
       </div>
 
-      <!-- LIST 1: DENNÍ TRUHLA -->
+      <!-- LIST 1: DENNÍ TRUHLA (ČISTÝ DESIGN S VELKOU TRUHLICÍ A EFEKTEM VYPRSKNUTÍ POKLADU) -->
       <div id="chest-tab-content-daily">
-        <span class="bg-amber-400 text-amber-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Kouzelná Truhla</span>
-        <h3 class="text-2xl font-black text-slate-800 mt-1 font-baloo">Denní Box Odměn 🎁</h3>
-        <p class="text-xs text-slate-600 font-bold mt-0.5">Klepni na truhlu a získej 0,5 až 2 minuty zdarma každý den!</p>
+        <span class="bg-amber-400 text-amber-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Každodenní Poklad</span>
+        <h3 class="text-2xl font-black text-slate-800 mt-1 font-baloo">Denní Truhla Pokladů</h3>
 
-        <div class="my-4 flex flex-col items-center justify-center min-h-[140px]">
-          <div id="chest-graphic" onclick="openChestAction()" class="cursor-pointer text-6xl sm:text-7xl select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95">
-            🎁
+        <div class="my-5 flex flex-col items-center justify-center min-h-[210px] relative">
+          <!-- Vrstva pro efekt vyprsknutí pokladu z truhly -->
+          <div id="daily-chest-burst-layer" class="absolute inset-0 pointer-events-none overflow-visible"></div>
+
+          <!-- Velká truhlice s pokladem -->
+          <div id="chest-graphic" onclick="openChestAction()" class="cursor-pointer w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95 relative z-10">
+            <img src="https://i.imgur.com/t1cvXEh.png" referrerpolicy="no-referrer" alt="Denní truhla s pokladem" class="w-full h-full object-contain drop-shadow-xl">
           </div>
-          <div id="chest-status-text" class="text-xs sm:text-sm font-black text-amber-800 mt-2.5">
-            Klepni pro otevření! 👆
+          <div id="chest-status-text" class="text-xs sm:text-sm font-black text-amber-800 mt-3 relative z-10">
+            Klepni na truhlici pro otevření! 👆
           </div>
         </div>
 
-        <div id="chest-reward-reveal" class="hidden bg-gradient-to-r from-amber-300 to-yellow-300 border-2 border-amber-500 rounded-2xl p-3 text-center my-2 animate-pulse">
-          <span class="text-3xl">⭐</span>
-          <div class="text-[10px] font-black uppercase text-amber-900 mt-0.5">Vyhráváš do pokladnice:</div>
-          <div class="text-2xl font-black text-amber-950 font-baloo my-0.5" id="chest-reward-amount">+1,5 minuty!</div>
-          <p class="text-[10px] text-amber-900 font-bold">Připsáno na tvůj účet tabletu.</p>
+        <div id="chest-reward-reveal" class="hidden bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 border-3 border-amber-500 rounded-2xl p-3.5 text-center my-2 shadow-lg">
+          <span class="text-3xl block" id="chest-reward-icon">⭐</span>
+          <div class="text-[10px] font-black uppercase text-amber-900 mt-0.5">Z truhlice vyskočil poklad:</div>
+          <div class="text-2xl font-black text-amber-950 font-baloo my-0.5" id="chest-reward-amount">+1 min!</div>
+          <p class="text-[11px] text-amber-900 font-bold" id="chest-reward-subtext">Připsáno na tvůj účet.</p>
         </div>
       </div>
 
       <!-- LIST 2: VÝJIMEČNÁ TRUHLA -->
       <div id="chest-tab-content-legendary" class="hidden">
         <span class="bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">Mimořádná Odměna</span>
-        <h3 class="text-2xl font-black text-slate-800 mt-1 font-baloo" id="legend-chest-display-title">Legendární Truhla 👑</h3>
+        <h3 class="text-2xl font-black text-slate-800 mt-1 font-baloo" id="legend-chest-display-title">Výjimečná Truhla</h3>
         
         <div id="legend-chest-active-box">
           <p class="text-xs text-cyan-800 font-extrabold mt-0.5" id="legend-chest-note">
-            Tato truhla je připravena pro tebe!
+            Tato vzácná truhlice je připravena pro tebe!
           </p>
 
-          <div class="my-4 flex flex-col items-center justify-center min-h-[140px]">
-            <div id="legend-chest-graphic" onclick="openLegendaryChestAction()" class="cursor-pointer text-6xl sm:text-7xl select-none transition-transform duration-300 chest-legend-ready hover:scale-110 active:scale-95">
-              👑
+          <div class="my-5 flex flex-col items-center justify-center min-h-[210px] relative">
+            <!-- Vrstva pro efekt vyprsknutí diamantů z vzácné truhly -->
+            <div id="legend-chest-burst-layer" class="absolute inset-0 pointer-events-none overflow-visible"></div>
+
+            <!-- Velká vzácná truhlice -->
+            <div id="legend-chest-graphic" onclick="openLegendaryChestAction()" class="cursor-pointer w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center select-none transition-transform duration-300 chest-legend-ready hover:scale-110 active:scale-95 relative z-10">
+              <img src="https://i.imgur.com/E6kB6Sg.png" referrerpolicy="no-referrer" alt="Výjimečná truhla" class="w-full h-full object-contain drop-shadow-xl">
             </div>
-            <div id="legend-chest-status-text" class="text-xs sm:text-sm font-black text-cyan-900 mt-2.5">
-              Klepni pro vyzvednutí diamantů! 👆
+            <div id="legend-chest-status-text" class="text-xs sm:text-sm font-black text-cyan-900 mt-3 relative z-10">
+              Klepni na vzácnou truhlici! 👆
             </div>
           </div>
 
-          <div id="legend-chest-reward-reveal" class="hidden bg-gradient-to-r from-cyan-400 to-blue-500 text-white border-2 border-cyan-300 rounded-2xl p-3 text-center my-2 animate-pulse">
-            <span class="text-3xl">💎</span>
-            <div class="text-[10px] font-black uppercase text-cyan-100 mt-0.5">Získáváš do pokladnice:</div>
+          <div id="legend-chest-reward-reveal" class="hidden bg-gradient-to-r from-cyan-400 to-blue-500 text-white border-2 border-cyan-300 rounded-2xl p-3.5 text-center my-2 shadow-lg">
+            <span class="text-3xl block">💎</span>
+            <div class="text-[10px] font-black uppercase text-cyan-100 mt-0.5">Z truhlice vyskočil poklad:</div>
             <div class="text-2xl font-black text-white font-baloo my-0.5" id="legend-chest-reward-amount">+10 Diamantů!</div>
-            <p class="text-[10px] text-cyan-100 font-bold">Připsáno k tvým modrým drahokamům.</p>
+            <p class="text-[11px] text-cyan-100 font-bold">Připsáno k tvým modrým drahokamům.</p>
           </div>
         </div>
 
-        <div id="legend-chest-empty-box" class="hidden my-6 py-3 px-2">
-          <span class="text-4xl block mb-1 opacity-60">📭</span>
-          <p class="text-xs sm:text-sm font-black text-slate-600">Dnes legendární truhlu nemáš.</p>
+        <div id="legend-chest-empty-box" class="hidden my-6 py-4 px-2 flex flex-col items-center">
+          <img src="https://i.imgur.com/E6kB6Sg.png" referrerpolicy="no-referrer" alt="Výjimečná truhla" class="w-28 h-28 object-contain opacity-35 grayscale mb-2">
+          <p class="text-xs sm:text-sm font-black text-slate-600">Dnes výjimečnou truhlu nemáš.</p>
           <p class="text-[11px] text-slate-400 font-bold mt-0.5">Počkej na mimořádnou odměnu od rodiče!</p>
         </div>
       </div>
@@ -1607,8 +1681,8 @@
             <span>Nastavení TESTU</span>
           </button>
           <button onclick="switchAdminTab('legendary')" id="admin-tab-btn-legendary" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left">
-            <span class="text-base">👑</span>
-            <span>Výjimečná Truhla</span>
+            <span class="text-base">🎁</span>
+            <span>Truhly (Denní & Vzácná)</span>
           </button>
           <button onclick="switchAdminTab('math')" id="admin-tab-btn-math" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left">
             <span class="text-base">🔢</span>
@@ -1812,9 +1886,9 @@
               </div>
 
               <div class="bg-white p-2 rounded-xl border border-emerald-200 mb-2.5 flex items-center justify-between">
-                <span class="text-xs font-black text-slate-800">Odměna za 1 splněný Denní úkol:</span>
+                <span class="text-xs font-black text-slate-800">Odměna za splnění denního úkolu (16× Čtení / 16× Matematika):</span>
                 <div class="flex items-center gap-1">
-                  <input type="number" step="0.25" min="0.1" max="10" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+                  <input type="number" step="0.5" min="0.5" max="20" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
                   <span class="text-[11px] font-black text-slate-600">min</span>
                 </div>
               </div>
@@ -2007,14 +2081,154 @@
             </div>
           </div>
 
-          <!-- ZÁLOŽKA 4: SPRÁVA VÝJIMEČNÉ TRUHLY -->
-          <div id="admin-tab-content-legendary" class="hidden space-y-4">
+          <!-- ZÁLOŽKA 4: SPRÁVA DENNÍ A VZÁCNÉ TRUHLY -->
+          <div id="admin-tab-content-legendary" class="hidden space-y-5">
+            
+            <!-- ČÁST 1: DENNÍ TRUHLA (ŠANCE A ODMĚNY) -->
+            <div class="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-4 shadow-sm">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3 border-b border-amber-200 pb-2.5">
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">🎁</span>
+                  <div>
+                    <h4 class="font-black text-slate-800 text-base">1. Nastavení Denní Truhly (Šance v % a Odměny)</h4>
+                    <p class="text-xs text-amber-900 font-bold">Uprav pravděpodobnost padnutí jednotlivých odměn a jejich množství:</p>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <button onclick="adminResetChest()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-sm flex items-center gap-1">
+                    <span>🔄</span> Znovu zpřístupnit dnes
+                  </button>
+                  <button onclick="adminResetDailyChestDefaults()" class="text-xs font-black bg-white text-amber-900 border border-amber-300 px-2.5 py-1.5 rounded-xl hover:bg-amber-100">
+                    ↺ Výchozí šance
+                  </button>
+                </div>
+              </div>
+
+              <div class="space-y-2.5 bg-white p-3.5 rounded-2xl border border-amber-200 shadow-inner">
+                <!-- Řádek 1: Minuty 0,5 - 1 min -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-2 rounded-xl bg-amber-50/70 border border-amber-200">
+                  <div class="sm:col-span-5 flex items-center gap-2 font-black text-xs text-slate-800">
+                    <span class="text-lg">⭐</span>
+                    <span>Minuty na hraní (rozmezí)</span>
+                  </div>
+                  <div class="sm:col-span-3 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Šance:</label>
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-minutes" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-amber-300 bg-white">
+                    <span class="text-xs font-black text-amber-800">%</span>
+                  </div>
+                  <div class="sm:col-span-4 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Od–Do:</label>
+                    <input type="number" step="0.5" min="0.5" max="10" id="admin-dchest-min-minutes" onchange="saveAdminDailyChestConfig()" class="w-14 text-center font-black text-xs py-1 px-1 rounded-lg border border-amber-300 bg-white">
+                    <span class="text-xs font-bold">–</span>
+                    <input type="number" step="0.5" min="0.5" max="10" id="admin-dchest-max-minutes" onchange="saveAdminDailyChestConfig()" class="w-14 text-center font-black text-xs py-1 px-1 rounded-lg border border-amber-300 bg-white">
+                    <span class="text-[11px] font-bold text-slate-600">min</span>
+                  </div>
+                </div>
+
+                <!-- Řádek 2: Krmivo pro peta -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-2 rounded-xl bg-orange-50/70 border border-orange-200">
+                  <div class="sm:col-span-5 flex items-center gap-2 font-black text-xs text-slate-800">
+                    <span class="text-lg">🍖</span>
+                    <span>Krmivo pro peta</span>
+                  </div>
+                  <div class="sm:col-span-3 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Šance:</label>
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-food" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-orange-300 bg-white">
+                    <span class="text-xs font-black text-orange-800">%</span>
+                  </div>
+                  <div class="sm:col-span-4 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Množství:</label>
+                    <input type="number" step="1" min="1" max="20" id="admin-dchest-amt-food" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-orange-300 bg-white">
+                    <span class="text-[11px] font-bold text-slate-600">ks 🍖</span>
+                  </div>
+                </div>
+
+                <!-- Řádek 3: Kámen oživení pro peta -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-2 rounded-xl bg-rose-50/70 border border-rose-200">
+                  <div class="sm:col-span-5 flex items-center gap-2 font-black text-xs text-slate-800">
+                    <span class="text-lg">❤️‍🔥</span>
+                    <span>Kámen oživení pro peta</span>
+                  </div>
+                  <div class="sm:col-span-3 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Šance:</label>
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-revive" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-rose-300 bg-white">
+                    <span class="text-xs font-black text-rose-800">%</span>
+                  </div>
+                  <div class="sm:col-span-4 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Množství:</label>
+                    <input type="number" step="1" min="1" max="10" id="admin-dchest-amt-revive" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-rose-300 bg-white">
+                    <span class="text-[11px] font-bold text-slate-600">ks ❤️‍🔥</span>
+                  </div>
+                </div>
+
+                <!-- Řádek 4: Malý diamantový bonus (2 diamanty) -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-2 rounded-xl bg-cyan-50/70 border border-cyan-200">
+                  <div class="sm:col-span-5 flex items-center gap-2 font-black text-xs text-slate-800">
+                    <span class="text-lg">💎</span>
+                    <span>Malý diamantový bonus</span>
+                  </div>
+                  <div class="sm:col-span-3 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Šance:</label>
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diasmall" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-cyan-300 bg-white">
+                    <span class="text-xs font-black text-cyan-800">%</span>
+                  </div>
+                  <div class="sm:col-span-4 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Odměna:</label>
+                    <input type="number" step="1" min="1" max="100" id="admin-dchest-amt-diasmall" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-cyan-300 bg-white">
+                    <span class="text-[11px] font-bold text-slate-600">💎</span>
+                  </div>
+                </div>
+
+                <!-- Řádek 5: Střední diamantový bonus (10 diamantů) -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-2 rounded-xl bg-blue-50/70 border border-blue-200">
+                  <div class="sm:col-span-5 flex items-center gap-2 font-black text-xs text-slate-800">
+                    <span class="text-lg">💎</span>
+                    <span>Střední diamantový bonus</span>
+                  </div>
+                  <div class="sm:col-span-3 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Šance:</label>
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diamed" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-blue-300 bg-white">
+                    <span class="text-xs font-black text-blue-800">%</span>
+                  </div>
+                  <div class="sm:col-span-4 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Odměna:</label>
+                    <input type="number" step="1" min="1" max="200" id="admin-dchest-amt-diamed" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-blue-300 bg-white">
+                    <span class="text-[11px] font-bold text-slate-600">💎</span>
+                  </div>
+                </div>
+
+                <!-- Řádek 6: Jackpot diamanty (20 diamantů) -->
+                <div class="grid grid-cols-1 sm:grid-cols-12 items-center gap-2 p-2 rounded-xl bg-purple-50/80 border border-purple-300">
+                  <div class="sm:col-span-5 flex items-center gap-2 font-black text-xs text-purple-950">
+                    <span class="text-lg">👑</span>
+                    <span>Jackpot diamanty</span>
+                  </div>
+                  <div class="sm:col-span-3 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Šance:</label>
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diajackpot" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-purple-300 bg-white">
+                    <span class="text-xs font-black text-purple-800">%</span>
+                  </div>
+                  <div class="sm:col-span-4 flex items-center gap-1.5">
+                    <label class="text-[11px] font-bold text-slate-500">Odměna:</label>
+                    <input type="number" step="1" min="1" max="500" id="admin-dchest-amt-diajackpot" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-purple-300 bg-white">
+                    <span class="text-[11px] font-bold text-slate-600">💎</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-amber-950 px-1">
+                <span id="admin-daily-chest-sum-label">Součet vah: 91 % (poměrové losování aktivní)</span>
+                <span id="admin-daily-chest-status-label" class="text-amber-800">Stav dnes: Připravena k otevření</span>
+              </div>
+            </div>
+
+            <!-- ČÁST 2: VZÁCNÁ / VÝJIMEČNÁ TRUHLA -->
             <div class="bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-cyan-300 rounded-2xl p-4 shadow-sm">
               <div class="flex items-center gap-2 mb-2">
                 <span class="text-2xl">👑</span>
                 <div>
-                  <h4 class="font-black text-slate-800 text-base">Správa Výjimečné / Legendární Truhly:</h4>
-                  <p class="text-xs text-slate-600 font-bold">Zadej mimořádný důvod odměny a počet diamantů:</p>
+                  <h4 class="font-black text-slate-800 text-base">2. Správa Vzácné / Výjimečné Truhly:</h4>
+                  <p class="text-xs text-slate-600 font-bold">Zadej mimořádný důvod odměny a počet diamantů pro jednorázovou vzácnou truhlu:</p>
                 </div>
               </div>
 
@@ -2034,7 +2248,7 @@
 
                 <div class="pt-1 flex flex-wrap items-center gap-2">
                   <button onclick="adminApplyLegendaryChest()" class="game-button bg-cyan-600 hover:bg-cyan-700 text-white font-black px-5 py-2 rounded-2xl text-xs sm:text-sm shadow-game-btn border-b-4 border-cyan-800 flex items-center gap-1.5">
-                    <span>🚀</span> APLIKOVAT TRUHLU
+                    <span>🚀</span> APLIKOVAT VZÁCNOU TRUHLU
                   </button>
                   <button onclick="adminCancelLegendaryChest()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-700 font-black px-3 py-2 rounded-2xl text-xs">
                     Odebrat truhlu

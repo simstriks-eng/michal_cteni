@@ -15,7 +15,9 @@ const HERO_SPRITES = {
   bulbasaur: 'https://i.imgur.com/maOZCLM.png',
   charmander: 'https://i.imgur.com/tozUhUD.png',
   sonic: 'https://i.imgur.com/hojYJWT.png',
-  mewtwo: 'https://i.imgur.com/BbmRwrL.png'
+  mewtwo: 'https://i.imgur.com/BbmRwrL.png',
+  daily_chest: 'https://i.imgur.com/t1cvXEh.png',
+  rare_chest: 'https://i.imgur.com/E6kB6Sg.png'
 };
 
 const HERO_IMAGES = {};
@@ -1544,16 +1546,17 @@ function executeMonsterCounterAttack(wasPlayerMiss) {
   petData.currentHp = Math.max(0, petData.currentHp - rawDmg);
   showFloatingDamage('pet', `-${rawDmg} HP`, 'text-rose-400 text-2xl');
 
-  const stage = document.getElementById('arena-battle-stage');
-  if (stage) {
-    stage.classList.add('arena-shake-anim');
-    setTimeout(() => stage.classList.remove('arena-shake-anim'), 380);
+  const petBox = document.getElementById('arena-pet-sprite-box');
+  if (petBox) {
+    petBox.classList.add('brightness-125');
+    setTimeout(() => petBox.classList.remove('brightness-125'), 260);
   }
 
   if (petData.currentHp <= 0) {
     petData.isKnockedOut = true;
     petData.losses = (petData.losses || 0) + 1;
     ps.battlesToday = (ps.battlesToday || 0) + 1;
+    if (typeof updateDailyQuestsProgress === 'function') updateDailyQuestsProgress('arena', 1);
     arenaBattleState.turnLocked = false;
     arenaBattleState.battleLog = `💀 ${petData.name || 'Parťák'} padl v Patře ${ps.currentStage || 1}! Oživ ho nebo se přes noc uzdraví.`;
     if (typeof saveState === 'function') saveState();
@@ -1612,6 +1615,7 @@ function handleArenaVictory() {
 
   petData.wins = (petData.wins || 0) + 1;
   ps.battlesToday = (ps.battlesToday || 0) + 1;
+  if (typeof updateDailyQuestsProgress === 'function') updateDailyQuestsProgress('arena', 1);
 
   // Postup do vyššího patra (Slayer Stage Progression)
   ps.currentStage = clearedStage + 1;
@@ -1740,14 +1744,9 @@ function showFloatingDamage(target, text, colorClasses) {
 
 function triggerMonsterHitShake(isHeavy) {
   const monsterBox = document.getElementById('arena-monster-sprite-box');
-  const stage = document.getElementById('arena-battle-stage');
   if (monsterBox) {
-    monsterBox.classList.add('scale-125', 'brightness-150');
-    setTimeout(() => monsterBox.classList.remove('scale-125', 'brightness-150'), 320);
-  }
-  if (isHeavy && stage) {
-    stage.classList.add('arena-shake-anim');
-    setTimeout(() => stage.classList.remove('arena-shake-anim'), 420);
+    monsterBox.classList.add('scale-110', 'brightness-125');
+    setTimeout(() => monsterBox.classList.remove('scale-110', 'brightness-125'), 280);
   }
 }
 

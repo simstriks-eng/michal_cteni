@@ -69,18 +69,63 @@ function getYesterdayDateString() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function createDefaultDailyQuests(chosenCustomLvl = 4) {
+function createDefaultDailyQuests() {
   return [
-    { id: 'q1', title: 'Mistr Písmenek & Slabik', desc: 'Procvič 4 sady písmenek nebo slabik.', icon: '🔤', target: 4, progress: 0, claimed: false, matches: (s, l) => s === 'reading' && (l === 1 || l === 2) },
-    { id: 'q2', title: 'Rychlé Slabiky', desc: 'Dokonči 3 sady otevřených slabik.', icon: '🧩', target: 3, progress: 0, claimed: false, matches: (s, l) => s === 'reading' && l === 2 },
-    { id: 'q3', title: 'Slovní Zásoba (3. úroveň)', desc: 'Správně přečti 3 sady jednoslabičných slov.', icon: '📦', target: 3, progress: 0, claimed: false, matches: (s, l) => s === 'reading' && l === 3 },
-    { id: 'q_spelling', title: 'Hláskař Šampion', desc: 'Správně vyhláskuj 3 slova v záložce 8. Hláskování.', icon: '🗣️', target: 3, progress: 0, claimed: false, matches: (s, l) => s === 'reading' && l === 8 },
-    { id: 'q_custom_reading', isCustom: true, selectedTargetLevel: chosenCustomLvl, title: 'Volitelná čtenářská výzva', desc: 'Vyber si kategorii níže a splň 3 sady.', icon: '🎯', target: 3, progress: 0, claimed: false, matches: function(s, l) { return s === 'reading' && l === (this.selectedTargetLevel || 4); } },
-    { id: 'q4', title: 'Čtenář Vět', desc: 'Úspěšně přečti 2 sady celých vět v 7. záložce.', icon: '🌟', target: 2, progress: 0, claimed: false, matches: (s, l) => s === 'reading' && l === 7 },
-    { id: 'q_m_speed', title: 'Bleskový Počtář', desc: 'Správně spočítej 3 sady příkladů na Počítadle.', icon: '➕', target: 3, progress: 0, claimed: false, matches: (s, l) => s === 'math' && l === 4 },
-    { id: 'q_m_compare', title: 'Váhy a Porovnání', desc: 'Vyřeš 2 sady porovnávání čísel (<, =, >).', icon: '⚖️', target: 2, progress: 0, claimed: false, matches: (s, l) => s === 'math' && l === 2 },
-    { id: 'q_m_story', title: 'Příběhové Úlohy', desc: 'Vyřeš 2 sady slovních úloh z matematiky.', icon: '📖', target: 2, progress: 0, claimed: false, matches: (s, l) => s === 'math' && l === 6 },
-    { id: 'q_m_color', title: 'Umělec s Pokémony', desc: 'Vybarvi 1 celého Pokémona v omalovánce.', icon: '🎨', target: 1, progress: 0, claimed: false, matches: (s, l) => s === 'math' && l === 7 }
+    {
+      id: 'q_reading_all',
+      title: 'Čtenářská Výzva (16× cvičení)',
+      desc: 'Splň dohromady 16 jakýchkoliv cvičení z nabídky Čtení (písmenka, slabiky, slova, věty nebo hláskování).',
+      icon: '📖',
+      target: 16,
+      progress: 0,
+      claimed: false,
+      isTrackerOnly: false,
+      matches: (s, l) => s === 'reading' && l >= 1 && l <= 8
+    },
+    {
+      id: 'q_math_all',
+      title: 'Matematická Výzva (16× cvičení)',
+      desc: 'Splň dohromady 16 jakýchkoliv cvičení z nabídky Matematiky (počty, porovnávání, řada, počítadlo, rozklad nebo slovní úlohy).',
+      icon: '🔢',
+      target: 16,
+      progress: 0,
+      claimed: false,
+      isTrackerOnly: false,
+      matches: (s, l) => s === 'math' && l >= 1 && l <= 6
+    },
+    {
+      id: 'q_test',
+      title: 'Denní TEST',
+      desc: 'Dokonči dnešní velký denní test (odměna je přímo v testu).',
+      icon: '📝',
+      target: 1,
+      progress: 0,
+      claimed: false,
+      isTrackerOnly: true,
+      matches: (s) => s === 'test'
+    },
+    {
+      id: 'q_arena',
+      title: 'Boj s pety (5 zápasů)',
+      desc: 'Odbojuj dnes 5 zápasů v Pet Aréně (odměna je přímo v boji).',
+      icon: '⚔️',
+      target: 5,
+      progress: 0,
+      claimed: false,
+      isTrackerOnly: true,
+      matches: (s) => s === 'arena'
+    },
+    {
+      id: 'q_coloring',
+      title: 'Vymalovánka',
+      desc: 'Vybarvi dnes 1 celý obrázek Pokémona v omalovánce (odměna je přímo za vybarvení).',
+      icon: '🎨',
+      target: 1,
+      progress: 0,
+      claimed: false,
+      isTrackerOnly: true,
+      matches: (s, l) => s === 'math' && l === 7
+    }
   ];
 }
 
@@ -116,6 +161,22 @@ let state = {
   boxDate: getTodayDateString(),
   boxClaimed: false,
   lastBoxReward: 0.0,
+  lastBoxRewardText: '',
+  dailyChestConfig: {
+    minutesChance: 50,
+    minutesMin: 0.5,
+    minutesMax: 1.0,
+    foodChance: 20,
+    foodAmount: 1,
+    reviveChance: 15,
+    reviveAmount: 1,
+    diaSmallChance: 5,
+    diaSmallAmount: 2,
+    diaMedChance: 0.9,
+    diaMedAmount: 10,
+    diaJackpotChance: 0.1,
+    diaJackpotAmount: 20
+  },
   legendaryChest: JSON.parse(JSON.stringify(DEFAULT_LEGENDARY_CHEST)),
   testDate: getTodayDateString(),
   testDoneToday: false,
@@ -352,8 +413,7 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      const chosenLvl = parsed.customDailyLevelChoice || 4;
-      const defaultQuests = createDefaultDailyQuests(chosenLvl);
+      const defaultQuests = createDefaultDailyQuests();
 
       if (parsed.quests && Array.isArray(parsed.quests)) {
         parsed.quests = defaultQuests.map(dq => {
@@ -362,7 +422,8 @@ function loadState() {
             return { 
               ...dq, 
               ...saved, 
-              selectedTargetLevel: (dq.id === 'q_custom_reading') ? (saved.selectedTargetLevel || chosenLvl) : undefined,
+              isTrackerOnly: dq.isTrackerOnly,
+              target: dq.target,
               matches: dq.matches 
             };
           }
@@ -370,6 +431,11 @@ function loadState() {
         });
       }
       state = { ...state, ...parsed };
+      if (!state.rewards) {
+        state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+      } else if (state.rewards.questRate === undefined || state.rewards.questRate === 1) {
+        state.rewards.questRate = 4.0;
+      }
       window.state = state;
 
       if (!state.customizations) {
@@ -377,6 +443,23 @@ function loadState() {
       }
       if (!state.itemPrices) {
         state.itemPrices = {};
+      }
+      if (!state.dailyChestConfig) {
+        state.dailyChestConfig = {
+          minutesChance: 50,
+          minutesMin: 0.5,
+          minutesMax: 1.0,
+          foodChance: 20,
+          foodAmount: 1,
+          reviveChance: 15,
+          reviveAmount: 1,
+          diaSmallChance: 5,
+          diaSmallAmount: 2,
+          diaMedChance: 0.9,
+          diaMedAmount: 10,
+          diaJackpotChance: 0.1,
+          diaJackpotAmount: 20
+        };
       }
     }
   } catch (e) {
@@ -410,6 +493,7 @@ function checkAndHandleDailyResets() {
     state.boxDate = today;
     state.boxClaimed = false;
     state.lastBoxReward = 0.0;
+    state.lastBoxRewardText = '';
   }
 
   if (state.testDate !== today) {
@@ -1840,11 +1924,40 @@ function parentReviewOnlyQuest() {
    DENNÍ ŘADA (STREAK)
    ============================================================ */
 
+function syncTrackerQuestsWithState() {
+  if (!state.quests || !Array.isArray(state.quests)) return;
+  const qTest = state.quests.find(q => q.id === 'q_test');
+  if (qTest) {
+    if (state.testDoneToday) {
+      qTest.progress = 1;
+      qTest.claimed = true;
+    } else {
+      qTest.progress = 0;
+      qTest.claimed = false;
+    }
+  }
+  const qArena = state.quests.find(q => q.id === 'q_arena');
+  if (qArena && state.petSystem && typeof state.petSystem.battlesToday === 'number') {
+    qArena.progress = Math.min(qArena.target, Math.max(qArena.progress || 0, state.petSystem.battlesToday));
+    if (qArena.progress >= qArena.target) {
+      qArena.claimed = true;
+    }
+  }
+  const qColor = state.quests.find(q => q.id === 'q_coloring');
+  if (qColor && qColor.progress >= qColor.target) {
+    qColor.claimed = true;
+  }
+}
+
 function checkStreakStatus() {
-  const completedQuestsCount = state.quests.filter(q => q.claimed || q.progress >= q.target).length;
+  syncTrackerQuestsWithState();
+  const readingQuest = state.quests.find(q => q.id === 'q_reading_all');
+  const mathQuest = state.quests.find(q => q.id === 'q_math_all');
+  const isReadingDone = readingQuest && (readingQuest.claimed || readingQuest.progress >= readingQuest.target);
+  const isMathDone = mathQuest && (mathQuest.claimed || mathQuest.progress >= mathQuest.target);
   const today = getTodayDateString();
 
-  if (completedQuestsCount >= 5 && !state.streakTodayCompleted) {
+  if ((isReadingDone || isMathDone) && !state.streakTodayCompleted) {
     state.streakTodayCompleted = true;
     state.streakLastActiveDate = today;
     state.streakDays = (state.streakDays || 0) + 1;
@@ -1937,15 +2050,17 @@ function renderStreakView() {
 
   if (heroDays) heroDays.textContent = `${days} ${czechNounForm(days, 'DEN', 'DNY', 'DNÍ')}`;
 
-  const completedQuestsCount = state.quests.filter(q => q.claimed || q.progress >= q.target).length;
-  const neededRemaining = Math.max(0, 5 - completedQuestsCount);
+  const readingQuest = state.quests.find(q => q.id === 'q_reading_all');
+  const mathQuest = state.quests.find(q => q.id === 'q_math_all');
+  const rProg = readingQuest ? readingQuest.progress : 0;
+  const mProg = mathQuest ? mathQuest.progress : 0;
 
   if (heroDesc) {
     if (state.streakTodayCompleted) {
       heroDesc.innerHTML = '🎉 <strong class="text-yellow-200">Dnešní den je splněn!</strong> Řada je v bezpečí.';
       largeFlame.className = 'text-6xl sm:text-7xl select-none flame-active scale-110';
     } else {
-      heroDesc.innerHTML = `Splň dnes ještě aspoň <strong class="text-white underline">${neededRemaining}</strong> ${czechNounForm(neededRemaining, 'úkol', 'úkoly', 'úkolů')} k započtení dneška!`;
+      heroDesc.innerHTML = `Splň dnes <strong class="text-white underline">16× Čtení</strong> (${rProg}/16) NEBO <strong class="text-white underline">16× Matematiku</strong> (${mProg}/16) k započtení dneška!`;
       largeFlame.className = 'text-6xl sm:text-7xl select-none opacity-80';
     }
   }
@@ -2004,17 +2119,28 @@ function renderStreakView() {
 function updateDailyQuestsProgress(subj, completedLvl) {
   checkAndHandleDailyResets();
   let questCompletedNow = false;
+  const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 4.0;
 
   state.quests.forEach(q => {
     if (!q.claimed && q.progress < q.target) {
-      if (q.matches(subj, completedLvl)) {
+      if (q.matches && q.matches(subj, completedLvl)) {
         q.progress++;
-        if (q.progress >= q.target) questCompletedNow = true;
+        if (q.progress >= q.target) {
+          questCompletedNow = true;
+          q.claimed = true;
+          if (!q.isTrackerOnly) {
+            creditRewardMinutes(qRate, `Denní úkol: ${q.title}`);
+            alertUserFeedback(`🎯 Splněn denní úkol "${q.title}"! Získáváš +${formatMinutes(qRate)} ⭐`);
+          }
+        }
       }
     }
   });
 
+  syncTrackerQuestsWithState();
+
   if (questCompletedNow) playTone(900, 0.25, 'triangle', 0.3);
+  saveState();
   checkStreakStatus();
   updateTopBadges();
 }
@@ -2045,26 +2171,32 @@ function showStoreTab(tabKey) {
 }
 
 function switchStoreTab(tabKey) {
-  const tabs = ['skins', 'pets', 'themes', 'sounds', 'tickets', 'diamonds'];
+  const tabs = ['tickets', 'skins', 'pets', 'themes', 'sounds', 'diamonds'];
   const activeGradients = {
+    tickets: 'bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 text-white shadow-lg border-2 border-amber-300',
     skins: 'bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-md',
     pets: 'bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-md',
     themes: 'bg-gradient-to-r from-indigo-500 to-blue-600 text-white shadow-md',
     sounds: 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-md',
-    tickets: 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-md',
     diamonds: 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
   };
 
-  const targetKey = tabs.includes(tabKey) ? tabKey : 'skins';
+  const targetKey = tabs.includes(tabKey) ? tabKey : 'tickets';
 
   tabs.forEach(key => {
     const btn = document.getElementById(`store-tab-btn-${key}`);
     const content = document.getElementById(`store-tab-content-${key}`);
     if (btn) {
-      if (key === targetKey) {
-        btn.className = `w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-start gap-2.5 text-left ${activeGradients[key]}`;
+      if (key === 'tickets') {
+        if (key === targetKey) {
+          btn.className = `w-full py-3.5 px-3.5 rounded-2xl font-black text-sm sm:text-base transition-all flex items-center justify-start gap-2.5 text-left whitespace-nowrap ${activeGradients.tickets}`;
+        } else {
+          btn.className = 'w-full py-3.5 px-3.5 rounded-2xl font-black text-sm sm:text-base transition-all bg-amber-50/90 text-amber-950 border-2 border-amber-300 hover:bg-amber-100 shadow-sm flex items-center justify-start gap-2.5 text-left whitespace-nowrap';
+        }
+      } else if (key === targetKey) {
+        btn.className = `w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all flex items-center justify-start gap-2.5 text-left whitespace-nowrap ${activeGradients[key]}`;
       } else {
-        btn.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-white hover:shadow-sm flex items-center justify-start gap-2.5 text-left';
+        btn.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-white hover:shadow-sm flex items-center justify-start gap-2.5 text-left whitespace-nowrap';
       }
     }
     if (content) {
@@ -2080,7 +2212,7 @@ function switchStoreTab(tabKey) {
     if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
   } else if (targetKey === 'skins' || targetKey === 'themes' || targetKey === 'sounds') {
     renderStoreSkinsUI();
-  } else if (targetKey === 'diamonds') {
+  } else if (targetKey === 'diamonds' || targetKey === 'tickets') {
     updateDiamondMarketUI();
   }
   playTone(520, 0.08, 'sine', 0.12);
@@ -2641,6 +2773,7 @@ function updateBalanceUI() {
 
 function updateTopBadges() {
   checkAndHandleDailyResets();
+  syncTrackerQuestsWithState();
   
   const topStreakCount = document.getElementById('top-streak-count');
   if (topStreakCount) topStreakCount.textContent = (state.streakDays || 0).toString();
@@ -2725,26 +2858,153 @@ function switchChestSubTab(tabKey) {
   playTone(520, 0.08, 'sine', 0.12);
 }
 
+function getDailyChestConfig() {
+  if (!state.dailyChestConfig) {
+    state.dailyChestConfig = {
+      minutesChance: 50,
+      minutesMin: 0.5,
+      minutesMax: 1.0,
+      foodChance: 20,
+      foodAmount: 1,
+      reviveChance: 15,
+      reviveAmount: 1,
+      diaSmallChance: 5,
+      diaSmallAmount: 2,
+      diaMedChance: 0.9,
+      diaMedAmount: 10,
+      diaJackpotChance: 0.1,
+      diaJackpotAmount: 20
+    };
+  }
+  return state.dailyChestConfig;
+}
+
+const DAILY_CHEST_IMG_URL = 'https://i.imgur.com/t1cvXEh.png';
+const RARE_CHEST_IMG_URL = 'https://i.imgur.com/E6kB6Sg.png';
+
+function triggerChestLootBurst(layerId, mainIcon, mainLabel, isRare = false) {
+  const layer = document.getElementById(layerId);
+  if (!layer) return;
+  layer.innerHTML = '';
+
+  // 1. Dvojitá tlaková vlna ze středu truhlice
+  for (let r = 0; r < 2; r++) {
+    const ring = document.createElement('div');
+    ring.className = 'chest-shockwave-ring';
+    ring.style.border = isRare ? '5px solid #22d3ee' : '5px solid #fbbf24';
+    ring.style.boxShadow = isRare ? '0 0 24px #06b6d4' : '0 0 24px #f59e0b';
+    ring.style.animationDelay = `${r * 0.14}s`;
+    layer.appendChild(ring);
+  }
+
+  // 2. Gejzír pokladů stříkající z truhlice do všech stran
+  const particlePool = isRare
+    ? ['💎', '✨', '👑', '💎', '⭐', mainIcon]
+    : [mainIcon, '✨', '🪙', '⭐', '💎', mainIcon, '✨'];
+
+  const count = 18;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'loot-burst-particle text-2xl sm:text-3xl select-none drop-shadow-md';
+    p.textContent = particlePool[i % particlePool.length];
+
+    const spreadX = (Math.random() - 0.5) * 250;
+    const peakY = -(75 + Math.random() * 95);
+    const endY = peakY + (35 + Math.random() * 65);
+    const rot = (Math.random() - 0.5) * 540;
+
+    p.style.setProperty('--tx', `${Math.round(spreadX)}px`);
+    p.style.setProperty('--ty-peak', `${Math.round(peakY)}px`);
+    p.style.setProperty('--ty-end', `${Math.round(endY)}px`);
+    p.style.setProperty('--rot', `${Math.round(rot)}deg`);
+    p.style.animationDelay = `${(i % 5) * 0.035}s`;
+    layer.appendChild(p);
+  }
+
+  // 3. Hlavní výhra, která prudce vyprskne z truhlice nahoru
+  const mainPrize = document.createElement('div');
+  mainPrize.className = `loot-prize-erupt-badge px-4 py-1.5 rounded-2xl border-3 font-black font-baloo text-base sm:text-lg whitespace-nowrap shadow-2xl flex items-center gap-1.5 ${
+    isRare
+      ? 'bg-gradient-to-r from-cyan-400 to-blue-600 text-white border-white ring-4 ring-cyan-300'
+      : 'bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 text-amber-950 border-white ring-4 ring-amber-400'
+  }`;
+  mainPrize.innerHTML = `<span class="text-2xl">${mainIcon}</span><span>${mainLabel}</span>`;
+  layer.appendChild(mainPrize);
+}
+
 function renderDailyChestTab() {
   const chest = document.getElementById('chest-graphic');
   const statusText = document.getElementById('chest-status-text');
   const rewardReveal = document.getElementById('chest-reward-reveal');
-  rewardReveal.classList.add('hidden');
+  const burstLayer = document.getElementById('daily-chest-burst-layer');
+  if (rewardReveal) rewardReveal.classList.add('hidden');
+  if (burstLayer) burstLayer.innerHTML = '';
+
+  chest.innerHTML = `<img src="${DAILY_CHEST_IMG_URL}" referrerpolicy="no-referrer" alt="Denní truhla s pokladem" class="w-full h-full object-contain drop-shadow-xl">`;
 
   if (state.boxClaimed) {
-    chest.textContent = '📭';
-    chest.className = 'text-6xl sm:text-7xl select-none opacity-80';
+    chest.className = 'w-40 h-40 sm:w-44 sm:h-44 flex items-center justify-center select-none opacity-60 grayscale-[25%] relative z-10';
     chest.style.pointerEvents = 'none';
-    statusText.innerHTML = `Truhla už byla dnes otevřena! 🌟<br><span class="text-[11px] text-slate-500">Získal jsi: +${formatMinutes(state.lastBoxReward)}. Další zítra.</span>`;
+    const wonLabel = state.lastBoxRewardText || `+${formatMinutes(state.lastBoxReward || 0.5)}`;
+    statusText.innerHTML = `Truhlice už byla dnes otevřena! 🌟<br><span class="text-[11px] text-slate-500">Dnešní poklad: <strong>${wonLabel}</strong>. Další zítra.</span>`;
   } else {
-    chest.textContent = '🎁';
-    chest.className = 'cursor-pointer text-6xl sm:text-7xl select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95';
+    chest.className = 'cursor-pointer w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center select-none transition-transform duration-300 chest-ready hover:scale-110 active:scale-95 relative z-10';
     chest.style.pointerEvents = 'auto';
-    statusText.textContent = 'Klepni pro otevření! 👆';
+    statusText.textContent = 'Klepni na truhlici pro otevření! 👆';
   }
 }
 
 let isOpeningChest = false;
+
+function rollDailyChestReward() {
+  const cfg = getDailyChestConfig();
+  const wJackpot = Math.max(0, Number(cfg.diaJackpotChance) ?? 0.1);
+  const wMed = Math.max(0, Number(cfg.diaMedChance) ?? 0.9);
+  const wSmall = Math.max(0, Number(cfg.diaSmallChance) ?? 5);
+  const wRevive = Math.max(0, Number(cfg.reviveChance) ?? 15);
+  const wFood = Math.max(0, Number(cfg.foodChance) ?? 20);
+  const wMinutes = Math.max(0, Number(cfg.minutesChance) ?? 50);
+
+  const sumWeights = wJackpot + wMed + wSmall + wRevive + wFood + wMinutes;
+  if (sumWeights <= 0) {
+    return { type: 'minutes', amount: 0.5 };
+  }
+
+  // Pokud je součet <= 100 a minuty jsou povoleny, zachováme přesné procentuální šance vzácných odměn (0,1 %, 0,9 %, 5 %, 15 %, 20 %)
+  // a zbytek padne na minuty; pokud rodič nastaví součet > 100 nebo 0 % na minuty, losujeme poměrově podle součtu vah.
+  const totalScale = (wMinutes > 0 && sumWeights <= 100) ? 100 : sumWeights;
+  const r = Math.random() * totalScale;
+
+  let cursor = wJackpot;
+  if (r < cursor) {
+    return { type: 'diamonds_jackpot', amount: Math.max(1, Math.round(cfg.diaJackpotAmount || 20)) };
+  }
+  cursor += wMed;
+  if (r < cursor) {
+    return { type: 'diamonds_med', amount: Math.max(1, Math.round(cfg.diaMedAmount || 10)) };
+  }
+  cursor += wSmall;
+  if (r < cursor) {
+    return { type: 'diamonds_small', amount: Math.max(1, Math.round(cfg.diaSmallAmount || 2)) };
+  }
+  cursor += wRevive;
+  if (r < cursor) {
+    return { type: 'revive', amount: Math.max(1, Math.round(cfg.reviveAmount || 1)) };
+  }
+  cursor += wFood;
+  if (r < cursor) {
+    return { type: 'food', amount: Math.max(1, Math.round(cfg.foodAmount || 1)) };
+  }
+
+  const minVal = Math.max(0.25, Number(cfg.minutesMin) || 0.5);
+  const maxVal = Math.max(minVal, Number(cfg.minutesMax) || 1.0);
+  const steps = [];
+  for (let v = minVal; v <= maxVal + 0.001; v += 0.5) {
+    steps.push(Math.round(v * 100) / 100);
+  }
+  const chosenMin = steps.length > 0 ? steps[Math.floor(Math.random() * steps.length)] : minVal;
+  return { type: 'minutes', amount: chosenMin };
+}
 
 function openChestAction() {
   checkAndHandleDailyResets();
@@ -2755,35 +3015,111 @@ function openChestAction() {
   const statusText = document.getElementById('chest-status-text');
   const rewardReveal = document.getElementById('chest-reward-reveal');
   const rewardAmount = document.getElementById('chest-reward-amount');
+  const rewardIcon = document.getElementById('chest-reward-icon');
+  const rewardSubtext = document.getElementById('chest-reward-subtext');
 
   chest.style.pointerEvents = 'none';
   chest.classList.remove('chest-ready');
   chest.classList.add('chest-shaking');
-  statusText.textContent = 'Otevírám truhlu... ✨';
+  statusText.textContent = 'Otevírám truhlici... ✨';
   soundChestOpening();
 
   setTimeout(() => {
     chest.classList.remove('chest-shaking');
-    chest.textContent = '⭐';
-    chest.classList.add('scale-125');
+    chest.classList.add('scale-110');
+    chest.style.filter = 'drop-shadow(0 0 28px rgba(251, 191, 36, 0.98))';
 
-    const rewardsPool = [0.5, 1.0, 1.5, 2.0];
-    const chosenReward = rewardsPool[Math.floor(Math.random() * rewardsPool.length)];
-
+    const drop = rollDailyChestReward();
     state.boxClaimed = true;
-    state.lastBoxReward = chosenReward;
-    creditRewardMinutes(chosenReward, 'Denní Truhla');
 
-    rewardAmount.textContent = `+${formatMinutes(chosenReward)}!`;
+    if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+
+    let burstIcon = '⭐';
+    let burstShortLabel = '';
+
+    if (drop.type === 'minutes') {
+      burstIcon = '⭐';
+      burstShortLabel = `+${formatMinutes(drop.amount)}`;
+      if (rewardIcon) rewardIcon.textContent = '⭐';
+      state.lastBoxReward = drop.amount;
+      state.lastBoxRewardText = `+${formatMinutes(drop.amount)} ⭐`;
+      creditRewardMinutes(drop.amount, 'Denní Truhla');
+      rewardAmount.textContent = `+${formatMinutes(drop.amount)}!`;
+      if (rewardSubtext) rewardSubtext.textContent = 'Připsáno na tvůj účet tabletu.';
+    } else if (drop.type === 'food') {
+      burstIcon = '🍖';
+      burstShortLabel = `+${drop.amount}× Krmivo`;
+      if (rewardIcon) rewardIcon.textContent = '🍖';
+      if (state.petSystem) {
+        state.petSystem.petFoodCount = (state.petSystem.petFoodCount || 0) + drop.amount;
+      }
+      state.lastBoxReward = 0;
+      state.lastBoxRewardText = `+${drop.amount}× Krmivo pro peta 🍖`;
+      rewardAmount.textContent = `+${drop.amount}× Krmivo pro peta!`;
+      if (rewardSubtext) rewardSubtext.textContent = 'Uloženo do batohu pro tvého bojového parťáka.';
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'daily_chest_item',
+        minutes: 0,
+        note: `Denní Truhla: +${drop.amount}× Krmivo pro peta 🍖`
+      });
+    } else if (drop.type === 'revive') {
+      burstIcon = '❤️‍🔥';
+      burstShortLabel = `+${drop.amount}× Oživení`;
+      if (rewardIcon) rewardIcon.textContent = '❤️‍🔥';
+      if (state.petSystem) {
+        state.petSystem.revivePotionsCount = (state.petSystem.revivePotionsCount || 0) + drop.amount;
+      }
+      state.lastBoxReward = 0;
+      state.lastBoxRewardText = `+${drop.amount}× Kámen oživení ❤️‍🔥`;
+      rewardAmount.textContent = `+${drop.amount}× Kámen oživení!`;
+      if (rewardSubtext) rewardSubtext.textContent = 'Vzácný úlovek! Probouzí peta v Aréně na 100 % HP.';
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'daily_chest_item',
+        minutes: 0,
+        note: `Denní Truhla: +${drop.amount}× Kámen oživení ❤️‍🔥`
+      });
+    } else {
+      const isJackpot = drop.type === 'diamonds_jackpot';
+      burstIcon = isJackpot ? '👑' : '💎';
+      burstShortLabel = `+${drop.amount} 💎`;
+      if (rewardIcon) rewardIcon.textContent = burstIcon;
+      state.goldDiamonds = (state.goldDiamonds || 0) + drop.amount;
+      state.lastBoxReward = 0;
+      state.lastBoxRewardText = `+${drop.amount} Diamantů 💎`;
+      rewardAmount.textContent = `+${drop.amount} Modrých Diamantů!`;
+      if (rewardSubtext) rewardSubtext.textContent = isJackpot ? 'MEGA JACKPOT! Připsáno k tvým drahokamům!' : 'Připsáno k tvým modrým drahokamům!';
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'daily_chest_diamonds',
+        minutes: 0,
+        note: `Denní Truhla: +${drop.amount} 💎`
+      });
+    }
+
+    // Spustíme animaci vyprsknutí pokladu přímo z truhlice
+    triggerChestLootBurst('daily-chest-burst-layer', burstIcon, burstShortLabel, false);
+
     rewardReveal.classList.remove('hidden');
-    statusText.textContent = 'Skvělá trefa! 🎉';
+    statusText.textContent = 'Poklad vyprskl z truhlice! 🎉';
 
     saveState();
     triggerConfetti();
     playCustomSuccessSound();
+    updateBalanceUI();
     updateTopBadges();
+    updateDiamondMarketUI();
+    if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+    updateAdminLegendaryUI();
     isOpeningChest = false;
-  }, 1000);
+  }, 950);
 }
 
 function renderLegendaryChestTab() {
@@ -2794,24 +3130,28 @@ function renderLegendaryChestTab() {
   const statusText = document.getElementById('legend-chest-status-text');
   const rewardReveal = document.getElementById('legend-chest-reward-reveal');
   const noteEl = document.getElementById('legend-chest-note');
+  const burstLayer = document.getElementById('legend-chest-burst-layer');
 
-  rewardReveal.classList.add('hidden');
+  if (rewardReveal) rewardReveal.classList.add('hidden');
+  if (burstLayer) burstLayer.innerHTML = '';
+
   const leg = state.legendaryChest;
   const isAvailable = (leg && leg.active && !leg.claimed);
 
   if (isAvailable) {
     activeBox.classList.remove('hidden');
     emptyBox.classList.add('hidden');
-    displayTitle.textContent = leg.title || 'Legendární Truhla 👑';
-    noteEl.textContent = `Odměna: ${leg.diamonds || 10} modrých diamantů 💎`;
-    chestGraphic.textContent = '👑';
-    chestGraphic.className = 'cursor-pointer text-6xl sm:text-7xl select-none transition-transform duration-300 chest-legend-ready hover:scale-110 active:scale-95';
+    displayTitle.textContent = leg.title || 'Výjimečná Truhla';
+    noteEl.textContent = `Odměna uvnitř: ${leg.diamonds || 10} modrých diamantů 💎`;
+    chestGraphic.innerHTML = `<img src="${RARE_CHEST_IMG_URL}" referrerpolicy="no-referrer" alt="Výjimečná truhla" class="w-full h-full object-contain drop-shadow-xl">`;
+    chestGraphic.className = 'cursor-pointer w-44 h-44 sm:w-52 sm:h-52 flex items-center justify-center select-none transition-transform duration-300 chest-legend-ready hover:scale-110 active:scale-95 relative z-10';
     chestGraphic.style.pointerEvents = 'auto';
-    statusText.textContent = 'Klepni pro vyzvednutí diamantů! 👆';
+    chestGraphic.style.filter = '';
+    statusText.textContent = 'Klepni na vzácnou truhlici! 👆';
   } else {
     activeBox.classList.add('hidden');
     emptyBox.classList.remove('hidden');
-    displayTitle.textContent = 'Legendární Truhla 👑';
+    displayTitle.textContent = 'Výjimečná Truhla';
   }
 }
 
@@ -2830,13 +3170,13 @@ function openLegendaryChestAction() {
   chest.style.pointerEvents = 'none';
   chest.classList.remove('chest-legend-ready');
   chest.classList.add('chest-shaking');
-  statusText.textContent = 'Otevírám legendární truhlu... 👑✨';
+  statusText.textContent = 'Otevírám vzácnou truhlici... ✨';
   soundChestOpening();
 
   setTimeout(() => {
     chest.classList.remove('chest-shaking');
-    chest.textContent = '💎';
-    chest.classList.add('scale-125');
+    chest.classList.add('scale-110');
+    chest.style.filter = 'drop-shadow(0 0 30px rgba(34, 211, 238, 0.98))';
 
     const awardedDiamonds = leg.diamonds || 10;
     leg.claimed = true;
@@ -2849,12 +3189,15 @@ function openLegendaryChestAction() {
       date: new Date().toLocaleDateString('cs-CZ'),
       type: 'legendary_chest',
       minutes: 0,
-      note: `Legendární truhla (${leg.title}): +${awardedDiamonds} 💎`
+      note: `Výjimečná truhla (${leg.title}): +${awardedDiamonds} 💎`
     });
+
+    // Efekt vyprsknutí diamantů z vzácné truhlice
+    triggerChestLootBurst('legend-chest-burst-layer', '💎', `+${awardedDiamonds} 💎`, true);
 
     rewardAmount.textContent = `+${awardedDiamonds} Modrých Diamantů!`;
     rewardReveal.classList.remove('hidden');
-    statusText.textContent = 'Mimořádná odměna převzata! 💎🎉';
+    statusText.textContent = 'Mimořádný poklad vyprskl z truhlice! 💎🎉';
 
     saveState();
     triggerConfetti();
@@ -2868,7 +3211,57 @@ function openLegendaryChestAction() {
       isOpeningLegendaryChest = false;
       renderLegendaryChestTab();
     }, 2800);
-  }, 1000);
+  }, 950);
+}
+
+function saveAdminDailyChestConfig() {
+  const cfg = getDailyChestConfig();
+  const getNum = (id, fallback) => {
+    const el = document.getElementById(id);
+    if (!el) return fallback;
+    const val = parseFloat(el.value.replace(',', '.'));
+    return isNaN(val) ? fallback : Math.max(0, val);
+  };
+
+  cfg.minutesChance = getNum('admin-dchest-chance-minutes', 50);
+  cfg.minutesMin = Math.max(0.5, getNum('admin-dchest-min-minutes', 0.5));
+  cfg.minutesMax = Math.max(cfg.minutesMin, getNum('admin-dchest-max-minutes', 1.0));
+  cfg.foodChance = getNum('admin-dchest-chance-food', 20);
+  cfg.foodAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-food', 1)));
+  cfg.reviveChance = getNum('admin-dchest-chance-revive', 15);
+  cfg.reviveAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-revive', 1)));
+  cfg.diaSmallChance = getNum('admin-dchest-chance-diasmall', 5);
+  cfg.diaSmallAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-diasmall', 2)));
+  cfg.diaMedChance = getNum('admin-dchest-chance-diamed', 0.9);
+  cfg.diaMedAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-diamed', 10)));
+  cfg.diaJackpotChance = getNum('admin-dchest-chance-diajackpot', 0.1);
+  cfg.diaJackpotAmount = Math.max(1, Math.round(getNum('admin-dchest-amt-diajackpot', 20)));
+
+  saveState();
+  updateAdminLegendaryUI();
+  playTone(580, 0.08, 'sine', 0.15);
+}
+
+function adminResetDailyChestDefaults() {
+  state.dailyChestConfig = {
+    minutesChance: 50,
+    minutesMin: 0.5,
+    minutesMax: 1.0,
+    foodChance: 20,
+    foodAmount: 1,
+    reviveChance: 15,
+    reviveAmount: 1,
+    diaSmallChance: 5,
+    diaSmallAmount: 2,
+    diaMedChance: 0.9,
+    diaMedAmount: 10,
+    diaJackpotChance: 0.1,
+    diaJackpotAmount: 20
+  };
+  saveState();
+  updateAdminLegendaryUI();
+  playTone(640, 0.12, 'triangle', 0.2);
+  alertUserFeedback('Šance a odměny denní truhly vráceny na výchozí hodnoty!');
 }
 
 function adminApplyLegendaryChest() {
@@ -2882,7 +3275,7 @@ function adminApplyLegendaryChest() {
   updateTopBadges();
   updateAdminLegendaryUI();
   playTone(660, 0.15, 'triangle', 0.25);
-  alertUserFeedback(`Výjimečná truhla připravena: "${title}" (${diamonds} 💎)!`);
+  alertUserFeedback(`Vzácná truhla připravena: "${title}" (${diamonds} 💎)!`);
 }
 
 function adminCancelLegendaryChest() {
@@ -2893,10 +3286,45 @@ function adminCancelLegendaryChest() {
   updateTopBadges();
   updateAdminLegendaryUI();
   playTone(400, 0.1, 'sine', 0.15);
-  alertUserFeedback('Výjimečná truhla zrušena.');
+  alertUserFeedback('Vzácná truhla zrušena.');
 }
 
 function updateAdminLegendaryUI() {
+  const cfg = getDailyChestConfig();
+  const setVal = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  };
+
+  setVal('admin-dchest-chance-minutes', cfg.minutesChance);
+  setVal('admin-dchest-min-minutes', cfg.minutesMin);
+  setVal('admin-dchest-max-minutes', cfg.minutesMax);
+  setVal('admin-dchest-chance-food', cfg.foodChance);
+  setVal('admin-dchest-amt-food', cfg.foodAmount);
+  setVal('admin-dchest-chance-revive', cfg.reviveChance);
+  setVal('admin-dchest-amt-revive', cfg.reviveAmount);
+  setVal('admin-dchest-chance-diasmall', cfg.diaSmallChance);
+  setVal('admin-dchest-amt-diasmall', cfg.diaSmallAmount);
+  setVal('admin-dchest-chance-diamed', cfg.diaMedChance);
+  setVal('admin-dchest-amt-diamed', cfg.diaMedAmount);
+  setVal('admin-dchest-chance-diajackpot', cfg.diaJackpotChance);
+  setVal('admin-dchest-amt-diajackpot', cfg.diaJackpotAmount);
+
+  const sumLabel = document.getElementById('admin-daily-chest-sum-label');
+  if (sumLabel) {
+    const total = Math.round((cfg.minutesChance + cfg.foodChance + cfg.reviveChance + cfg.diaSmallChance + cfg.diaMedChance + cfg.diaJackpotChance) * 100) / 100;
+    sumLabel.textContent = `Součet šancí: ${total.toString().replace('.', ',')} %`;
+  }
+
+  const dailyStatusLabel = document.getElementById('admin-daily-chest-status-label');
+  if (dailyStatusLabel) {
+    if (state.boxClaimed) {
+      dailyStatusLabel.innerHTML = `⚪ Dnes již otevřena (${state.lastBoxRewardText || `+${formatMinutes(state.lastBoxReward || 0.5)}`})`;
+    } else {
+      dailyStatusLabel.innerHTML = `🟢 Dnes připravena k otevření`;
+    }
+  }
+
   const statusLabel = document.getElementById('admin-legendary-status-label');
   if (!statusLabel) return;
 
@@ -2904,7 +3332,7 @@ function updateAdminLegendaryUI() {
   if (leg && leg.active && !leg.claimed) {
     statusLabel.innerHTML = `🟢 <strong class="text-emerald-800">AKTIVNÍ:</strong> Truhla "${leg.title}" s ${leg.diamonds} 💎 čeká na otevření.`;
   } else {
-    statusLabel.innerHTML = `⚪ <span class="text-slate-600">Stav: Žádná aktivní legendární truhla nečeká.</span>`;
+    statusLabel.innerHTML = `⚪ <span class="text-slate-600">Stav: Žádná aktivní vzácná truhla nečeká.</span>`;
   }
 
   const titleInp = document.getElementById('admin-legendary-title-input');
@@ -3329,6 +3757,7 @@ function finishDailyTest() {
     });
   }
 
+  updateDailyQuestsProgress('test', 1);
   saveState();
   updateBalanceUI();
   updateTopBadges();
@@ -3423,6 +3852,7 @@ function adminResetTestToday() {
   state.testDoneToday = false;
   state.testDate = getTodayDateString();
   state.testLastResult = null;
+  syncTrackerQuestsWithState();
   saveState();
   updateTopBadges();
   updateAdminTestUI();
@@ -3811,57 +4241,32 @@ function submitManualSyncCode() {
 }
 
 function goToQuestLevel(questId) {
-  if (questId === 'q1') {
-    if (state.subject === 'reading') switchLevel(1); else switchMathLevel(1);
-  } else if (questId === 'q2') {
+  if (questId === 'q_reading_all') {
     setSubject('reading');
-    switchLevel(2);
-  } else if (questId === 'q3') {
-    setSubject('reading');
-    switchLevel(3);
-  } else if (questId === 'q_spelling') {
-    setSubject('reading');
-    switchLevel(8);
-  } else if (questId === 'q_custom_reading') {
-    setSubject('reading');
-    const customQ = state.quests.find(q => q.id === 'q_custom_reading');
-    const targetLvl = (customQ && customQ.selectedTargetLevel) ? customQ.selectedTargetLevel : 4;
-    switchLevel(targetLvl);
-  } else if (questId === 'q4') {
-    setSubject('reading');
-    switchLevel(7);
-  } else if (questId === 'q_m_speed') {
+    switchLevel(state.currentLevel || 1);
+    showView('learn');
+  } else if (questId === 'q_math_all') {
     setSubject('math');
-    switchMathLevel(4);
-  } else if (questId === 'q_m_compare') {
-    setSubject('math');
-    switchMathLevel(2);
-  } else if (questId === 'q_m_story') {
-    setSubject('math');
-    switchMathLevel(6);
-  } else if (questId === 'q_m_color') {
+    const mathLvl = (state.currentMathLevel && state.currentMathLevel <= 6) ? state.currentMathLevel : 1;
+    switchMathLevel(mathLvl);
+    showView('learn');
+  } else if (questId === 'q_test') {
+    showView('test');
+  } else if (questId === 'q_arena') {
+    showView('arena');
+  } else if (questId === 'q_coloring') {
     setSubject('math');
     switchMathLevel(7);
+    showView('learn');
+  } else {
+    showView('learn');
   }
-  showView('learn');
   playTone(500, 0.1, 'sine', 0.15);
-}
-
-function onCustomQuestLevelChange(newLvlStr) {
-  const newLvl = parseInt(newLvlStr, 10);
-  state.customDailyLevelChoice = newLvl;
-  const q = state.quests.find(item => item.id === 'q_custom_reading');
-  if (q) {
-    q.selectedTargetLevel = newLvl;
-    if (!q.claimed) q.progress = 0;
-  }
-  saveState();
-  renderDailyQuests();
-  playTone(520, 0.08, 'sine', 0.15);
 }
 
 function renderDailyQuests() {
   checkAndHandleDailyResets();
+  syncTrackerQuestsWithState();
   const container = document.getElementById('quests-list-container');
   const dateDisplay = document.getElementById('quests-date-display');
   
@@ -3869,30 +4274,52 @@ function renderDailyQuests() {
   dateDisplay.textContent = todayFormatted;
 
   container.innerHTML = '';
-  const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 1.0;
+  const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 4.0;
 
   state.quests.forEach(quest => {
-    const isDone = quest.progress >= quest.target;
+    const isDone = quest.progress >= quest.target || quest.claimed;
     const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
+    const isTracker = !!quest.isTrackerOnly;
 
     const card = document.createElement('div');
     card.className = `p-3 sm:p-4 rounded-3xl border-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
-      quest.claimed 
-        ? 'bg-slate-50 border-slate-300 opacity-80' 
+      quest.claimed || (isTracker && isDone)
+        ? 'bg-emerald-50/60 border-emerald-300 opacity-90' 
         : isDone 
           ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-400 ring-2 ring-emerald-300 shadow-lg' 
-          : 'bg-white border-indigo-200 hover:border-indigo-400 hover:shadow-lg cursor-pointer'
+          : isTracker
+            ? 'bg-slate-50 border-slate-200 hover:border-indigo-300 hover:shadow-md cursor-pointer'
+            : 'bg-white border-indigo-200 hover:border-indigo-400 hover:shadow-lg cursor-pointer'
     }`;
 
-    if (!quest.claimed && !isDone) {
+    if (!isDone) {
       card.onclick = () => goToQuestLevel(quest.id);
     }
 
     let actionHtml = '';
-    if (quest.claimed) {
+    if (isTracker) {
+      if (isDone) {
+        actionHtml = `
+          <div class="flex items-center gap-1.5 text-emerald-800 font-black text-xs sm:text-sm bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-2xl self-start sm:self-auto">
+            <span>✅</span> SPLNĚNO DNES
+          </div>
+        `;
+      } else {
+        actionHtml = `
+          <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
+            <span class="text-[10px] font-extrabold text-slate-500 bg-slate-200/80 px-2.5 py-0.5 rounded-xl block">
+              📋 Přehled aktivity
+            </span>
+            <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-slate-700 hover:bg-slate-800 text-white px-3 py-1 rounded-xl shadow-sm flex items-center gap-1">
+              Přejít ➡️
+            </button>
+          </div>
+        `;
+      }
+    } else if (quest.claimed) {
       actionHtml = `
-        <div class="flex items-center gap-1.5 text-emerald-700 font-black text-xs sm:text-sm bg-emerald-100 px-3 py-1.5 rounded-2xl self-start sm:self-auto">
-          <span>✅</span> VYZVEDNUTO (+${formatMinutes(qRate)})
+        <div class="flex items-center gap-1.5 text-emerald-700 font-black text-xs sm:text-sm bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-2xl self-start sm:self-auto">
+          <span>✅</span> SPLNĚNO (+${formatMinutes(qRate)} ⭐ & 🔥)
         </div>
       `;
     } else if (isDone) {
@@ -3904,8 +4331,8 @@ function renderDailyQuests() {
     } else {
       actionHtml = `
         <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
-          <span class="text-[11px] font-black text-indigo-900 bg-indigo-100 px-2.5 py-0.5 rounded-xl block">
-            Odměna: +${formatMinutes(qRate)} ⭐
+          <span class="text-[11px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2.5 py-0.5 rounded-xl block">
+            Odměna: +${formatMinutes(qRate)} ⭐ + 🔥 Řada
           </span>
           <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-xl shadow-sm flex items-center gap-1">
             Trénovat ➡️
@@ -3914,34 +4341,17 @@ function renderDailyQuests() {
       `;
     }
 
-    let customSelectorHtml = '';
-    if (quest.isCustom) {
-      const curLvl = quest.selectedTargetLevel || 4;
-      customSelectorHtml = `
-        <div class="mt-2 flex items-center gap-1.5" onclick="event.stopPropagation()">
-          <label class="text-[11px] font-bold text-slate-600">Kategorie:</label>
-          <select onchange="onCustomQuestLevelChange(this.value)" class="bg-amber-50 text-indigo-950 font-black text-xs px-2 py-1 rounded-xl border-2 border-amber-300 focus:outline-none focus:border-indigo-600 shadow-sm cursor-pointer" ${quest.claimed ? 'disabled' : ''}>
-            <option value="4" ${curLvl === 4 ? 'selected' : ''}>📖 4. Dvouslabičná slova</option>
-            <option value="5" ${curLvl === 5 ? 'selected' : ''}>✨ 5. Shluky / OU</option>
-            <option value="6" ${curLvl === 6 ? 'selected' : ''}>🎯 6. DĚ / TĚ / NĚ</option>
-            <option value="8" ${curLvl === 8 ? 'selected' : ''}>🗣️ 8. Hláskování</option>
-          </select>
-        </div>
-      `;
-    }
-
     card.innerHTML = `
       <div class="flex items-start gap-3 flex-grow">
-        <span class="text-3xl bg-indigo-50 p-1.5 rounded-2xl border border-indigo-100">${quest.icon}</span>
+        <span class="text-3xl ${isTracker ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'} p-1.5 rounded-2xl border">${quest.icon}</span>
         <div class="flex-grow">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center flex-wrap gap-2">
             <h4 class="font-black text-slate-800 text-sm sm:text-base">${quest.title}</h4>
-            ${isDone && !quest.claimed ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Splněno!</span>' : ''}
+            ${isDone ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Hotovo!</span>' : '<span class="bg-amber-100 text-amber-800 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Chybí splnit</span>'}
           </div>
           <p class="text-[11px] text-slate-600 font-bold mt-0.5">${quest.desc}</p>
-          ${customSelectorHtml}
           <div class="mt-1.5 w-full max-w-md bg-slate-200 rounded-full h-2.5 overflow-hidden border border-slate-300">
-            <div class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
+            <div class="bg-gradient-to-r ${isDone ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-purple-500'} h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
           </div>
           <div class="text-[10px] font-extrabold text-slate-500 mt-0.5">
             Postup: <span class="text-indigo-700">${quest.progress} / ${quest.target}</span> (${percent}%)
@@ -3960,9 +4370,11 @@ function claimQuestReward(questId) {
   const quest = state.quests.find(q => q.id === questId);
   if (!quest || quest.claimed || quest.progress < quest.target) return;
 
-  const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 1.0;
   quest.claimed = true;
-  creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`);
+  if (!quest.isTrackerOnly) {
+    const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 4.0;
+    creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`);
+  }
 
   saveState();
   playCustomSuccessSound();
@@ -4064,10 +4476,12 @@ function adminResetChest() {
   state.boxClaimed = false;
   state.boxDate = getTodayDateString();
   state.lastBoxReward = 0.0;
+  state.lastBoxRewardText = '';
   isOpeningChest = false;
   saveState();
   playTone(700, 0.15, 'sine', 0.2);
   updateTopBadges();
+  updateAdminLegendaryUI();
   alertUserFeedback('Denní truhla znovu připravena!');
 }
 
