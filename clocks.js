@@ -81,73 +81,73 @@ function renderClockSection() {
 
   // Standardní zobrazení hodin (záložky 1, 2, 3)
   container.innerHTML = `
-    <div class="w-full max-w-7xl mx-auto flex flex-col gap-2.5 px-2 sm:px-4">
+    <div class="w-full max-w-7xl mx-auto flex flex-col gap-1.5 sm:gap-2 px-1 sm:px-2">
       
       <!-- HORNÍ LIŠTA: Úroveň + Přepínač Analog/Digitál -->
-      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-3 p-2 bg-white rounded-2xl border-2 border-amber-300 shadow-sm">
-        <div class="w-full sm:w-auto flex items-center gap-1.5 flex-wrap">
-          <button onclick="switchClockSubLevel(1)" id="clock-sub-btn-1" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm">
+      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2 p-1.5 bg-white rounded-2xl border-2 border-amber-300 shadow-sm">
+        <div class="w-full sm:w-auto flex items-center gap-1 flex-wrap">
+          <button onclick="switchClockSubLevel(1)" id="clock-sub-btn-1" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all bg-amber-500 text-white shadow-sm">
             ⏰ 1. Celé hodiny
           </button>
-          <button onclick="switchClockSubLevel(2)" id="clock-sub-btn-2" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-100">
+          <button onclick="switchClockSubLevel(2)" id="clock-sub-btn-2" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">
             ⏱️ 2. Velká ruč.
           </button>
-          <button onclick="switchClockSubLevel(3)" id="clock-sub-btn-3" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-100">
+          <button onclick="switchClockSubLevel(3)" id="clock-sub-btn-3" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">
             🎯 3. Kombinace
           </button>
-          <button onclick="switchClockSubLevel(4)" id="clock-sub-btn-4" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-100">
+          <button onclick="switchClockSubLevel(4)" id="clock-sub-btn-4" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">
             🧠 4. Jak dlouho co trvá?
           </button>
         </div>
 
-        <div class="flex items-center bg-slate-100 p-1 rounded-xl border-2 border-amber-300 shadow-inner flex-shrink-0">
-          <button onclick="switchClockDisplayType('analog')" id="display-type-btn-analog" class="py-1.5 px-3 rounded-lg font-black text-xs transition-all bg-amber-500 text-white shadow-sm">
+        <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border-2 border-amber-300 shadow-inner flex-shrink-0">
+          <button onclick="switchClockDisplayType('analog')" id="display-type-btn-analog" class="py-1 px-2.5 rounded-lg font-black text-xs transition-all bg-amber-500 text-white shadow-sm">
             ⏰ Ručičkové
           </button>
-          <button onclick="switchClockDisplayType('digital')" id="display-type-btn-digital" class="py-1.5 px-3 rounded-lg font-black text-xs transition-all text-slate-700 hover:bg-amber-100">
+          <button onclick="switchClockDisplayType('digital')" id="display-type-btn-digital" class="py-1 px-2.5 rounded-lg font-black text-xs transition-all text-slate-700 hover:bg-amber-100">
             📱 Digitální
           </button>
         </div>
       </div>
 
-      <!-- NOVÁ HORNÍ LIŠTA PRO FILTRY DENNÍ DOBY -->
-      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2 p-2.5 bg-sky-50 rounded-2xl border-2 border-sky-200 shadow-sm text-xs sm:text-sm font-black text-sky-950">
-        <div class="flex items-center gap-2 px-1 flex-shrink-0">
+      <!-- HORNÍ LIŠTA PRO FILTRY DENNÍ DOBY -->
+      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-1.5 px-2.5 py-1.5 bg-sky-50 rounded-2xl border-2 border-sky-200 shadow-sm text-xs font-black text-sky-950">
+        <div class="flex items-center gap-1.5 px-1 flex-shrink-0">
           <span>🌅 Výběr denní doby:</span>
         </div>
-        <div class="grid grid-cols-3 sm:grid-cols-6 gap-1.5 w-full sm:w-auto" id="clock-time-filters-bar">
-          <button onclick="switchTimeFilter('all')" id="filter-btn-all" class="py-1.5 px-3 rounded-xl bg-sky-600 text-white shadow-sm transition-all text-xs font-black text-center">Vše</button>
-          <button onclick="switchTimeFilter('morning')" id="filter-btn-morning" class="py-1.5 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌅 Ráno</button>
-          <button onclick="switchTimeFilter('forenoon')" id="filter-btn-forenoon" class="py-1.5 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">☀️ Dopol.</button>
-          <button onclick="switchTimeFilter('afternoon')" id="filter-btn-afternoon" class="py-1.5 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌤️ Odpol.</button>
-          <button onclick="switchTimeFilter('evening')" id="filter-btn-evening" class="py-1.5 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌆 Večer</button>
-          <button onclick="switchTimeFilter('night')" id="filter-btn-night" class="py-1.5 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌙 Noc</button>
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-1 w-full sm:w-auto" id="clock-time-filters-bar">
+          <button onclick="switchTimeFilter('all')" id="filter-btn-all" class="py-1 px-2.5 rounded-xl bg-sky-600 text-white shadow-sm transition-all text-xs font-black text-center">Vše</button>
+          <button onclick="switchTimeFilter('morning')" id="filter-btn-morning" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌅 Ráno</button>
+          <button onclick="switchTimeFilter('forenoon')" id="filter-btn-forenoon" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">☀️ Dopol.</button>
+          <button onclick="switchTimeFilter('afternoon')" id="filter-btn-afternoon" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌤️ Odpol.</button>
+          <button onclick="switchTimeFilter('evening')" id="filter-btn-evening" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌆 Večer</button>
+          <button onclick="switchTimeFilter('night')" id="filter-btn-night" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌙 Noc</button>
         </div>
       </div>
 
       <!-- HLAVNÍ MŘÍŽKA -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch w-full">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch w-full">
         
         <!-- LEVÝ PANEL -->
-        <div class="lg:col-span-3 flex flex-col gap-3">
-          <div class="w-full flex flex-col gap-3 bg-white p-4 rounded-3xl border-3 border-amber-300 shadow-md h-full justify-center">
+        <div class="lg:col-span-3 flex flex-col gap-2">
+          <div class="w-full flex flex-col gap-2 bg-white p-2.5 sm:p-3 rounded-2xl border-3 border-amber-300 shadow-md h-full justify-center">
             
-            <div class="w-full flex flex-col gap-1.5 p-3 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-2xl border-2 border-purple-300 text-xs sm:text-sm font-black text-purple-950">
+            <div class="w-full flex flex-col gap-1 p-2.5 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl border-2 border-purple-300 text-xs font-black text-purple-950">
               <div class="flex items-center justify-between">
                 <span>🎮 Režim:</span>
-                <span id="sharp-counter-badge" class="hidden bg-cyan-600 text-white px-2.5 py-0.5 rounded-xl text-xs shadow-sm">Splněno: 0 / 10</span>
+                <span id="sharp-counter-badge" class="hidden bg-cyan-600 text-white px-2 py-0.5 rounded-lg text-[11px] shadow-sm">Splněno: 0 / 10</span>
               </div>
-              <div class="flex flex-col gap-1.5 mt-1">
-                <button onclick="switchClockGameMode('training')" id="clock-mode-game-training" class="py-2 px-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm text-center text-xs">Trénink</button>
-                <button onclick="switchClockGameMode('sharp')" id="clock-mode-game-sharp" class="py-2 px-2 rounded-xl transition-all text-purple-900 hover:bg-purple-100 text-center text-xs">🔥 Ostrá (2 💎)</button>
+              <div class="flex flex-col gap-1 mt-0.5">
+                <button onclick="switchClockGameMode('training')" id="clock-mode-game-training" class="py-1.5 px-2 rounded-xl transition-all bg-indigo-600 text-white shadow-sm text-center text-xs">Trénink</button>
+                <button onclick="switchClockGameMode('sharp')" id="clock-mode-game-sharp" class="py-1.5 px-2 rounded-xl transition-all text-purple-900 hover:bg-purple-100 text-center text-xs">🔥 Ostrá (2 💎)</button>
               </div>
             </div>
 
-            <div id="clock-mode-toggle-container" class="w-full flex flex-col gap-1.5 px-3 py-2.5 bg-amber-100/85 rounded-2xl border-2 border-amber-300 text-xs sm:text-sm font-black text-amber-950">
+            <div id="clock-mode-toggle-container" class="w-full flex flex-col gap-1 px-2.5 py-2 bg-amber-100/85 rounded-xl border-2 border-amber-300 text-xs font-black text-amber-950">
               <span id="clock-mode-label">Režim zobrazení:</span>
-              <div class="flex flex-col gap-1.5 mt-1">
-                <button onclick="switchClockMode('basic')" id="clock-mode-btn-basic" class="py-2 px-2 rounded-xl transition-all bg-amber-500 text-white shadow-sm text-center text-xs">Čtvrt / Půl</button>
-                <button onclick="switchClockMode('advanced')" id="clock-mode-btn-advanced" class="py-2 px-2 rounded-xl transition-all text-amber-900 hover:bg-amber-100 text-center text-xs">Minuty</button>
+              <div class="flex flex-col gap-1 mt-0.5">
+                <button onclick="switchClockMode('basic')" id="clock-mode-btn-basic" class="py-1.5 px-2 rounded-xl transition-all bg-amber-500 text-white shadow-sm text-center text-xs">Čtvrt / Půl</button>
+                <button onclick="switchClockMode('advanced')" id="clock-mode-btn-advanced" class="py-1.5 px-2 rounded-xl transition-all text-amber-900 hover:bg-amber-100 text-center text-xs">Minuty</button>
               </div>
             </div>
 
@@ -155,12 +155,12 @@ function renderClockSection() {
         </div>
 
         <!-- PRAVÝ PANEL -->
-        <div class="lg:col-span-9 flex flex-col items-center justify-between bg-white p-5 rounded-3xl border-3 border-amber-300 shadow-md w-full">
-          <div id="clock-display-main-box" class="flex flex-col lg:flex-row items-center justify-center gap-6 w-full min-h-[360px] my-auto">
+        <div class="lg:col-span-9 flex flex-col items-center justify-between bg-white p-2.5 sm:p-3.5 rounded-2xl border-3 border-amber-300 shadow-md w-full">
+          <div id="clock-display-main-box" class="flex flex-col lg:flex-row items-center justify-center gap-4 w-full min-h-[200px] sm:min-h-[220px] my-auto">
             <!-- Vykreslí se dynamicky -->
           </div>
-          <div class="text-center mt-3">
-            <div id="clock-context-pill" class="inline-flex items-center gap-2 text-base font-black px-6 py-2 rounded-2xl border-2 shadow-sm">
+          <div class="text-center mt-1.5">
+            <div id="clock-context-pill" class="inline-flex items-center gap-1.5 text-sm font-black px-4 py-1 rounded-xl border-2 shadow-sm">
               <span>☀️</span> <span>RÁNO</span>
             </div>
           </div>
@@ -169,7 +169,7 @@ function renderClockSection() {
       </div>
 
       <!-- MOŽNOSTI ODPOVĚDÍ -->
-      <div class="grid grid-cols-3 gap-4 w-full max-w-4xl mx-auto mt-2" id="clock-options-container">
+      <div class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full max-w-4xl mx-auto mt-0.5" id="clock-options-container">
         <!-- Generováno dynamicky -->
       </div>
       
@@ -191,40 +191,40 @@ function renderTimeImaginationModule(container) {
   const act = quiz.currentActivity;
 
   container.innerHTML = `
-    <div class="w-full max-w-5xl mx-auto flex flex-col gap-4">
+    <div class="w-full max-w-5xl mx-auto flex flex-col gap-2.5">
       
       <!-- HORNÍ LIŠTA ZÁLOŽEK -->
-      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-3 p-2 bg-white rounded-2xl border-2 border-amber-300 shadow-sm">
-        <div class="w-full sm:w-auto flex items-center gap-2 flex-wrap">
-          <button onclick="switchClockSubLevel(1)" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-100">⏰ 1. Celé hodiny</button>
-          <button onclick="switchClockSubLevel(2)" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-100">⏱️ 2. Velká ruč.</button>
-          <button onclick="switchClockSubLevel(3)" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-100">🎯 3. Kombinace</button>
-          <button onclick="switchClockSubLevel(4)" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-amber-500 text-white shadow-sm">🧠 4. Jak dlouho co trvá?</button>
+      <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2 p-1.5 bg-white rounded-2xl border-2 border-amber-300 shadow-sm">
+        <div class="w-full sm:w-auto flex items-center gap-1 flex-wrap">
+          <button onclick="switchClockSubLevel(1)" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">⏰ 1. Celé hodiny</button>
+          <button onclick="switchClockSubLevel(2)" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">⏱️ 2. Velká ruč.</button>
+          <button onclick="switchClockSubLevel(3)" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">🎯 3. Kombinace</button>
+          <button onclick="switchClockSubLevel(4)" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all bg-amber-500 text-white shadow-sm">🧠 4. Jak dlouho co trvá?</button>
         </div>
-        <div class="text-xs font-black text-amber-900 bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-300">
+        <div class="text-xs font-black text-amber-900 bg-amber-100 px-2.5 py-1 rounded-xl border border-amber-300">
           🌟 Úspěchy: <span id="time-quiz-score">${quiz.score}</span> / 10
         </div>
       </div>
 
       <!-- HLAVNÍ KARTA KVÍZU PRO PŘEDSTAVIVOST -->
-      <div class="w-full bg-white p-6 sm:p-8 rounded-3xl border-4 border-amber-300 shadow-lg flex flex-col items-center text-center gap-6">
+      <div class="w-full bg-white p-4 sm:p-5 rounded-3xl border-3 border-amber-300 shadow-lg flex flex-col items-center text-center gap-3.5">
         
-        <div class="inline-flex items-center gap-2 bg-sky-100 text-sky-950 px-5 py-2 rounded-2xl border-2 border-sky-300 font-black text-sm sm:text-base">
+        <div class="inline-flex items-center gap-2 bg-sky-100 text-sky-950 px-4 py-1.5 rounded-2xl border-2 border-sky-300 font-black text-xs sm:text-sm">
           <span>💡</span> <span>Jaká aktivita odpovídá tomuto čase?</span>
         </div>
 
-        <div class="text-3xl sm:text-4xl font-black text-amber-950 bg-amber-50 px-8 py-5 rounded-3xl border-3 border-amber-300 shadow-inner">
+        <div class="text-2xl sm:text-3xl font-black text-amber-950 bg-amber-50 px-6 py-3 rounded-2xl border-3 border-amber-300 shadow-inner">
           ⏱️ ${formatDurationText(act.durationSec)}
         </div>
 
-        <p class="text-slate-600 font-bold text-sm sm:text-base italic">
+        <p class="text-slate-600 font-bold text-xs sm:text-sm italic">
           Nápověda: „${act.hint}“
         </p>
 
         <!-- MOŽNOSTI VÝBĚRU -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 w-full mt-2">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full mt-1">
           ${quiz.options.map(opt => `
-            <button onclick="evaluateTimeQuizAnswer('${opt.text.replace(/'/g, "\\'")}')" class="game-button py-5 px-4 rounded-2xl bg-white border-4 border-amber-300 hover:border-amber-500 text-amber-950 font-black text-base sm:text-lg shadow-md transition-all flex items-center justify-center text-center">
+            <button onclick="evaluateTimeQuizAnswer('${opt.text.replace(/'/g, "\\'")}')" class="game-button py-3.5 px-3 rounded-2xl bg-white border-3 border-amber-300 hover:border-amber-500 text-amber-950 font-black text-sm sm:text-base shadow-md transition-all flex items-center justify-center text-center">
               ${opt.text}
             </button>
           `).join('')}
@@ -324,22 +324,22 @@ function updateClockDisplayArea() {
 
   if (clockState.displayType === 'digital') {
     mainBox.innerHTML = `
-      <div class="flex flex-col items-center justify-center p-6 bg-slate-900 border-6 border-amber-400 rounded-3xl shadow-lg select-none">
-        <span class="text-xs font-black tracking-widest text-amber-400 uppercase mb-2">Digitální čas (24h)</span>
-        <div class="text-7xl sm:text-8xl font-black font-mono text-emerald-400 tracking-wider drop-shadow-[0_0_20px_rgba(52,211,153,0.7)] px-6 py-3">
+      <div class="flex flex-col items-center justify-center p-3.5 sm:p-4 bg-slate-900 border-4 border-amber-400 rounded-2xl shadow-lg select-none">
+        <span class="text-[11px] font-black tracking-widest text-amber-400 uppercase mb-1">Digitální čas (24h)</span>
+        <div class="text-5xl sm:text-6xl font-black font-mono text-emerald-400 tracking-wider drop-shadow-[0_0_20px_rgba(52,211,153,0.7)] px-4 py-2">
           ${String(clockState.targetHour).padStart(2, '0')}:${String(clockState.targetMinute).padStart(2, '0')}
         </div>
       </div>
-      <div class="flex flex-col items-center justify-center bg-amber-50/80 p-5 rounded-3xl border-3 border-amber-300 shadow-inner">
-        <span class="text-xs font-black text-amber-900 uppercase mb-2">💡 Srovnání na ručičkách</span>
-        <div class="relative w-64 h-64 sm:w-72 sm:h-72 bg-gradient-to-tr from-amber-50 to-white border-5 border-amber-400 rounded-full shadow-md flex items-center justify-center select-none">
+      <div class="flex flex-col items-center justify-center bg-amber-50/80 p-3 rounded-2xl border-2 border-amber-300 shadow-inner">
+        <span class="text-[11px] font-black text-amber-900 uppercase mb-1">💡 Srovnání na ručičkách</span>
+        <div class="relative w-44 h-44 sm:w-52 sm:h-52 bg-gradient-to-tr from-amber-50 to-white border-4 border-amber-400 rounded-full shadow-md flex items-center justify-center select-none">
           ${generateClockSvgMarkup(clockState.targetHour, clockState.targetMinute)}
         </div>
       </div>
     `;
   } else {
     mainBox.innerHTML = `
-      <div class="relative w-88 h-88 sm:w-96 sm:h-96 md:w-[440px] md:h-[440px] bg-gradient-to-tr from-amber-50 to-white border-6 border-amber-400 rounded-full shadow-lg flex items-center justify-center my-2 select-none" id="clock-face-container">
+      <div class="relative w-52 h-52 sm:w-60 sm:h-60 md:w-[245px] md:h-[245px] bg-gradient-to-tr from-amber-50 to-white border-5 border-amber-400 rounded-full shadow-lg flex items-center justify-center my-0.5 select-none" id="clock-face-container">
         ${generateClockSvgMarkup(clockState.targetHour, clockState.targetMinute)}
       </div>
     `;
@@ -574,7 +574,7 @@ function renderClockOptions() {
 
   clockState.options.forEach(opt => {
     const btn = document.createElement('button');
-    btn.className = 'game-button py-3 px-3 rounded-2xl bg-white border-4 border-amber-300 hover:border-amber-500 text-amber-950 font-black text-2xl sm:text-3xl shadow-md transition-all flex items-center justify-center';
+    btn.className = 'game-button py-2 px-3 rounded-2xl bg-white border-3 border-amber-300 hover:border-amber-500 text-amber-950 font-black text-xl sm:text-2xl shadow-md transition-all flex items-center justify-center';
     btn.textContent = opt;
     btn.onclick = () => evaluateClockAnswer(opt);
     container.appendChild(btn);

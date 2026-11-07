@@ -537,12 +537,12 @@ function updateTopPetCompanionWidget() {
 
   if (!activeId || !petData || !petData.unlocked) {
     badgeContainer.innerHTML = `
-      <div class="w-8 h-8 rounded-xl bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-base flex-shrink-0">
+      <div class="w-7 h-7 rounded-xl bg-amber-100 border-2 border-amber-400 flex items-center justify-center text-sm flex-shrink-0">
         🐾
       </div>
       <div class="flex flex-col justify-center leading-none pr-0.5">
         <span class="text-xs sm:text-sm font-black text-slate-800 font-baloo leading-none">ARÉNA PETŮ</span>
-        <span class="text-[9px] font-bold text-amber-700 leading-none mt-1">🔒 Odemkni peta</span>
+        <span class="text-[9px] font-bold text-amber-700 leading-none mt-0.5">🔒 Odemkni peta</span>
       </div>
     `;
     return;
@@ -561,7 +561,7 @@ function updateTopPetCompanionWidget() {
         <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-600 border-2 border-white shadow-sm"></span>
       </span>
     ` : ''}
-    <div class="w-8 h-8 rounded-xl bg-amber-100/80 border-2 border-amber-400 flex items-center justify-center p-0.5 flex-shrink-0 ${isKo ? 'grayscale opacity-60' : ''}">
+    <div class="w-7 h-7 rounded-xl bg-amber-100/80 border-2 border-amber-400 flex items-center justify-center p-0.5 flex-shrink-0 ${isKo ? 'grayscale opacity-60' : ''}">
       ${petDef.svg}
     </div>
     <div class="flex flex-col justify-center leading-none pr-0.5">
@@ -571,7 +571,7 @@ function updateTopPetCompanionWidget() {
           ${isKo ? 'K.O.' : `Lv.${lvl}`}
         </span>
       </div>
-      <span class="text-[9px] font-bold leading-none mt-1 ${isKo ? 'text-rose-600' : 'text-emerald-600'}">
+      <span class="text-[9px] font-bold leading-none mt-0.5 ${isKo ? 'text-rose-600' : 'text-emerald-600'}">
         ${isKo ? 'Oživit v Aréně' : `${petData.currentHp}/${maxHp} HP`}
       </span>
     </div>
@@ -853,23 +853,23 @@ function renderArenaView() {
   if (ticketBtn) {
     const hasTickets = (ps.battleTicketsCount || 0) > 0;
     ticketBtn.className = hasTickets
-      ? 'game-button bg-emerald-600 hover:bg-emerald-500 text-white font-black px-3 py-1.5 rounded-2xl border-2 border-emerald-400 border-b-3 border-b-emerald-800 text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap shadow-md animate-pulse'
-      : 'bg-slate-800/80 border-2 border-slate-600 text-slate-300 font-black px-3 py-1.5 rounded-2xl text-xs sm:text-sm flex items-center gap-1.5 whitespace-nowrap';
+      ? 'game-button bg-emerald-600 hover:bg-emerald-500 text-white font-black px-2.5 py-1 rounded-xl border-2 border-emerald-400 border-b-3 border-b-emerald-800 text-xs flex items-center gap-1 whitespace-nowrap shadow-sm animate-pulse'
+      : 'bg-slate-800/80 border-2 border-slate-600 text-slate-300 font-black px-2.5 py-1 rounded-xl text-xs flex items-center gap-1 whitespace-nowrap';
   }
 
   if (stageBadge) {
     if (isBossStage) {
       stageBadge.textContent = `🔥 BOSS PATRO ${stage}`;
-      stageBadge.className = 'px-3 py-1.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 whitespace-nowrap bg-rose-600 border-amber-300 text-white shadow-md animate-pulse';
+      stageBadge.className = 'px-2.5 py-1 rounded-xl border-2 text-xs font-black flex items-center gap-1 whitespace-nowrap bg-rose-600 border-amber-300 text-white shadow-sm animate-pulse';
     } else {
       stageBadge.textContent = `🏰 Patro ${stage}`;
-      stageBadge.className = 'px-3 py-1.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 whitespace-nowrap bg-amber-500/20 border-amber-400 text-amber-200 shadow-inner';
+      stageBadge.className = 'px-2.5 py-1 rounded-xl border-2 text-xs font-black flex items-center gap-1 whitespace-nowrap bg-amber-500/20 border-amber-400 text-amber-200 shadow-inner';
     }
   }
 
   if (dailyBadge) {
     dailyBadge.textContent = `⚔️ Dnes: ${shownBattlesToday} / ${maxDaily}`;
-    dailyBadge.className = `px-3 py-1.5 rounded-2xl border-2 text-xs font-black flex items-center gap-1.5 whitespace-nowrap shadow-inner ${
+    dailyBadge.className = `px-2.5 py-1 rounded-xl border-2 text-xs font-black flex items-center gap-1 whitespace-nowrap shadow-inner ${
       battlesToday >= maxDaily && !ps.ticketMatchActive
         ? 'bg-rose-950/90 border-rose-400 text-rose-200'
         : 'bg-indigo-900/90 border-indigo-400 text-indigo-100'
@@ -934,7 +934,7 @@ function renderArenaView() {
   if (petNameEl) petNameEl.textContent = petDef.name;
   if (petElementEl) {
     petElementEl.textContent = petDef.element;
-    petElementEl.className = `text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${petDef.badgeClass}`;
+    petElementEl.className = `text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${petDef.badgeClass}`;
   }
   if (petLvlBadge) petLvlBadge.textContent = `LEVEL ${petData.level}`;
   if (petHpText) petHpText.textContent = `${petData.currentHp} / ${maxHp} HP`;
@@ -951,7 +951,7 @@ function renderArenaView() {
   if (petXpBar) petXpBar.style.width = `${xpPct}%`;
   if (petSpriteBox) {
     petSpriteBox.innerHTML = petDef.svg;
-    petSpriteBox.className = `w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center transition-transform duration-300 ${
+    petSpriteBox.className = `w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center transition-transform duration-300 ${
       petData.isKnockedOut ? 'grayscale opacity-50 rotate-12' : 'pet-float-anim'
     }`;
   }
@@ -960,10 +960,10 @@ function renderArenaView() {
   if (feedBtn) {
     const isFullHp = petData.currentHp >= maxHp;
     if (isFullHp || petData.isKnockedOut || (ps.petFoodCount || 0) <= 0) {
-      feedBtn.className = 'px-3.5 py-2 rounded-2xl font-black text-xs sm:text-sm border-2 border-slate-600 bg-slate-800/80 text-slate-400 cursor-not-allowed flex items-center gap-1.5 whitespace-nowrap';
+      feedBtn.className = 'px-3 py-1.5 rounded-xl font-black text-xs border-2 border-slate-600 bg-slate-800/80 text-slate-400 cursor-not-allowed flex items-center gap-1 whitespace-nowrap';
       feedBtn.title = isFullHp ? 'Pet má plné HP!' : 'Nelze nakrmit';
     } else {
-      feedBtn.className = 'game-button bg-amber-400 hover:bg-amber-500 text-amber-950 px-3.5 py-2 rounded-2xl font-black text-xs sm:text-sm border-b-3 border-amber-600 flex items-center gap-1.5 shadow-md whitespace-nowrap';
+      feedBtn.className = 'game-button bg-amber-400 hover:bg-amber-500 text-amber-950 px-3 py-1.5 rounded-xl font-black text-xs border-b-3 border-amber-600 flex items-center gap-1 shadow-sm whitespace-nowrap';
       feedBtn.title = 'Doplnit HP krmivem';
     }
   }
@@ -982,8 +982,8 @@ function renderArenaView() {
   if (monsterTitleEl) {
     monsterTitleEl.textContent = arenaBattleState.isBoss ? `🔥 BOSS PATRA ${stage}` : m.title;
     monsterTitleEl.className = arenaBattleState.isBoss
-      ? 'text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse'
-      : 'text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-rose-600 text-white';
+      ? 'text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 animate-pulse'
+      : 'text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-600 text-white';
   }
   if (monsterLvlBadge) {
     monsterLvlBadge.textContent = `PATRO ${stage} • LV.${arenaBattleState.monsterLevel}`;
@@ -992,7 +992,7 @@ function renderArenaView() {
   if (monsterHpBar) monsterHpBar.style.width = `${mHpPct}%`;
   if (monsterSpriteBox) {
     monsterSpriteBox.innerHTML = m.svg;
-    monsterSpriteBox.className = `w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center transition-transform duration-300 pet-float-anim ${
+    monsterSpriteBox.className = `w-24 h-24 sm:w-28 sm:h-28 flex items-center justify-center transition-transform duration-300 pet-float-anim ${
       arenaBattleState.isBoss ? 'scale-110 drop-shadow-[0_0_16px_rgba(244,63,94,0.75)]' : ''
     }`;
   }

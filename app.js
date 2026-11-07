@@ -1499,11 +1499,11 @@ function switchLevel(lvl) {
     const btn = document.getElementById(`lvl-btn-${i}`);
     if (btn) {
       if (i === lvl) {
-        btn.className = 'lvl-btn py-1.5 px-2.5 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700 min-w-[125px] sm:min-w-0 flex-shrink-0';
-        btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-amber-200';
+        btn.className = 'lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700 min-w-[105px] sm:min-w-0 flex-shrink-0';
+        btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-200 leading-tight';
       } else {
-        btn.className = 'lvl-btn py-1.5 px-2.5 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0';
-        btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-amber-600';
+        btn.className = 'lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[105px] sm:min-w-0 flex-shrink-0';
+        btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-600 leading-tight';
       }
     }
   });
@@ -1520,11 +1520,11 @@ function switchMathLevel(lvl) {
     const btn = document.getElementById(`math-lvl-btn-${i}`);
     if (btn) {
       if (i === lvl) {
-        btn.className = 'math-lvl-btn py-1.5 px-2.5 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-amber-500 text-white shadow-game-btn border-b-4 border-amber-700 min-w-[135px] sm:min-w-0 flex-shrink-0';
-        btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-amber-200';
+        btn.className = 'math-lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-amber-500 text-white shadow-game-btn border-b-4 border-amber-700 min-w-[115px] sm:min-w-0 flex-shrink-0';
+        btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-200 leading-tight';
       } else {
-        btn.className = 'math-lvl-btn py-1.5 px-2.5 rounded-2xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[135px] sm:min-w-0 flex-shrink-0';
-        btn.querySelector('span:last-child').className = 'text-[10px] font-bold text-amber-600';
+        btn.className = 'math-lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[115px] sm:min-w-0 flex-shrink-0';
+        btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-600 leading-tight';
       }
     }
   });
@@ -1606,9 +1606,9 @@ function renderCurrentContent() {
 
   if (isMath) {
     if (state.currentMathLevel === 5) {
-      gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto py-1';
+      gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-4xl mx-auto py-0.5';
     } else {
-      gridContainer.className = 'w-full flex flex-col gap-2.5 max-w-3xl mx-auto';
+      gridContainer.className = 'w-full flex flex-col gap-1.5 sm:gap-2 max-w-3xl mx-auto';
     }
 
     state.currentItems.forEach((item, index) => {
@@ -1616,69 +1616,69 @@ function renderCurrentContent() {
       card.id = `math-card-${index}`;
 
       if (item.type === 'decomposition') {
-        card.className = 'math-row-card bg-white rounded-3xl p-3.5 sm:p-5 border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center';
+        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center';
         card.innerHTML = `
-          <div class="w-14 sm:w-16 h-14 sm:h-16 rounded-2xl border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-2xl sm:text-3xl font-black text-slate-800 shadow-sm font-baloo">
+          <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl border-3 sm:border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-800 shadow-sm font-baloo">
             ${item.topNum}
           </div>
-          <svg class="w-24 sm:w-28 h-7 sm:h-8" viewBox="0 0 100 30">
+          <svg class="w-20 sm:w-24 h-6 sm:h-7" viewBox="0 0 100 30">
             <line x1="50" y1="0" x2="20" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
             <line x1="50" y1="0" x2="80" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
           </svg>
-          <div class="flex items-center gap-4 sm:gap-6 mt-0.5">
+          <div class="flex items-center gap-3 sm:gap-5 mt-0.5">
             ${item.missingSide === 'left' ? `
-              <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-12 sm:w-14 h-12 sm:h-14 text-center text-xl sm:text-2xl font-black rounded-2xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
+              <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-11 sm:w-12 h-11 sm:h-12 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
             ` : `
-              <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl border-3 sm:border-4 border-slate-700 bg-white flex items-center justify-center text-xl sm:text-2xl font-black text-slate-800">${item.leftNum}</div>
+              <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-xl border-3 border-slate-700 bg-white flex items-center justify-center text-lg sm:text-xl font-black text-slate-800">${item.leftNum}</div>
             `}
             ${item.missingSide === 'right' ? `
-              <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-12 sm:w-14 h-12 sm:h-14 text-center text-xl sm:text-2xl font-black rounded-2xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
+              <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-11 sm:w-12 h-11 sm:h-12 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
             ` : `
-              <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl border-3 sm:border-4 border-slate-700 bg-white flex items-center justify-center text-xl sm:text-2xl font-black text-slate-800">${item.rightNum}</div>
+              <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-xl border-3 border-slate-700 bg-white flex items-center justify-center text-lg sm:text-xl font-black text-slate-800">${item.rightNum}</div>
             `}
           </div>
-          <span id="math-feedback-${index}" class="text-xl mt-1.5 h-5"></span>
+          <span id="math-feedback-${index}" class="text-lg mt-1 h-4"></span>
         `;
       } else if (item.type === 'compare') {
-        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2.5 overflow-x-auto';
+        card.className = 'math-row-card bg-white rounded-2xl py-2 px-3 sm:py-2.5 sm:px-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2 overflow-x-auto';
         card.innerHTML = `
-          <div class="flex items-center whitespace-nowrap select-none font-baloo text-2xl sm:text-4xl">${item.htmlRow}</div>
+          <div class="flex items-center whitespace-nowrap select-none font-baloo text-2xl sm:text-3xl">${item.htmlRow}</div>
           <div class="flex items-center gap-1.5 whitespace-nowrap ml-auto">
-            <button type="button" onclick="selectCompareOption(${index}, '<')" id="cmp-${index}-lt" class="cmp-btn text-xl sm:text-2xl font-black w-10 sm:w-12 h-10 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300">&lt;</button>
-            <button type="button" onclick="selectCompareOption(${index}, '=')" id="cmp-${index}-eq" class="cmp-btn text-xl sm:text-2xl font-black w-10 sm:w-12 h-10 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300">=</button>
-            <button type="button" onclick="selectCompareOption(${index}, '>')" id="cmp-${index}-gt" class="cmp-btn text-xl sm:text-2xl font-black w-10 sm:w-12 h-10 sm:h-12 rounded-xl sm:rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300">&gt;</button>
+            <button type="button" onclick="selectCompareOption(${index}, '<')" id="cmp-${index}-lt" class="cmp-btn text-lg sm:text-xl font-black w-9 sm:w-11 h-9 sm:h-11 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300">&lt;</button>
+            <button type="button" onclick="selectCompareOption(${index}, '=')" id="cmp-${index}-eq" class="cmp-btn text-lg sm:text-xl font-black w-9 sm:w-11 h-9 sm:h-11 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300">=</button>
+            <button type="button" onclick="selectCompareOption(${index}, '>')" id="cmp-${index}-gt" class="cmp-btn text-lg sm:text-xl font-black w-9 sm:w-11 h-9 sm:h-11 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 border-2 border-amber-300">&gt;</button>
             <input type="hidden" id="math-input-${index}" value="">
-            <span id="math-feedback-${index}" class="text-xl ml-1.5 w-6 text-center"></span>
+            <span id="math-feedback-${index}" class="text-lg ml-1 w-5 text-center"></span>
           </div>
         `;
       } else if (item.isWordProblem) {
         const formulaText = item.formula || `${item.a} ${item.op} ${item.b} = ?`;
 
-        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border-3 border-amber-400 shadow-game-card flex flex-col items-center justify-center text-center gap-3 w-full';
+        card.className = 'math-row-card bg-white rounded-2xl py-2.5 px-3 sm:py-3 sm:px-4 border-3 border-amber-400 shadow-game-card flex flex-col items-center justify-center text-center gap-1.5 w-full';
         card.innerHTML = `
-          <div class="flex items-center justify-center gap-2 mb-1 flex-wrap">
-            <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-2.5 py-0.5 rounded-full">Slovní Úloha</span>
-            <button type="button" onclick="toggleWordProblemFormula(${index})" id="formula-toggle-btn-${index}" class="text-[10px] font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-0.5 rounded-full border border-slate-300 transition-colors">
+          <div class="flex items-center justify-center gap-2 flex-wrap">
+            <span class="text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full">Slovní Úloha</span>
+            <button type="button" onclick="toggleWordProblemFormula(${index})" id="formula-toggle-btn-${index}" class="text-[10px] font-black uppercase bg-slate-100 hover:bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full border border-slate-300 transition-colors">
               👁️ Zobrazit příklad
             </button>
           </div>
-          <p class="text-base sm:text-xl font-black text-slate-800 leading-relaxed font-nunito max-w-2xl mx-auto">${item.story}</p>
-          <div id="word-problem-formula-${index}" class="hidden text-xs font-black text-amber-900 bg-amber-100/90 border border-amber-300 px-3 py-1 rounded-xl inline-block mt-1">
+          <p class="text-sm sm:text-base font-black text-slate-800 leading-snug font-nunito max-w-2xl mx-auto">${item.story}</p>
+          <div id="word-problem-formula-${index}" class="hidden text-xs font-black text-amber-900 bg-amber-100/90 border border-amber-300 px-2.5 py-0.5 rounded-xl inline-block">
             Zápis příkladu: <strong>${formulaText}</strong>
           </div>
-          <div class="flex items-center justify-center gap-2 mt-2">
-            <span class="text-xs sm:text-sm font-black text-slate-600">Výsledek:</span>
-            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-16 sm:w-20 h-11 sm:h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
-            <span id="math-feedback-${index}" class="text-xl ml-1 w-6 text-center"></span>
+          <div class="flex items-center justify-center gap-2 mt-0.5">
+            <span class="text-xs font-black text-slate-600">Výsledek:</span>
+            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-14 sm:w-16 h-9 sm:h-10 text-center text-xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+            <span id="math-feedback-${index}" class="text-lg ml-1 w-5 text-center"></span>
           </div>
         `;
       } else {
-        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-3 sm:p-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2.5 overflow-x-auto';
+        card.className = 'math-row-card bg-white rounded-2xl py-2 px-3 sm:py-2.5 sm:px-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2 overflow-x-auto';
         card.innerHTML = `
-          <div class="flex items-center whitespace-nowrap select-none overflow-x-auto font-baloo text-2xl sm:text-4xl">${item.htmlRow}</div>
-          <div class="flex items-center gap-2 whitespace-nowrap ml-auto">
-            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-14 sm:w-16 h-10 sm:h-12 text-center text-xl sm:text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
-            <span id="math-feedback-${index}" class="text-xl ml-1 w-6 text-center"></span>
+          <div class="flex items-center whitespace-nowrap select-none overflow-x-auto font-baloo text-2xl sm:text-3xl">${item.htmlRow}</div>
+          <div class="flex items-center gap-1.5 whitespace-nowrap ml-auto">
+            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-13 sm:w-15 h-9 sm:h-11 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+            <span id="math-feedback-${index}" class="text-lg ml-1 w-5 text-center"></span>
           </div>
         `;
       }
@@ -1688,26 +1688,26 @@ function renderCurrentContent() {
   } else {
     const isSentence = state.currentLevel === 7;
     gridContainer.className = isSentence 
-      ? 'w-full grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 py-1'
-      : (state.gridCardCount === 10 ? 'w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-2.5 py-1' : 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 py-1');
+      ? 'w-full grid grid-cols-1 md:grid-cols-2 gap-2 py-0.5'
+      : (state.gridCardCount === 10 ? 'w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 py-0.5' : 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2 py-0.5');
 
     state.currentItems.forEach((item, index) => {
       const card = document.createElement('div');
-      const padClass = isSentence ? 'p-2.5 sm:p-3.5 min-h-[85px]' : 'p-2 sm:p-3 min-h-[110px]';
-      card.className = `letter-card bg-white rounded-2xl sm:rounded-3xl ${padClass} border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-amber-400 relative`;
+      const padClass = isSentence ? 'p-2 sm:p-2.5 min-h-[72px]' : 'p-2 sm:p-2.5 min-h-[86px] sm:min-h-[92px]';
+      card.className = `letter-card bg-white rounded-2xl ${padClass} border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-amber-400 relative`;
 
       const textDisplay = formatCase(item.text);
       let emojiHtml = '';
       if (state.showImages && item.emoji) {
-        emojiHtml = `<div class="h-6 sm:h-7 flex items-center justify-center mb-0.5 text-2xl sm:text-3xl select-none leading-none">${item.emoji}</div>`;
+        emojiHtml = `<div class="h-5 sm:h-6 flex items-center justify-center mb-0.5 text-xl sm:text-2xl select-none leading-none">${item.emoji}</div>`;
       } else if (state.showImages && item.svg) {
-        emojiHtml = `<div class="h-6 sm:h-7 flex items-center justify-center mb-0.5 select-none leading-none">${item.svg}</div>`;
+        emojiHtml = `<div class="h-5 sm:h-6 flex items-center justify-center mb-0.5 select-none leading-none">${item.svg}</div>`;
       }
 
       let speakerBtnHtml = '';
       if (state.showSpeechButton) {
         speakerBtnHtml = `
-          <button onclick="speakCardItem(event, '${item.text.replace(/'/g, "\\'")}')" class="absolute top-1.5 right-1.5 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-50 hover:bg-sky-100 text-sky-600 border border-slate-200 shadow-sm flex items-center justify-center text-xs" title="Výslovnost">
+          <button onclick="speakCardItem(event, '${item.text.replace(/'/g, "\\'")}')" class="absolute top-1 right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-slate-50 hover:bg-sky-100 text-sky-600 border border-slate-200 shadow-sm flex items-center justify-center text-[10px]" title="Výslovnost">
             🔊
           </button>
         `;
@@ -1717,7 +1717,7 @@ function renderCurrentContent() {
         ${speakerBtnHtml}
         ${emojiHtml}
         <div class="w-full flex items-center justify-center px-1">
-          <span class="text-2xl sm:text-4xl md:text-5xl font-black text-sky-800 game-font leading-tight select-none text-center">
+          <span class="text-xl sm:text-3xl md:text-4xl font-black text-sky-800 game-font leading-tight select-none text-center">
             ${textDisplay}
           </span>
         </div>
@@ -4322,14 +4322,14 @@ function renderDailyQuests() {
     const isTracker = !!quest.isTrackerOnly;
 
     const card = document.createElement('div');
-    card.className = `p-3 sm:p-4 rounded-3xl border-3 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all ${
+    card.className = `p-2 sm:p-2.5 rounded-2xl border-2 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${
       quest.claimed || (isTracker && isDone)
         ? 'bg-emerald-50/60 border-emerald-300 opacity-90' 
         : isDone 
-          ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-400 ring-2 ring-emerald-300 shadow-lg' 
+          ? 'bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-emerald-400 ring-2 ring-emerald-300 shadow-md' 
           : isTracker
-            ? 'bg-slate-50 border-slate-200 hover:border-indigo-300 hover:shadow-md cursor-pointer'
-            : 'bg-white border-indigo-200 hover:border-indigo-400 hover:shadow-lg cursor-pointer'
+            ? 'bg-slate-50 border-slate-200 hover:border-indigo-300 hover:shadow-sm cursor-pointer'
+            : 'bg-white border-indigo-200 hover:border-indigo-400 hover:shadow-md cursor-pointer'
     }`;
 
     if (!isDone) {
@@ -4340,17 +4340,17 @@ function renderDailyQuests() {
     if (isTracker) {
       if (isDone) {
         actionHtml = `
-          <div class="flex items-center gap-1.5 text-emerald-800 font-black text-xs sm:text-sm bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-2xl self-start sm:self-auto">
+          <div class="flex items-center gap-1.5 text-emerald-800 font-black text-xs bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-xl self-start sm:self-auto">
             <span>✅</span> SPLNĚNO DNES
           </div>
         `;
       } else {
         actionHtml = `
-          <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
-            <span class="text-[10px] font-extrabold text-slate-500 bg-slate-200/80 px-2.5 py-0.5 rounded-xl block">
-              📋 Přehled aktivity
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <span class="text-[10px] font-extrabold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-lg">
+              📋 Přehled
             </span>
-            <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-slate-700 hover:bg-slate-800 text-white px-3 py-1 rounded-xl shadow-sm flex items-center gap-1">
+            <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-slate-700 hover:bg-slate-800 text-white px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
               Přejít ➡️
             </button>
           </div>
@@ -4358,23 +4358,23 @@ function renderDailyQuests() {
       }
     } else if (quest.claimed) {
       actionHtml = `
-        <div class="flex items-center gap-1.5 text-emerald-700 font-black text-xs sm:text-sm bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-2xl self-start sm:self-auto">
+        <div class="flex items-center gap-1.5 text-emerald-700 font-black text-xs bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-xl self-start sm:self-auto">
           <span>✅</span> SPLNĚNO (+${formatMinutes(qRate)} ⭐ & 🔥)
         </div>
       `;
     } else if (isDone) {
       actionHtml = `
-        <button onclick="event.stopPropagation(); claimQuestReward('${quest.id}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-2 rounded-2xl border-b-4 border-emerald-700 text-xs sm:text-sm shadow-game-btn flex items-center gap-1.5 self-start sm:self-auto animate-bounce">
+        <button onclick="event.stopPropagation(); claimQuestReward('${quest.id}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl border-b-4 border-emerald-700 text-xs shadow-game-btn flex items-center gap-1.5 self-start sm:self-auto animate-bounce">
           <span>🎁</span> VYZVEDNOUT +${formatMinutes(qRate)}!
         </button>
       `;
     } else {
       actionHtml = `
-        <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
-          <span class="text-[11px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2.5 py-0.5 rounded-xl block">
-            Odměna: +${formatMinutes(qRate)} ⭐ + 🔥 Řada
+        <div class="flex items-center gap-2 self-start sm:self-auto">
+          <span class="text-[10px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2 py-0.5 rounded-lg">
+            +${formatMinutes(qRate)} ⭐ + 🔥
           </span>
-          <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-xl shadow-sm flex items-center gap-1">
+          <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
             Trénovat ➡️
           </button>
         </div>
@@ -4382,19 +4382,19 @@ function renderDailyQuests() {
     }
 
     card.innerHTML = `
-      <div class="flex items-start gap-3 flex-grow">
-        <span class="text-3xl ${isTracker ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'} p-1.5 rounded-2xl border">${quest.icon}</span>
+      <div class="flex items-center gap-2.5 flex-grow">
+        <span class="text-2xl ${isTracker ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'} p-1.5 rounded-xl border">${quest.icon}</span>
         <div class="flex-grow">
-          <div class="flex items-center flex-wrap gap-2">
-            <h4 class="font-black text-slate-800 text-sm sm:text-base">${quest.title}</h4>
-            ${isDone ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Hotovo!</span>' : '<span class="bg-amber-100 text-amber-800 text-[9px] font-black px-2 py-0.5 rounded-full uppercase">Chybí splnit</span>'}
+          <div class="flex items-center flex-wrap gap-1.5">
+            <h4 class="font-black text-slate-800 text-xs sm:text-sm">${quest.title}</h4>
+            ${isDone ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Hotovo!</span>' : '<span class="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Chybí splnit</span>'}
+            <span class="text-[10px] font-extrabold text-slate-500 ml-auto sm:ml-2">
+              <span class="text-indigo-700">${quest.progress}/${quest.target}</span> (${percent}%)
+            </span>
           </div>
-          <p class="text-[11px] text-slate-600 font-bold mt-0.5">${quest.desc}</p>
-          <div class="mt-1.5 w-full max-w-md bg-slate-200 rounded-full h-2.5 overflow-hidden border border-slate-300">
+          <p class="text-[11px] text-slate-600 font-bold leading-tight">${quest.desc}</p>
+          <div class="mt-1 w-full max-w-md bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300">
             <div class="bg-gradient-to-r ${isDone ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-purple-500'} h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
-          </div>
-          <div class="text-[10px] font-extrabold text-slate-500 mt-0.5">
-            Postup: <span class="text-indigo-700">${quest.progress} / ${quest.target}</span> (${percent}%)
           </div>
         </div>
       </div>
@@ -4602,8 +4602,10 @@ function alertUserFeedback(msg) {
 
 function openParentModal() {
   const modal = document.getElementById('parent-pin-modal');
+  const challenge = document.getElementById('math-challenge');
   const err = document.getElementById('pin-error');
   const input = document.getElementById('pin-input');
+  if (challenge) challenge.classList.add('hidden');
   if (err) err.classList.add('hidden');
   if (input) input.value = '';
 
