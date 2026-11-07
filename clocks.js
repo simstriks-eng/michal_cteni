@@ -126,10 +126,10 @@ function renderClockSection() {
       </div>
 
       <!-- HLAVNÍ MŘÍŽKA -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 items-stretch w-full">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-stretch w-full">
         
         <!-- LEVÝ PANEL -->
-        <div class="lg:col-span-3 flex flex-col gap-2">
+        <div class="md:col-span-3 flex flex-col gap-2">
           <div class="w-full flex flex-col gap-2 bg-white p-2.5 sm:p-3 rounded-2xl border-3 border-amber-300 shadow-md h-full justify-center">
             
             <div class="w-full flex flex-col gap-1 p-2.5 bg-gradient-to-r from-purple-100 to-indigo-100 rounded-xl border-2 border-purple-300 text-xs font-black text-purple-950">
@@ -155,8 +155,8 @@ function renderClockSection() {
         </div>
 
         <!-- PRAVÝ PANEL -->
-        <div class="lg:col-span-9 flex flex-col items-center justify-between bg-white p-2.5 sm:p-3.5 rounded-2xl border-3 border-amber-300 shadow-md w-full">
-          <div id="clock-display-main-box" class="flex flex-col lg:flex-row items-center justify-center gap-4 w-full min-h-[200px] sm:min-h-[220px] my-auto">
+        <div class="md:col-span-9 flex flex-col items-center justify-between bg-white p-2.5 sm:p-3.5 rounded-2xl border-3 border-amber-300 shadow-md w-full">
+          <div id="clock-display-main-box" class="flex flex-col md:flex-row items-center justify-center gap-4 w-full min-h-[200px] sm:min-h-[220px] my-auto">
             <!-- Vykreslí se dynamicky -->
           </div>
           <div class="text-center mt-1.5">

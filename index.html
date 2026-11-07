@@ -56,6 +56,14 @@
       padding-right: env(safe-area-inset-right);
       transition: background 0.4s ease, color 0.3s ease;
     }
+    @media (min-width: 768px) {
+      html, body {
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+    }
 
     /* PŮVODNÍ BAREVNÁ TÉMATA */
     body.theme-sky {
@@ -292,12 +300,12 @@
     }
   </style>
 </head>
-<body id="app-body" class="theme-sky min-h-screen text-slate-800 flex flex-col justify-between overflow-x-hidden">
+<body id="app-body" class="theme-sky min-h-[100dvh] md:h-[100dvh] md:max-h-[100dvh] text-slate-800 flex flex-col justify-between overflow-x-hidden md:overflow-hidden">
 
   <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
 
   <!-- Top Navigation (Optimalizováno pro iPad 11" na šířku - 2 symetrické řádky bez spodní bílé lišty) -->
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-3 border-amber-300 shadow-sm header-safe py-1.5">
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-3 border-amber-300 shadow-sm header-safe py-1 flex-shrink-0">
     <div class="max-w-6xl mx-auto flex flex-wrap items-start justify-between gap-2">
       
       <!-- LEVÝ BLOK: 1. řada Avatar + Pet | 2. řada Řada + Truhla + Úkoly + Obchod -->
@@ -396,13 +404,13 @@
     </div>
   </header>
 
-  <main class="max-w-6xl w-full mx-auto px-2 sm:px-3 py-1.5 flex-grow flex flex-col">
+  <main class="max-w-6xl w-full mx-auto px-2 sm:px-3 py-1 flex-grow flex flex-col min-h-0 md:overflow-hidden">
 
     <!-- VIEW 1: LEARNING / MISSIONS -->
-    <section id="view-learn" class="flex-grow flex flex-col justify-between space-y-1.5">
+    <section id="view-learn" class="flex-grow flex flex-col justify-between gap-1 min-h-0">
       
       <!-- SUB-NAV 1: ČTENÍ -->
-      <div id="reading-tabs-container" class="bg-white/95 p-1 rounded-2xl shadow-sm border-2 border-sky-200 overflow-x-auto no-scrollbar">
+      <div id="reading-tabs-container" class="bg-white/95 p-1 rounded-2xl shadow-sm border-2 border-sky-200 overflow-x-auto no-scrollbar flex-shrink-0">
         <div class="flex md:grid md:grid-cols-4 lg:grid-cols-8 gap-1 min-w-max md:min-w-0">
           <button onclick="switchLevel(1)" id="lvl-btn-1" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-sky-500 text-white shadow-game-btn border-b-3 border-sky-700 min-w-[115px] sm:min-w-0 flex-shrink-0">
             <span>🔤 1. Písmena</span>
@@ -440,7 +448,7 @@
       </div>
 
       <!-- SUB-NAV 2: MATEMATIKA -->
-      <div id="math-tabs-container" class="hidden bg-white/95 p-1 rounded-2xl shadow-sm border-2 border-amber-200 overflow-x-auto no-scrollbar">
+      <div id="math-tabs-container" class="hidden bg-white/95 p-1 rounded-2xl shadow-sm border-2 border-amber-200 overflow-x-auto no-scrollbar flex-shrink-0">
         <div class="flex md:grid md:grid-cols-4 lg:grid-cols-7 gap-1 min-w-max md:min-w-0">
           <button onclick="switchMathLevel(1)" id="math-lvl-btn-1" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-amber-500 text-white shadow-game-btn border-b-3 border-amber-700 min-w-[125px] sm:min-w-0 flex-shrink-0">
             <span id="math-tab-1-title">🍎 1. Obrázkové počty</span>
@@ -474,7 +482,7 @@
       </div>
 
       <!-- Control Bar -->
-      <div id="general-control-bar" class="flex flex-wrap items-center justify-between gap-2 bg-white/90 px-3 py-1 rounded-2xl border-2 border-amber-200 shadow-sm">
+      <div id="general-control-bar" class="flex flex-wrap items-center justify-between gap-2 bg-white/90 px-3 py-1 rounded-2xl border-2 border-amber-200 shadow-sm flex-shrink-0">
         
         <div id="control-case-wrapper" class="flex items-center gap-1.5">
           <span class="text-xs font-bold text-slate-600">Písmo:</span>
@@ -519,7 +527,7 @@
       </div>
 
       <!-- Main Interactive Content Area -->
-      <div class="flex-grow flex flex-col justify-center items-center min-h-0">
+      <div class="flex-grow flex flex-col justify-center items-center min-h-0 overflow-y-auto no-scrollbar">
         <div id="content-grid-view" class="w-full py-0.5"></div>
 
         <!-- SPECIAL VIEW: HLÁSKOVÁNÍ A ROZKLAD SLOV -->
@@ -663,12 +671,12 @@
       </div>
 
       <!-- FOOTER 1: HODNOCENÍ ČTENÍ -->
-      <div id="reading-review-panel" class="bg-white/95 rounded-2xl p-2 sm:p-2.5 border-3 border-emerald-400 shadow-lg">
+      <div id="reading-review-panel" class="bg-white/95 rounded-2xl p-1.5 sm:p-2 border-3 border-emerald-400 shadow-lg flex-shrink-0">
         <div class="text-center mb-1">
           <p class="text-[10px] uppercase font-black tracking-wider text-slate-500 leading-none" id="reading-review-prompt">Hodnocení rodiče (Poslechni si čtení syna):</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button onclick="parentReview(false)" class="game-button bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-2 px-4 rounded-xl border-b-3 border-amber-600 text-xs sm:text-base flex items-center justify-center gap-2 shadow-sm">
+          <button onclick="parentReview(false)" class="game-button bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-1.5 px-4 rounded-xl border-b-3 border-amber-600 text-xs sm:text-base flex items-center justify-center gap-2 shadow-sm">
             <span class="text-lg sm:text-xl">🔄</span>
             <div class="text-left leading-tight">
               <div>DALŠÍ POKUS</div>
@@ -678,7 +686,7 @@
 
           <!-- POTVRZOVACÍ ZÓNA: HLAVNÍ ZELENÉ TLAČÍTKO + MENŠÍ ŠEDÉ TLAČÍTKO PRO SPLNĚNÍ BEZ MINUT -->
           <div class="flex items-stretch gap-2">
-            <button onclick="parentReview(true)" id="btn-review-success" class="game-button flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 px-4 rounded-xl border-b-3 border-emerald-700 text-xs sm:text-base flex items-center justify-center gap-2 shadow-sm">
+            <button onclick="parentReview(true)" id="btn-review-success" class="game-button flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 px-4 rounded-xl border-b-3 border-emerald-700 text-xs sm:text-base flex items-center justify-center gap-2 shadow-sm">
               <span class="text-lg sm:text-xl">🎉</span>
               <div class="text-left leading-tight">
                 <div id="reading-success-title">PŘEČTENO SPRÁVNĚ!</div>
@@ -686,8 +694,8 @@
               </div>
             </button>
 
-            <button onclick="parentReviewOnlyQuest()" id="btn-review-quest-only" title="Započíst do Daily misí bez přičtení minut" class="game-button flex-shrink-0 bg-slate-500 hover:bg-slate-600 active:bg-slate-700 text-white font-black px-3 py-2 rounded-xl border-b-3 border-slate-700 flex flex-col items-center justify-center gap-0.5 shadow-sm min-w-[68px] sm:min-w-[80px]">
-              <span class="text-base leading-none">📋</span>
+            <button onclick="parentReviewOnlyQuest()" id="btn-review-quest-only" title="Započíst do Daily misí bez přičtení minut" class="game-button flex-shrink-0 bg-slate-500 hover:bg-slate-600 active:bg-slate-700 text-white font-black px-3 py-1.5 rounded-xl border-b-3 border-slate-700 flex flex-col items-center justify-center gap-0.5 shadow-sm min-w-[68px] sm:min-w-[80px]">
+              <span class="text-sm leading-none">📋</span>
               <span class="text-[9px] sm:text-[10px] leading-tight font-black uppercase tracking-wider text-center">Jen mise</span>
               <span class="text-[8px] font-bold text-slate-300 leading-none">0 min</span>
             </button>
@@ -696,7 +704,7 @@
       </div>
 
       <!-- FOOTER 2: VYHODNOCENÍ MATEMATIKY -->
-      <div id="math-eval-panel" class="hidden bg-white/95 rounded-2xl p-2 sm:p-2.5 border-3 border-amber-400 shadow-lg">
+      <div id="math-eval-panel" class="hidden bg-white/95 rounded-2xl p-1.5 sm:p-2 border-3 border-amber-400 shadow-lg flex-shrink-0">
         <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
           <div class="flex items-center gap-2">
             <span class="text-xl sm:text-2xl">🧮</span>
@@ -706,10 +714,10 @@
             </div>
           </div>
           <div class="flex items-center gap-2 w-full sm:w-auto">
-            <button onclick="generateLessonItems()" class="game-button w-1/3 sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-black py-2 px-3 rounded-xl border-b-3 border-slate-400 text-xs sm:text-sm flex items-center justify-center gap-1 shadow-sm">
+            <button onclick="generateLessonItems()" class="game-button w-1/3 sm:w-auto bg-slate-200 hover:bg-slate-300 text-slate-700 font-black py-1.5 px-3 rounded-xl border-b-3 border-slate-400 text-xs sm:text-sm flex items-center justify-center gap-1 shadow-sm">
               <span>🔄</span> Nové
             </button>
-            <button onclick="evaluateMathTasks()" id="btn-math-eval" class="game-button flex-grow sm:flex-grow-0 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 px-5 rounded-xl border-b-3 border-emerald-700 text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm">
+            <button onclick="evaluateMathTasks()" id="btn-math-eval" class="game-button flex-grow sm:flex-grow-0 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 px-5 rounded-xl border-b-3 border-emerald-700 text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm">
               <span>✅</span> ZKONTROLOVAT VÝSLEDKY
             </button>
           </div>
@@ -719,7 +727,7 @@
     </section>
 
     <!-- VIEW: TEST (DENNÍ PÍSEMKA) -->
-    <section id="view-test" class="hidden flex-grow flex flex-col space-y-3">
+    <section id="view-test" class="hidden flex-grow flex flex-col space-y-2.5 min-h-0 overflow-y-auto no-scrollbar">
       <div class="bg-gradient-to-r from-purple-700 via-indigo-700 to-sky-600 text-white p-4 sm:p-5 rounded-3xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-3">
         <div>
           <div class="flex items-center gap-2">
@@ -850,8 +858,8 @@
     </section>
 
     <!-- VIEW 2: DAILY QUESTS & STREAK -->
-    <section id="view-quests" class="hidden flex-grow flex flex-col space-y-2">
-      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-4 py-2.5 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-2">
+    <section id="view-quests" class="hidden flex-grow flex flex-col space-y-2 min-h-0 overflow-y-auto no-scrollbar">
+      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-4 py-2 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-2 flex-shrink-0">
         <div class="flex items-center gap-3 flex-wrap">
           <h2 class="text-lg sm:text-xl font-black font-baloo leading-tight">Denní Výzvy 📋</h2>
           <span class="text-[10px] bg-amber-400 text-indigo-950 font-black px-2 py-0.5 rounded-full" id="quests-date-display">Dnes</span>
@@ -862,7 +870,7 @@
         </button>
       </div>
 
-      <div class="flex items-center gap-2 p-1 bg-white/90 rounded-2xl border-2 border-indigo-200 shadow-sm">
+      <div class="flex items-center gap-2 p-1 bg-white/90 rounded-2xl border-2 border-indigo-200 shadow-sm flex-shrink-0">
         <button onclick="switchQuestsSubTab('tasks')" id="subtab-btn-tasks" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5">
           <span>📋</span> Seznam Úkolů (<span id="quests-subtab-badge">0/5</span>)
         </button>
@@ -904,8 +912,8 @@
     </section>
 
     <!-- VIEW 3: STORE (PŘEHLEDNÝ OBCHOD S BOČNÍM MENU VLEVO JAKO V ADMIN MÓDU) -->
-    <section id="view-store" class="hidden flex-grow flex flex-col">
-      <div class="bg-white rounded-3xl border-4 border-pink-500 shadow-2xl flex-grow flex flex-col overflow-hidden max-h-[calc(100dvh-110px)]">
+    <section id="view-store" class="hidden flex-grow flex flex-col min-h-0">
+      <div class="bg-white rounded-3xl border-4 border-pink-500 shadow-2xl flex-grow flex flex-col overflow-hidden min-h-0">
         
         <!-- Horní lišta Obchodu -->
         <div class="flex items-center justify-between border-b px-4 py-2 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 text-white flex-shrink-0">
@@ -1199,7 +1207,7 @@
     </section>
 
     <!-- VIEW 5: PET RPG ARÉNA SPOLEČNÍKŮ (Optimalizováno pro iPad 11" na šířku bez scrollování) -->
-    <section id="view-arena" class="hidden flex-grow flex flex-col space-y-2">
+    <section id="view-arena" class="hidden flex-grow flex flex-col space-y-2 min-h-0 overflow-y-auto no-scrollbar">
       <!-- Horní lišta Arény: Symetrická hlavička (ARÉNA + Patro + Limit | Vyměň PETA | Krmivo + Oživení + Lístky) -->
       <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-3.5 py-2 rounded-2xl border-3 border-amber-400 shadow-lg flex flex-wrap items-center justify-between gap-2">
         <!-- Levá část: Nápis ARÉNA + Patro (Stage) + Denní limit -->
@@ -2491,16 +2499,12 @@
     </div>
   </div>
 
-  <footer class="py-0.5 px-4 text-center text-sky-800/75 text-[10px] font-bold leading-tight">
-    Školácká mise pro 1. třídu ZŠ • Vzdělávací metodika českého slabikáře, fonetické analýzy a matematiky RVP ❤️
-  </footer>
-
   <!-- Načtení všech modulů v přesném pořadí závislostí (s cache-busting verzí pro GitHub Pages) -->
-  <script src="data.js?v=5.5"></script>
-  <script src="audio.js?v=5.5"></script>
-  <script src="wardrobe.js?v=5.5"></script>
-  <script src="clocks.js?v=5.5"></script>
-  <script src="petSystem.js?v=5.5"></script>
-  <script src="app.js?v=5.5"></script>
+  <script src="data.js?v=5.6"></script>
+  <script src="audio.js?v=5.6"></script>
+  <script src="wardrobe.js?v=5.6"></script>
+  <script src="clocks.js?v=5.6"></script>
+  <script src="petSystem.js?v=5.6"></script>
+  <script src="app.js?v=5.6"></script>
 </body>
 </html>
