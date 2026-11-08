@@ -1458,26 +1458,7 @@ function triggerArenaAttackModal(attackType) {
   }`;
 
   if (task.subject === 'reading') {
-    const formatted = typeof formatCase === 'function' ? formatCase(task.promptText) : task.promptText;
-    body.innerHTML = `
-      <div class="text-xs font-bold text-slate-400 uppercase mb-1">${task.subLabel || 'Čtení'}</div>
-      <div class="bg-slate-50 border-3 border-indigo-200 rounded-3xl p-5 my-2 relative">
-        <button onclick="speakCzechWord('${task.promptText.replace(/'/g, "\\'")}', 0.8)" class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-teal-100 hover:bg-teal-200 text-teal-800 flex items-center justify-center text-base shadow-sm" title="Přehrát výslovnost">
-          🔊
-        </button>
-        <div class="text-3xl sm:text-5xl font-black text-indigo-950 game-font tracking-wide break-words py-2">
-          ${formatted}
-        </div>
-      </div>
-      <div class="grid grid-cols-2 gap-3 w-full mt-4">
-        <button onclick="resolveArenaTaskTurn(false)" class="game-button bg-rose-500 hover:bg-rose-600 text-white font-black py-3 rounded-2xl border-b-4 border-rose-700 text-sm">
-          ❌ Chyba
-        </button>
-        <button onclick="resolveArenaTaskTurn(true)" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl border-b-4 border-emerald-700 text-sm">
-          ✅ Přečteno! ⚡
-        </button>
-      </div>
-    `;
+    renderArenaReadingTaskBody();
   } else {
     const promptMarkup = task.mathKind === 'story'
       ? `<p class="text-base sm:text-xl font-black text-slate-800 leading-relaxed mb-3">${task.storyText}</p>`
@@ -1511,6 +1492,52 @@ function triggerArenaAttackModal(attackType) {
 
   modal.classList.remove('hidden');
   if (typeof playTone === 'function') playTone(540, 0.08, 'sine', 0.15);
+}
+
+function renderArenaReadingTaskBody() {
+  const body = document.getElementById('arena-modal-task-body');
+  const task = arenaBattleState.activeTask;
+  if (!body || !task || task.subject !== 'reading') return;
+
+  const arcsActive = !!(window.state && window.state.showSyllableArcs);
+  const formattedHtml = (typeof renderReadingTextHtml === 'function')
+    ? renderReadingTextHtml(task.promptText, { forceEnableArcs: arcsActive, arcColor: '#e11d48' })
+    : (typeof formatCase === 'function' ? formatCase(task.promptText) : task.promptText);
+
+  body.innerHTML = `
+    <div class="flex items-center justify-between gap-2 mb-1 px-1">
+      <span class="text-xs font-bold text-slate-400 uppercase">${task.subLabel || 'Čtení'}</span>
+      <button type="button" onclick="toggleArenaSyllableArcs()" class="game-button px-2.5 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1 shadow-sm ${arcsActive ? 'bg-rose-500 text-white' : 'bg-slate-200 text-slate-700 hover:bg-slate-300'}">
+        <span>◡◡</span>
+        <span>${arcsActive ? 'Slabiky: ZAP' : 'Slabiky: VYP'}</span>
+      </button>
+    </div>
+    <div class="bg-slate-50 border-3 border-indigo-200 rounded-3xl p-5 my-2 relative">
+      <button onclick="speakCzechWord('${task.promptText.replace(/'/g, "\\'")}', 0.8)" class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-teal-100 hover:bg-teal-200 text-teal-800 flex items-center justify-center text-base shadow-sm" title="Přehrát výslovnost">
+        🔊
+      </button>
+      <div class="text-3xl sm:text-5xl font-black text-indigo-950 game-font tracking-wide break-words py-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        ${formattedHtml}
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 w-full mt-4">
+      <button onclick="resolveArenaTaskTurn(false)" class="game-button bg-rose-500 hover:bg-rose-600 text-white font-black py-3 rounded-2xl border-b-4 border-rose-700 text-sm">
+        ❌ Chyba
+      </button>
+      <button onclick="resolveArenaTaskTurn(true)" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl border-b-4 border-emerald-700 text-sm">
+        ✅ Přečteno! ⚡
+      </button>
+    </div>
+  `;
+}
+
+function toggleArenaSyllableArcs() {
+  if (typeof toggleSyllableArcs === 'function') {
+    toggleSyllableArcs();
+  } else if (window.state) {
+    window.state.showSyllableArcs = !window.state.showSyllableArcs;
+  }
+  renderArenaReadingTaskBody();
 }
 
 function closeArenaTaskModal() {

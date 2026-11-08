@@ -2,7 +2,7 @@
    audio.js - Školácká Mise
    Zvukový modul:
    - Web Audio API syntezátor (Pikachu, fanfáry, Sonic ring, Minecraft XP)
-   - Pedagogická česká výslovnost pro 1. třídu ZŠ (TTS)
+   - Česká výslovnost pro 1. třídu ZŠ (Web Speech API)
    ============================================================ */
 
 let audioCtx = null;
@@ -138,25 +138,33 @@ function soundChestOpening() {
 }
 
 /* ============================================================
-   ČESKÁ VÝUKOVÁ VÝSLOVNOST (TTS)
+   PŮVODNÍ ČESKÁ VÝUKOVÁ VÝSLOVNOST (WEB SPEECH API)
    ============================================================ */
+
+function stopAllTtsPlayback() {
+  if ('speechSynthesis' in window) {
+    try {
+      window.speechSynthesis.cancel();
+    } catch (e) {}
+  }
+}
 
 function sanitizeForCzechPedagogicalTTS(text) {
   if (!text) return '';
   let clean = text.trim();
   if (clean.includes(' ')) return clean.toLowerCase();
 
-  if (clean.length === 1) {
+  if (clean.length === 1 || clean.toUpperCase() === 'CH') {
     const singleLetterSounds = {
-      'A': 'á', 'Á': 'á', 'B': 'bé', 'C': 'cé', 'Č': 'čé',
-      'D': 'dé', 'Ď': 'ďé', 'E': 'é', 'É': 'é', 'Ě': 'je',
-      'F': 'ef', 'G': 'gé', 'H': 'há', 'CH': 'chá', 'I': 'í',
+      'A': 'a', 'Á': 'á', 'B': 'bé', 'C': 'cé', 'Č': 'čé',
+      'D': 'dé', 'Ď': 'ďé', 'E': 'e', 'É': 'é', 'Ě': 'je',
+      'F': 'ef', 'G': 'gé', 'H': 'há', 'CH': 'chá', 'I': 'i',
       'Í': 'í', 'J': 'jé', 'K': 'ká', 'L': 'el', 'M': 'em',
-      'N': 'en', 'Ň': 'eň', 'O': 'ó', 'Ó': 'ó', 'P': 'pé',
+      'N': 'en', 'Ň': 'eň', 'O': 'o', 'Ó': 'ó', 'P': 'pé',
       'Q': 'kvé', 'R': 'er', 'Ř': 'eř', 'S': 'es', 'Š': 'eš',
-      'T': 'té', 'Ť': 'ťé', 'U': 'ú', 'Ú': 'ú', 'Ů': 'ú',
-      'V': 'vé', 'W': 'dvojité vé', 'X': 'iks', 'Y': 'ypsilon',
-      'Ý': 'dlouhé ypsilon', 'Z': 'zet', 'Ž': 'žet'
+      'T': 'té', 'Ť': 'ťé', 'U': 'u', 'Ú': 'ú', 'Ů': 'ú',
+      'V': 'vé', 'W': 'dvojité vé', 'X': 'iks', 'Y': 'y',
+      'Ý': 'ý', 'Z': 'zet', 'Ž': 'žet'
     };
     const u = clean.toUpperCase();
     return singleLetterSounds[u] || clean.toLowerCase();
@@ -178,21 +186,39 @@ function sanitizeForCzechPedagogicalTTS(text) {
   return phonetic;
 }
 
-function speakCzechWordWithCallback(text, rateModifier = 0.8, onEndCallback = null) {
+function getBestCzechSystemVoice() {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices() || [];
+  const czechVoices = voices.filter(v =>
+    v.lang.toLowerCase().startsWith('cs') ||
+    v.lang.toLowerCase().includes('czech') ||
+    v.name.toLowerCase().includes('zuzana') ||
+    v.name.toLowerCase().includes('vlasta') ||
+    v.name.toLowerCase().includes('antonin') ||
+    v.name.toLowerCase().includes('antonín')
+  );
+  return czechVoices.length > 0 ? czechVoices[0] : null;
+}
+
+function speakCzechWordWithCallback(text, rateModifier = 0.78, onEndCallback = null, options = {}) {
+  const cancelPrevious = options.cancelPrevious !== undefined ? options.cancelPrevious : true;
+  const maxTimeoutMs = options.maxTimeoutMs || 2200;
+
   if (!('speechSynthesis' in window)) {
-    if (onEndCallback) setTimeout(onEndCallback, 600);
+    if (onEndCallback) setTimeout(onEndCallback, 350);
     return;
   }
   try {
-    window.speechSynthesis.cancel();
+    if (cancelPrevious) {
+      window.speechSynthesis.cancel();
+    }
     const speechText = sanitizeForCzechPedagogicalTTS(text);
     const utterance = new SpeechSynthesisUtterance(speechText);
     utterance.lang = 'cs-CZ';
-    utterance.rate = rateModifier; 
-    utterance.pitch = 1.0;
-    
-    const voices = window.speechSynthesis.getVoices();
-    const czechVoice = voices.find(v => v.lang.startsWith('cs') || v.lang.includes('Czech') || v.lang.includes('cs_CZ'));
+    utterance.rate = Math.min(2.0, Math.max(0.5, rateModifier));
+    utterance.pitch = 1.05;
+
+    const czechVoice = getBestCzechSystemVoice();
     if (czechVoice) utterance.voice = czechVoice;
 
     let handled = false;
@@ -203,12 +229,12 @@ function speakCzechWordWithCallback(text, rateModifier = 0.8, onEndCallback = nu
       if (!handled) { handled = true; if (onEndCallback) onEndCallback(); }
     };
     window.speechSynthesis.speak(utterance);
-    setTimeout(() => { if (!handled) { handled = true; if (onEndCallback) onEndCallback(); } }, 2500);
+    setTimeout(() => { if (!handled) { handled = true; if (onEndCallback) onEndCallback(); } }, maxTimeoutMs);
   } catch (e) {
     if (onEndCallback) onEndCallback();
   }
 }
 
-function speakCzechWord(text, rateModifier = 0.8) {
+function speakCzechWord(text, rateModifier = 0.78) {
   speakCzechWordWithCallback(text, rateModifier, null);
 }

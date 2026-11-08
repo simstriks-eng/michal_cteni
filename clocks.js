@@ -79,6 +79,16 @@ function renderClockSection() {
     return;
   }
 
+  const activeSubClass = 'py-1 px-2.5 rounded-xl font-black text-xs transition-all bg-amber-500 text-white shadow-sm';
+  const inactiveSubClass = 'py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100';
+
+  const activeDispClass = 'py-1 px-2.5 rounded-lg font-black text-xs transition-all bg-amber-500 text-white shadow-sm';
+  const inactiveDispClass = 'py-1 px-2.5 rounded-lg font-black text-xs transition-all text-slate-700 hover:bg-amber-100';
+
+  const getFilterClass = (key) => clockState.timeFilter === key
+    ? 'py-1 px-2.5 rounded-xl bg-sky-600 text-white shadow-sm transition-all text-xs font-black text-center'
+    : 'py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center';
+
   // Standardní zobrazení hodin (záložky 1, 2, 3)
   container.innerHTML = `
     <div class="w-full max-w-7xl mx-auto flex flex-col gap-1.5 sm:gap-2 px-1 sm:px-2">
@@ -86,25 +96,25 @@ function renderClockSection() {
       <!-- HORNÍ LIŠTA: Úroveň + Přepínač Analog/Digitál -->
       <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-2 p-1.5 bg-white rounded-2xl border-2 border-amber-300 shadow-sm">
         <div class="w-full sm:w-auto flex items-center gap-1 flex-wrap">
-          <button onclick="switchClockSubLevel(1)" id="clock-sub-btn-1" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all bg-amber-500 text-white shadow-sm">
+          <button onclick="switchClockSubLevel(1)" id="clock-sub-btn-1" class="${clockState.currentSubLevel === 1 ? activeSubClass : inactiveSubClass}">
             ⏰ 1. Celé hodiny
           </button>
-          <button onclick="switchClockSubLevel(2)" id="clock-sub-btn-2" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">
+          <button onclick="switchClockSubLevel(2)" id="clock-sub-btn-2" class="${clockState.currentSubLevel === 2 ? activeSubClass : inactiveSubClass}">
             ⏱️ 2. Velká ruč.
           </button>
-          <button onclick="switchClockSubLevel(3)" id="clock-sub-btn-3" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">
+          <button onclick="switchClockSubLevel(3)" id="clock-sub-btn-3" class="${clockState.currentSubLevel === 3 ? activeSubClass : inactiveSubClass}">
             🎯 3. Kombinace
           </button>
-          <button onclick="switchClockSubLevel(4)" id="clock-sub-btn-4" class="py-1 px-2.5 rounded-xl font-black text-xs transition-all text-slate-700 hover:bg-slate-100">
+          <button onclick="switchClockSubLevel(4)" id="clock-sub-btn-4" class="${clockState.currentSubLevel === 4 ? activeSubClass : inactiveSubClass}">
             🧠 4. Jak dlouho co trvá?
           </button>
         </div>
 
         <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border-2 border-amber-300 shadow-inner flex-shrink-0">
-          <button onclick="switchClockDisplayType('analog')" id="display-type-btn-analog" class="py-1 px-2.5 rounded-lg font-black text-xs transition-all bg-amber-500 text-white shadow-sm">
+          <button onclick="switchClockDisplayType('analog')" id="display-type-btn-analog" class="${clockState.displayType === 'analog' ? activeDispClass : inactiveDispClass}">
             ⏰ Ručičkové
           </button>
-          <button onclick="switchClockDisplayType('digital')" id="display-type-btn-digital" class="py-1 px-2.5 rounded-lg font-black text-xs transition-all text-slate-700 hover:bg-amber-100">
+          <button onclick="switchClockDisplayType('digital')" id="display-type-btn-digital" class="${clockState.displayType === 'digital' ? activeDispClass : inactiveDispClass}">
             📱 Digitální
           </button>
         </div>
@@ -116,12 +126,12 @@ function renderClockSection() {
           <span>🌅 Výběr denní doby:</span>
         </div>
         <div class="grid grid-cols-3 sm:grid-cols-6 gap-1 w-full sm:w-auto" id="clock-time-filters-bar">
-          <button onclick="switchTimeFilter('all')" id="filter-btn-all" class="py-1 px-2.5 rounded-xl bg-sky-600 text-white shadow-sm transition-all text-xs font-black text-center">Vše</button>
-          <button onclick="switchTimeFilter('morning')" id="filter-btn-morning" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌅 Ráno</button>
-          <button onclick="switchTimeFilter('forenoon')" id="filter-btn-forenoon" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">☀️ Dopol.</button>
-          <button onclick="switchTimeFilter('afternoon')" id="filter-btn-afternoon" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌤️ Odpol.</button>
-          <button onclick="switchTimeFilter('evening')" id="filter-btn-evening" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌆 Večer</button>
-          <button onclick="switchTimeFilter('night')" id="filter-btn-night" class="py-1 px-2 rounded-xl bg-white text-slate-700 hover:bg-sky-100 transition-all text-xs font-black text-center">🌙 Noc</button>
+          <button onclick="switchTimeFilter('all')" id="filter-btn-all" class="${getFilterClass('all')}">Vše</button>
+          <button onclick="switchTimeFilter('morning')" id="filter-btn-morning" class="${getFilterClass('morning')}">🌅 Ráno</button>
+          <button onclick="switchTimeFilter('forenoon')" id="filter-btn-forenoon" class="${getFilterClass('forenoon')}">☀️ Dopol.</button>
+          <button onclick="switchTimeFilter('afternoon')" id="filter-btn-afternoon" class="${getFilterClass('afternoon')}">🌤️ Odpol.</button>
+          <button onclick="switchTimeFilter('evening')" id="filter-btn-evening" class="${getFilterClass('evening')}">🌆 Večer</button>
+          <button onclick="switchTimeFilter('night')" id="filter-btn-night" class="${getFilterClass('night')}">🌙 Noc</button>
         </div>
       </div>
 
@@ -146,8 +156,8 @@ function renderClockSection() {
             <div id="clock-mode-toggle-container" class="w-full flex flex-col gap-1 px-2.5 py-2 bg-amber-100/85 rounded-xl border-2 border-amber-300 text-xs font-black text-amber-950">
               <span id="clock-mode-label">Režim zobrazení:</span>
               <div class="flex flex-col gap-1 mt-0.5">
-                <button onclick="switchClockMode('basic')" id="clock-mode-btn-basic" class="py-1.5 px-2 rounded-xl transition-all bg-amber-500 text-white shadow-sm text-center text-xs">Čtvrt / Půl</button>
-                <button onclick="switchClockMode('advanced')" id="clock-mode-btn-advanced" class="py-1.5 px-2 rounded-xl transition-all text-amber-900 hover:bg-amber-100 text-center text-xs">Minuty</button>
+                <button onclick="switchClockMode('basic')" id="clock-mode-btn-basic" class="py-1.5 px-2 rounded-xl transition-all ${clockState.subMode === 'basic' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-900 hover:bg-amber-100'} text-center text-xs">Čtvrt / Půl</button>
+                <button onclick="switchClockMode('advanced')" id="clock-mode-btn-advanced" class="py-1.5 px-2 rounded-xl transition-all ${clockState.subMode === 'advanced' ? 'bg-amber-500 text-white shadow-sm' : 'text-amber-900 hover:bg-amber-100'} text-center text-xs">Minuty</button>
               </div>
             </div>
 

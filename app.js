@@ -145,7 +145,15 @@ let state = {
   currentLevel: 1,
   currentMathLevel: 1,
   mathMax: 10,
+  coinMaxLimit: 20,
+  coinHardMode: true,
   letterCase: 'upper',
+  showSyllableArcs: false,
+  spellingMode: 'classic',
+  reverseSpellingSpeed: 1,
+  ttsEngine: 'ai',
+  aiVoiceName: 'Kore',
+  preferredSystemVoiceURI: '',
   displayMode: 'grid',
   gridCardCount: 8,
   showImages: true,
@@ -199,18 +207,183 @@ function getMaxDailyDirectLimit() {
 }
 
 let spellingState = {
+  mode: 'classic',
   unseenDeck: [],
+  reverseDeck: [],
   currentWordObj: null,
   letters: [],
   revealedCount: 0,
   isWordHidden: false,
   currentRepeatIndex: 0,
-  totalRepeats: 3
+  totalRepeats: 3,
+  // Reverzní hláskování stav
+  typedLetters: [],
+  activeSpeakingSlotIdx: -1,
+  reverseSpeechRunId: 0,
+  reverseSolved: false,
+  slotStatuses: [],
+  isPeekingWord: false,
+  peekListenersAttached: false
 };
 
 function clearSpellingTimers() {
-  if ('speechSynthesis' in window) {
+  spellingState.reverseSpeechRunId++;
+  spellingState.activeSpeakingSlotIdx = -1;
+  spellingState.isPeekingWord = false;
+  if (typeof stopAllTtsPlayback === 'function') {
+    stopAllTtsPlayback();
+  } else if ('speechSynthesis' in window) {
     window.speechSynthesis.cancel();
+  }
+}
+
+function startReverseSpellingPeek(e) {
+  if (e && e.cancelable) {
+    e.preventDefault();
+  }
+  if (!spellingState.currentWordObj || spellingState.isPeekingWord) return;
+  spellingState.isPeekingWord = true;
+  playTone(620, 0.05, 'sine', 0.1);
+  updateReverseSpellingPeekUI();
+}
+
+function stopReverseSpellingPeek() {
+  if (!spellingState.isPeekingWord) return;
+  spellingState.isPeekingWord = false;
+  updateReverseSpellingPeekUI();
+}
+
+function updateReverseSpellingPeekUI() {
+  const peekBtn = document.getElementById('reverse-spelling-peek-btn');
+  const peekIcon = document.getElementById('reverse-spelling-peek-icon');
+  const peekLabel = document.getElementById('reverse-spelling-peek-label');
+  const peekPreview = document.getElementById('reverse-spelling-peek-preview');
+  const hiddenPlaceholder = document.getElementById('reverse-spelling-hidden-placeholder');
+  const wordObj = spellingState.currentWordObj;
+
+  if (spellingState.isPeekingWord && wordObj) {
+    if (peekBtn) {
+      peekBtn.className = 'game-button bg-amber-500 text-slate-950 border-b-4 border-amber-700 ring-4 ring-amber-200 px-6 py-2.5 rounded-2xl text-sm sm:text-base font-black flex items-center gap-2 shadow-lg select-none cursor-pointer transition-all scale-105';
+    }
+    if (peekIcon) peekIcon.textContent = '👀';
+    if (peekLabel) peekLabel.textContent = 'Držíš (pusť pro skrytí)';
+    if (hiddenPlaceholder) {
+      hiddenPlaceholder.classList.add('hidden');
+      hiddenPlaceholder.classList.remove('flex');
+    }
+    if (peekPreview) {
+      peekPreview.classList.remove('hidden');
+      peekPreview.classList.add('flex');
+      const formattedHtml = renderReadingTextHtml(wordObj.w);
+      const lettersBreakdown = (spellingState.letters || parseSpellingLetters(wordObj.w))
+        .map((item, idx) => state.letterCase === 'mixed' ? (idx === 0 ? item.char.toUpperCase() : item.char.toLowerCase()) : item.char.toUpperCase())
+        .join(' – ');
+      peekPreview.innerHTML = `
+        <div class="flex items-center justify-center gap-3">
+          ${state.showImages ? `<span class="text-3xl sm:text-4xl">${wordObj.e || '✨'}</span>` : ''}
+          <span class="text-3xl sm:text-5xl font-black text-amber-950 game-font tracking-wide">${formattedHtml}</span>
+        </div>
+        <div class="text-xs sm:text-sm font-black text-amber-900 bg-white/80 px-3 py-1 rounded-xl border border-amber-300">
+          Hlásky: <span class="tracking-widest">${lettersBreakdown}</span>
+        </div>
+      `;
+    }
+  } else {
+    if (peekBtn) {
+      peekBtn.className = 'game-button bg-amber-400 hover:bg-amber-500 text-amber-950 border-b-4 border-amber-600 px-6 py-2.5 rounded-2xl text-sm sm:text-base font-black flex items-center gap-2 shadow-md select-none cursor-pointer transition-all';
+    }
+    if (peekIcon) peekIcon.textContent = '👁️';
+    if (peekLabel) peekLabel.textContent = 'Podrž = ukázat slovo';
+    if (hiddenPlaceholder) {
+      hiddenPlaceholder.classList.remove('hidden');
+      hiddenPlaceholder.classList.add('flex');
+    }
+    if (peekPreview) {
+      peekPreview.classList.add('hidden');
+      peekPreview.classList.remove('flex');
+      peekPreview.innerHTML = '';
+    }
+  }
+}
+
+function attachReverseSpellingPeekListeners() {
+  const peekBtn = document.getElementById('reverse-spelling-peek-btn');
+  if (!peekBtn || peekBtn.dataset.peekBound === '1') return;
+  peekBtn.dataset.peekBound = '1';
+
+  peekBtn.addEventListener('pointerdown', (e) => startReverseSpellingPeek(e));
+  peekBtn.addEventListener('touchstart', (e) => startReverseSpellingPeek(e), { passive: false });
+  peekBtn.addEventListener('mousedown', (e) => startReverseSpellingPeek(e));
+
+  peekBtn.addEventListener('pointerup', () => stopReverseSpellingPeek());
+  peekBtn.addEventListener('pointercancel', () => stopReverseSpellingPeek());
+  peekBtn.addEventListener('pointerleave', () => stopReverseSpellingPeek());
+  peekBtn.addEventListener('touchend', () => stopReverseSpellingPeek());
+  peekBtn.addEventListener('touchcancel', () => stopReverseSpellingPeek());
+  peekBtn.addEventListener('mouseup', () => stopReverseSpellingPeek());
+  peekBtn.addEventListener('mouseleave', () => stopReverseSpellingPeek());
+
+  if (!spellingState.peekListenersAttached) {
+    spellingState.peekListenersAttached = true;
+    window.addEventListener('pointerup', () => stopReverseSpellingPeek());
+    window.addEventListener('pointercancel', () => stopReverseSpellingPeek());
+    window.addEventListener('touchend', () => stopReverseSpellingPeek());
+    window.addEventListener('touchcancel', () => stopReverseSpellingPeek());
+    window.addEventListener('mouseup', () => stopReverseSpellingPeek());
+    window.addEventListener('blur', () => stopReverseSpellingPeek());
+  }
+}
+
+function setSpellingMode(mode) {
+  const normalized = mode === 'reverse' ? 'reverse' : 'classic';
+  state.spellingMode = normalized;
+  spellingState.mode = normalized;
+  saveState();
+  playTone(540, 0.08, 'sine', 0.15);
+  initSpellingWord();
+}
+
+function updateSpellingModeUI() {
+  const mode = (state.spellingMode === 'reverse') ? 'reverse' : 'classic';
+  spellingState.mode = mode;
+
+  const btnClassic = document.getElementById('spelling-mode-btn-classic');
+  const btnReverse = document.getElementById('spelling-mode-btn-reverse');
+  const classicBox = document.getElementById('spelling-classic-container');
+  const reverseBox = document.getElementById('spelling-reverse-container');
+  const mainTitle = document.getElementById('spelling-main-title');
+  const subInst = document.getElementById('spelling-subtitle-instructions');
+  const repeatBtn = document.getElementById('spelling-repeat-btn');
+  const readingReviewPanel = document.getElementById('reading-review-panel');
+
+  const activeBtnClass = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-purple-600 text-white shadow-sm';
+  const inactiveBtnClass = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-purple-900 hover:bg-purple-200';
+
+  if (btnClassic) btnClassic.className = (mode === 'classic') ? activeBtnClass : inactiveBtnClass;
+  if (btnReverse) btnReverse.className = (mode === 'reverse') ? activeBtnClass : inactiveBtnClass;
+
+  if (readingReviewPanel && state.subject === 'reading' && state.currentLevel === 8) {
+    readingReviewPanel.classList.remove('hidden');
+  }
+
+  if (mode === 'reverse') {
+    if (classicBox) classicBox.classList.add('hidden');
+    if (reverseBox) {
+      reverseBox.classList.remove('hidden');
+      reverseBox.classList.add('flex');
+    }
+    if (repeatBtn) repeatBtn.classList.add('hidden');
+    if (mainTitle) mainTitle.textContent = 'Reverzní hláskování (Skládání slova ze sluchu)';
+    if (subInst) subInst.textContent = 'Podrž tlačítko, vyhláskuj slovo synovi po písmenkách a syn nahlas řekne celé slovo!';
+  } else {
+    if (classicBox) classicBox.classList.remove('hidden');
+    if (reverseBox) {
+      reverseBox.classList.add('hidden');
+      reverseBox.classList.remove('flex');
+    }
+    if (repeatBtn) repeatBtn.classList.remove('hidden');
+    if (mainTitle) mainTitle.textContent = 'Rozklad slova na hlásky';
+    if (subInst) subInst.textContent = `Poslouchej ${state.spellingRepeatCount || 3}× zřetelně přečtené slovo a pak ho vyhláskuj!`;
   }
 }
 
@@ -230,6 +403,39 @@ function parseSpellingLetters(word) {
     i++;
   }
   return res;
+}
+
+function buildReverseSpellingWordPool() {
+  const candidates = [];
+  const seen = new Set();
+
+  const addCandidate = (w, e, svg, syllables) => {
+    const cleanW = (w || '').trim().toUpperCase();
+    if (!cleanW || cleanW.includes(' ') || seen.has(cleanW)) return;
+    seen.add(cleanW);
+    candidates.push({
+      w: cleanW,
+      e: e || '✨',
+      svg: svg || null,
+      syllables: syllables || splitCzechWordIntoSyllables(cleanW).length
+    });
+  };
+
+  SPELLING_WORDS_DATABASE.forEach(item => addCandidate(item.w, item.e, item.svg, item.syllables));
+  if (typeof RAW_LEVEL_3_WORDS !== 'undefined') {
+    RAW_LEVEL_3_WORDS.forEach(item => addCandidate(item.t, item.e, null, 1));
+  }
+  if (typeof RAW_LEVEL_4_WORDS !== 'undefined') {
+    RAW_LEVEL_4_WORDS.forEach(item => addCandidate(item.t, item.e, null, null));
+  }
+  if (typeof RAW_LEVEL_5_WORDS !== 'undefined') {
+    RAW_LEVEL_5_WORDS.forEach(item => addCandidate(item.t, item.e, null, null));
+  }
+  if (typeof RAW_LEVEL_6_WORDS !== 'undefined') {
+    RAW_LEVEL_6_WORDS.forEach(item => addCandidate(item.t, item.e, null, null));
+  }
+
+  return candidates;
 }
 
 function renderSpellingImage(wordObj, containerEl) {
@@ -268,6 +474,30 @@ function updateSpellingRepeatDots(current, total) {
 
 function initSpellingWord() {
   clearSpellingTimers();
+  updateSpellingModeUI();
+
+  const isReverse = (state.spellingMode === 'reverse');
+
+  if (isReverse) {
+    if (!spellingState.reverseDeck || spellingState.reverseDeck.length === 0) {
+      spellingState.reverseDeck = shuffleArray(buildReverseSpellingWordPool());
+    }
+    const wordObj = spellingState.reverseDeck.pop();
+    spellingState.currentWordObj = wordObj;
+    spellingState.letters = parseSpellingLetters(wordObj.w);
+    spellingState.isPeekingWord = false;
+
+    const catPill = document.getElementById('reverse-spelling-category-pill');
+    if (catPill) {
+      const sylCount = wordObj.syllables || splitCzechWordIntoSyllables(wordObj.w).length;
+      catPill.textContent = `${sylCount} ${czechNounForm(sylCount, 'slabika', 'slabiky', 'slabik')} • ${spellingState.letters.length} písmen`;
+    }
+
+    attachReverseSpellingPeekListeners();
+    updateReverseSpellingPeekUI();
+    return;
+  }
+
   if (!spellingState.unseenDeck || spellingState.unseenDeck.length === 0) {
     spellingState.unseenDeck = shuffleArray([...SPELLING_WORDS_DATABASE]);
   }
@@ -287,7 +517,7 @@ function initSpellingWord() {
   renderSpellingImage(wordObj, imgContainer);
 
   const wordDisplay = document.getElementById('spelling-word-display');
-  wordDisplay.textContent = formatCase(wordObj.w);
+  wordDisplay.innerHTML = renderReadingTextHtml(wordObj.w);
 
   const catPill = document.getElementById('spelling-category-pill');
   catPill.textContent = `${wordObj.syllables} ${czechNounForm(wordObj.syllables, 'slabika', 'slabiky', 'slabik')} • ${wordObj.w.length} písmen`;
@@ -301,7 +531,7 @@ function initSpellingWord() {
 }
 
 function runSpellingSpeechCycle() {
-  if (spellingState.isWordHidden) return;
+  if (spellingState.isWordHidden || state.spellingMode === 'reverse') return;
   spellingState.currentRepeatIndex++;
   const cur = spellingState.currentRepeatIndex;
   const total = spellingState.totalRepeats;
@@ -321,7 +551,7 @@ function runSpellingSpeechCycle() {
   updateSpellingRepeatDots(cur, total);
 
   speakCzechWordWithCallback(spellingState.currentWordObj.w, 0.75, () => {
-    if (spellingState.isWordHidden) return;
+    if (spellingState.isWordHidden || state.spellingMode === 'reverse') return;
     if (spellingState.currentRepeatIndex < spellingState.totalRepeats) {
       setTimeout(() => { runSpellingSpeechCycle(); }, 320);
     } else {
@@ -331,10 +561,9 @@ function runSpellingSpeechCycle() {
 }
 
 function repeatSpellingTTS() {
-  if (spellingState.currentWordObj) {
-    speakCzechWord(spellingState.currentWordObj.w, 0.75);
-    playTone(600, 0.08, 'sine', 0.15);
-  }
+  if (!spellingState.currentWordObj || state.spellingMode === 'reverse') return;
+  speakCzechWord(spellingState.currentWordObj.w, 0.75);
+  playTone(600, 0.08, 'sine', 0.15);
 }
 
 function hideSpellingWord() {
@@ -624,62 +853,488 @@ function randomInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function renderEmojiRow(count, emo) {
-  return Array(count).fill(emo).join(' ');
+const CZECH_COINS_DATA = [
+  { value: 1, label: '1 Kč', img: 'https://i.imgur.com/8MWmsAA.png', sizeClass: 'w-12 h-12 sm:w-14 sm:h-14' },
+  { value: 2, label: '2 Kč', img: 'https://i.imgur.com/oKqEc7n.png', sizeClass: 'w-12 h-12 sm:w-14 sm:h-14' },
+  { value: 5, label: '5 Kč', img: 'https://i.imgur.com/HJs6OGE.png', sizeClass: 'w-13 h-13 sm:w-15 sm:h-15' },
+  { value: 10, label: '10 Kč', img: 'https://i.imgur.com/QaJdnKN.jpeg', sizeClass: 'w-13 h-13 sm:w-15 sm:h-15' },
+  { value: 20, label: '20 Kč', img: 'https://i.imgur.com/cs9z8Qa.png', sizeClass: 'w-14 h-14 sm:w-16 sm:h-16' },
+  { value: 50, label: '50 Kč', img: 'https://i.imgur.com/DFTA2V3.png', sizeClass: 'w-14 h-14 sm:w-16 sm:h-16' }
+];
+
+let coinGameState = {
+  targetAmount: 20,
+  forbiddenCoin: null,
+  placedCoins: [],
+  isSolved: false,
+  dragGhostEl: null,
+  draggingCoinVal: null,
+  draggingPlacedIdx: null,
+  startX: 0,
+  startY: 0,
+  hasMoved: false,
+  pointerListenersAttached: false
+};
+
+function setCoinGameMaxLimit(limit) {
+  state.coinMaxLimit = limit;
+  saveState();
+  updateCoinLimitButtonsUI();
+  playTone(540, 0.08, 'sine', 0.15);
+  initCoinGameTask();
 }
 
-function generateMathLevel1(maxVal) {
-  const pool = [];
-  if (maxVal <= 10) {
-    for (let i = 0; i < 20; i++) {
-      const emo = MATH_EMOJIS[Math.floor(Math.random() * MATH_EMOJIS.length)];
-      const isPlus = Math.random() > 0.4;
-      if (isPlus) {
-        const a = randomInt(1, 9);
-        const b = randomInt(1, 10 - a);
-        pool.push({
-          type: 'input',
-          htmlRow: `<span class="tracking-wide text-2xl sm:text-3xl">${renderEmojiRow(a, emo)}</span> <span class="text-amber-500 font-black text-2xl sm:text-3xl mx-2">+</span> <span class="tracking-wide text-2xl sm:text-3xl">${renderEmojiRow(b, emo)}</span> <span class="text-slate-400 font-black text-2xl sm:text-3xl mx-2">=</span>`,
-          correctAnswer: (a + b).toString()
-        });
-      } else {
-        const a = randomInt(2, 10);
-        const b = randomInt(1, a - 1);
-        pool.push({
-          type: 'input',
-          htmlRow: `<span class="tracking-wide text-2xl sm:text-3xl">${renderEmojiRow(a, emo)}</span> <span class="text-rose-500 font-black text-2xl sm:text-3xl mx-2">−</span> <span class="tracking-wide text-2xl sm:text-3xl">${renderEmojiRow(b, emo)}</span> <span class="text-slate-400 font-black text-2xl sm:text-3xl mx-2">=</span>`,
-          correctAnswer: (a - b).toString()
-        });
-      }
+function toggleCoinHardMode() {
+  state.coinHardMode = state.coinHardMode === false ? true : false;
+  saveState();
+  updateCoinHardModeUI();
+  playTone(state.coinHardMode ? 620 : 420, 0.09, 'sine', 0.18);
+
+  if (state.coinHardMode) {
+    if (coinGameState.targetAmount < 4) {
+      initCoinGameTask();
+      return;
     }
+    coinGameState.forbiddenCoin = pickForbiddenCoinForTarget(coinGameState.targetAmount);
+    coinGameState.placedCoins = coinGameState.placedCoins.filter(v => v !== coinGameState.forbiddenCoin);
   } else {
-    const maxTens = Math.floor(maxVal / 10);
-    for (let i = 0; i < 20; i++) {
-      const isPlus = Math.random() > 0.5;
-      if (isPlus) {
-        const tensA = randomInt(1, Math.max(1, maxTens - 1));
-        const tensB = randomInt(1, maxTens - tensA);
-        const a = tensA * 10;
-        const b = tensB * 10;
-        pool.push({
-          type: 'input',
-          htmlRow: `<span class="text-3xl sm:text-4xl font-black text-sky-800">${a}</span> <span class="text-2xl sm:text-3xl text-amber-500 font-black mx-2">+</span> <span class="text-3xl sm:text-4xl font-black text-sky-800">${b}</span> <span class="text-2xl sm:text-3xl text-slate-400 font-black mx-2">=</span>`,
-          correctAnswer: (a + b).toString()
-        });
-      } else {
-        const tensA = randomInt(2, maxTens);
-        const tensB = randomInt(1, tensA - 1);
-        const a = tensA * 10;
-        const b = tensB * 10;
-        pool.push({
-          type: 'input',
-          htmlRow: `<span class="text-3xl sm:text-4xl font-black text-sky-800">${a}</span> <span class="text-2xl sm:text-3xl text-rose-500 font-black mx-2">−</span> <span class="text-3xl sm:text-4xl font-black text-sky-800">${b}</span> <span class="text-2xl sm:text-3xl text-slate-400 font-black mx-2">=</span>`,
-          correctAnswer: (a - b).toString()
-        });
-      }
+    coinGameState.forbiddenCoin = null;
+  }
+
+  updateCoinConditionBadgeUI();
+  renderCoinTray();
+  renderCoinDropZoneItems();
+
+  const feedbackEl = document.getElementById('coin-game-feedback');
+  if (feedbackEl) {
+    if (coinGameState.forbiddenCoin) {
+      feedbackEl.innerHTML = `Přetáhni mince do pole a poskládej <strong>${coinGameState.targetAmount} Kč</strong> – <span class="text-rose-700 font-black">🚫 bez použití mince ${coinGameState.forbiddenCoin} Kč</span>!`;
+    } else {
+      feedbackEl.innerHTML = `Přetáhni mince do pole tak, abys poskládal částku <strong>${coinGameState.targetAmount} Kč</strong>!`;
     }
   }
-  return pool;
+}
+
+function updateCoinHardModeUI() {
+  const isHard = state.coinHardMode !== false;
+  const btn = document.getElementById('coin-hard-mode-btn');
+  const label = document.getElementById('coin-hard-mode-label');
+  if (btn) {
+    if (isHard) {
+      btn.className = 'game-button px-3 py-1 rounded-2xl text-xs font-black border-2 transition-all flex items-center gap-1 shadow-sm bg-rose-500 hover:bg-rose-600 text-white border-rose-700';
+    } else {
+      btn.className = 'game-button px-3 py-1 rounded-2xl text-xs font-black border-2 transition-all flex items-center gap-1 shadow-sm bg-slate-200 hover:bg-slate-300 text-slate-700 border-slate-300';
+    }
+  }
+  if (label) {
+    label.textContent = isHard ? 'Ztížení: ZAP' : 'Ztížení: VYP';
+  }
+}
+
+function pickForbiddenCoinForTarget(target) {
+  const usable = [20, 10, 5, 2, 1].filter(c => c < target);
+  let rem = target;
+  const greedyUsed = new Set();
+  for (const c of usable) {
+    while (rem >= c) {
+      if (c >= 2) greedyUsed.add(c);
+      rem -= c;
+    }
+  }
+
+  const greedyCandidates = Array.from(greedyUsed);
+  const higherCandidates = greedyCandidates.filter(c => c >= 5);
+  if (higherCandidates.length > 0 && Math.random() < 0.85) {
+    return higherCandidates[Math.floor(Math.random() * higherCandidates.length)];
+  }
+  if (greedyCandidates.length > 0) {
+    return greedyCandidates[Math.floor(Math.random() * greedyCandidates.length)];
+  }
+  return 2;
+}
+
+function updateCoinConditionBadgeUI() {
+  const badge = document.getElementById('coin-condition-badge');
+  const textEl = document.getElementById('coin-condition-text');
+  if (!badge || !textEl) return;
+
+  if (state.coinHardMode !== false && coinGameState.forbiddenCoin) {
+    badge.classList.remove('hidden');
+    badge.classList.add('inline-flex');
+    textEl.textContent = `Bez mince ${coinGameState.forbiddenCoin} Kč`;
+  } else {
+    badge.classList.add('hidden');
+    badge.classList.remove('inline-flex');
+  }
+}
+
+function updateCoinLimitButtonsUI() {
+  const currentLimit = state.coinMaxLimit || 20;
+  [20, 30, 40, 50].forEach(lim => {
+    const btn = document.getElementById(`coin-limit-btn-${lim}`);
+    if (btn) {
+      if (lim === currentLimit) {
+        btn.className = 'px-2.5 py-1 rounded-xl text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
+      } else {
+        btn.className = 'px-2.5 py-1 rounded-xl text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
+      }
+    }
+  });
+}
+
+function initCoinGameTask() {
+  const maxLimit = state.coinMaxLimit || 20;
+  const isHard = state.coinHardMode !== false;
+  updateCoinLimitButtonsUI();
+  updateCoinHardModeUI();
+
+  const minTarget = isHard ? 6 : 2;
+  const favoriteTargets = [6, 7, 8, 9, 10, 12, 13, 15, 17, 18, 20, 22, 23, 25, 27, 30, 34, 37, 40, 43, 47, 50].filter(v => v >= minTarget && v <= maxLimit);
+  let nextTarget = 20;
+  let attempts = 0;
+
+  do {
+    if (Math.random() < 0.5 && favoriteTargets.length > 0) {
+      nextTarget = favoriteTargets[Math.floor(Math.random() * favoriteTargets.length)];
+    } else {
+      nextTarget = randomInt(minTarget, maxLimit);
+    }
+    attempts++;
+  } while (nextTarget === coinGameState.targetAmount && attempts < 15);
+
+  coinGameState.targetAmount = nextTarget;
+  coinGameState.forbiddenCoin = isHard ? pickForbiddenCoinForTarget(nextTarget) : null;
+  coinGameState.placedCoins = [];
+  coinGameState.isSolved = false;
+
+  const targetBadge = document.getElementById('coin-target-amount-badge');
+  if (targetBadge) {
+    targetBadge.textContent = `${nextTarget} Kč`;
+  }
+
+  updateCoinConditionBadgeUI();
+
+  const feedbackEl = document.getElementById('coin-game-feedback');
+  if (feedbackEl) {
+    if (coinGameState.forbiddenCoin) {
+      feedbackEl.innerHTML = `Přetáhni mince do pole a poskládej <strong>${nextTarget} Kč</strong> – <span class="text-rose-700 font-black">🚫 bez použití mince ${coinGameState.forbiddenCoin} Kč</span>!`;
+    } else {
+      feedbackEl.innerHTML = `Přetáhni mince do pole tak, abys poskládal částku <strong>${nextTarget} Kč</strong>!`;
+    }
+  }
+
+  const dropZone = document.getElementById('coin-drop-zone');
+  if (dropZone) {
+    dropZone.className = 'w-full min-h-[135px] sm:min-h-[155px] bg-gradient-to-b from-amber-50/70 to-sky-50/70 border-4 border-dashed border-amber-400 rounded-3xl p-2.5 sm:p-3 flex flex-col justify-between relative transition-all select-none';
+  }
+
+  ensureCoinPointerListeners();
+  renderCoinTray();
+  renderCoinDropZoneItems();
+}
+
+function clearCoinDropZone() {
+  if (coinGameState.isSolved) return;
+  coinGameState.placedCoins = [];
+  playTone(360, 0.08, 'sine', 0.15);
+  renderCoinDropZoneItems();
+  const feedbackEl = document.getElementById('coin-game-feedback');
+  if (feedbackEl) {
+    if (coinGameState.forbiddenCoin) {
+      feedbackEl.innerHTML = `Herní pole vyčištěno. Poskládej <strong>${coinGameState.targetAmount} Kč</strong> <span class="text-rose-700 font-black">🚫 bez mince ${coinGameState.forbiddenCoin} Kč</span>!`;
+    } else {
+      feedbackEl.innerHTML = `Herní pole vyčištěno. Poskládej částku <strong>${coinGameState.targetAmount} Kč</strong>!`;
+    }
+  }
+}
+
+function renderCoinTray() {
+  const tray = document.getElementById('coin-tray-container');
+  if (!tray) return;
+  tray.innerHTML = '';
+
+  CZECH_COINS_DATA.forEach(coin => {
+    const isForbidden = (state.coinHardMode !== false) && (coinGameState.forbiddenCoin === coin.value);
+    const item = document.createElement('div');
+    item.className = isForbidden
+      ? 'relative flex flex-col items-center justify-center gap-1 p-1.5 rounded-2xl bg-rose-50/90 border-2 border-rose-400 opacity-65 cursor-not-allowed select-none w-full'
+      : 'relative flex flex-col items-center justify-center gap-1 p-1.5 rounded-2xl bg-white hover:bg-amber-50 border-2 border-amber-300 shadow-sm cursor-grab active:cursor-grabbing transition-transform hover:scale-105 select-none w-full';
+    item.style.touchAction = 'none';
+
+    item.innerHTML = `
+      ${isForbidden ? `<span class="absolute inset-0 flex items-center justify-center z-10 pointer-events-none"><span class="bg-rose-600/95 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow border border-white">🚫 ZAKÁZÁNO</span></span>` : ''}
+      <div class="${coin.sizeClass} rounded-full overflow-hidden flex items-center justify-center bg-amber-50 shadow-inner pointer-events-none p-0.5 ${isForbidden ? 'grayscale-[50%]' : ''}">
+        <img src="${coin.img}" alt="${coin.label}" referrerpolicy="no-referrer" draggable="false" class="w-full h-full object-contain rounded-full pointer-events-none select-none" />
+      </div>
+      <span class="text-xs sm:text-sm font-black ${isForbidden ? 'text-rose-900 bg-rose-200/90 border-rose-400 line-through' : 'text-amber-950 bg-amber-200/90 border-amber-400'} px-2.5 py-0.5 rounded-full border leading-none pointer-events-none">${coin.label}</span>
+    `;
+
+    item.addEventListener('pointerdown', (e) => startCoinDragFromTray(e, coin));
+    tray.appendChild(item);
+  });
+}
+
+function renderCoinDropZoneItems() {
+  const container = document.getElementById('coin-drop-zone-items');
+  const countLabel = document.getElementById('coin-drop-count-label');
+  if (!container) return;
+
+  if (countLabel) {
+    countLabel.textContent = coinGameState.placedCoins.length > 0
+      ? `V poli: ${coinGameState.placedCoins.length} ${coinGameState.placedCoins.length === 1 ? 'mince' : (coinGameState.placedCoins.length < 5 ? 'mince' : 'mincí')} (klepnutím odebereš ✕)`
+      : 'Klepnutím na minci v poli ji odebereš ✕';
+  }
+
+  container.innerHTML = '';
+
+  if (coinGameState.placedCoins.length === 0) {
+    container.innerHTML = `
+      <div class="text-slate-400 font-black text-xs sm:text-sm text-center py-4 pointer-events-none select-none">
+        👇 Chytni minci dole prstem a přetáhni ji sem do pole!
+      </div>
+    `;
+    return;
+  }
+
+  coinGameState.placedCoins.forEach((val, idx) => {
+    const coinMeta = CZECH_COINS_DATA.find(c => c.value === val) || CZECH_COINS_DATA[0];
+    const chip = document.createElement('div');
+    chip.className = 'relative flex flex-col items-center justify-center p-1 rounded-2xl bg-white/95 border-2 border-amber-400 shadow-md cursor-pointer hover:scale-105 active:scale-95 transition-transform select-none';
+    chip.style.touchAction = 'none';
+    chip.title = 'Klepni nebo přetáhni ven pro odebrání mince';
+
+    chip.innerHTML = `
+      <span class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-white shadow-sm pointer-events-none">✕</span>
+      <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-full overflow-hidden flex items-center justify-center bg-amber-50 pointer-events-none p-0.5">
+        <img src="${coinMeta.img}" alt="${coinMeta.label}" referrerpolicy="no-referrer" draggable="false" class="w-full h-full object-contain rounded-full pointer-events-none select-none" />
+      </div>
+      <span class="text-[11px] font-black text-amber-950 mt-0.5 leading-none pointer-events-none">${coinMeta.label}</span>
+    `;
+
+    chip.addEventListener('pointerdown', (e) => startCoinDragFromPlaced(e, idx, coinMeta));
+    container.appendChild(chip);
+  });
+}
+
+function createCoinDragGhost(coinMeta, x, y) {
+  removeCoinDragGhost();
+  const ghost = document.createElement('div');
+  ghost.style.position = 'fixed';
+  ghost.style.left = `${x}px`;
+  ghost.style.top = `${y}px`;
+  ghost.style.transform = 'translate(-50%, -50%) scale(1.18)';
+  ghost.style.zIndex = '9999';
+  ghost.style.pointerEvents = 'none';
+  ghost.className = 'flex flex-col items-center justify-center p-1.5 rounded-full bg-white/95 border-3 border-amber-400 shadow-2xl';
+  ghost.innerHTML = `
+    <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden flex items-center justify-center">
+      <img src="${coinMeta.img}" alt="${coinMeta.label}" referrerpolicy="no-referrer" draggable="false" class="w-full h-full object-contain rounded-full" />
+    </div>
+    <span class="text-xs font-black bg-amber-400 text-amber-950 px-2 py-0.5 rounded-full -mt-1 border border-amber-600 shadow-sm">${coinMeta.label}</span>
+  `;
+  document.body.appendChild(ghost);
+  coinGameState.dragGhostEl = ghost;
+}
+
+function removeCoinDragGhost() {
+  if (coinGameState.dragGhostEl && coinGameState.dragGhostEl.parentNode) {
+    coinGameState.dragGhostEl.parentNode.removeChild(coinGameState.dragGhostEl);
+  }
+  coinGameState.dragGhostEl = null;
+}
+
+function isPointInsideDropZone(x, y, tolerance = 22) {
+  const dropZone = document.getElementById('coin-drop-zone');
+  if (!dropZone) return false;
+  const rect = dropZone.getBoundingClientRect();
+  return (
+    x >= rect.left - tolerance &&
+    x <= rect.right + tolerance &&
+    y >= rect.top - tolerance &&
+    y <= rect.bottom + tolerance
+  );
+}
+
+function startCoinDragFromTray(e, coinMeta) {
+  if (coinGameState.isSolved) return;
+  e.preventDefault();
+
+  if (state.coinHardMode !== false && coinGameState.forbiddenCoin === coinMeta.value) {
+    soundError();
+    const feedbackEl = document.getElementById('coin-game-feedback');
+    if (feedbackEl) {
+      feedbackEl.innerHTML = `<span class="text-rose-700 font-black">🚫 Ztížení: Minci ${coinMeta.label} v tomto příkladu nesmíš použít! Poskládej ${coinGameState.targetAmount} Kč z jiných mincí.</span>`;
+    }
+    return;
+  }
+
+  coinGameState.draggingCoinVal = coinMeta.value;
+  coinGameState.draggingPlacedIdx = null;
+  coinGameState.startX = e.clientX;
+  coinGameState.startY = e.clientY;
+  coinGameState.hasMoved = false;
+
+  createCoinDragGhost(coinMeta, e.clientX, e.clientY);
+  playTone(520, 0.04, 'sine', 0.1);
+
+  const dropZone = document.getElementById('coin-drop-zone');
+  if (dropZone) {
+    dropZone.classList.add('border-indigo-400', 'bg-indigo-50/40');
+  }
+}
+
+function startCoinDragFromPlaced(e, idx, coinMeta) {
+  if (coinGameState.isSolved) return;
+  e.preventDefault();
+  e.stopPropagation();
+  coinGameState.draggingCoinVal = null;
+  coinGameState.draggingPlacedIdx = idx;
+  coinGameState.startX = e.clientX;
+  coinGameState.startY = e.clientY;
+  coinGameState.hasMoved = false;
+
+  createCoinDragGhost(coinMeta, e.clientX, e.clientY);
+}
+
+function ensureCoinPointerListeners() {
+  if (coinGameState.pointerListenersAttached) return;
+  coinGameState.pointerListenersAttached = true;
+
+  window.addEventListener('pointermove', (e) => {
+    if (coinGameState.draggingCoinVal === null && coinGameState.draggingPlacedIdx === null) return;
+
+    const dx = e.clientX - coinGameState.startX;
+    const dy = e.clientY - coinGameState.startY;
+    if (Math.hypot(dx, dy) > 8) {
+      coinGameState.hasMoved = true;
+    }
+
+    if (coinGameState.dragGhostEl) {
+      coinGameState.dragGhostEl.style.left = `${e.clientX}px`;
+      coinGameState.dragGhostEl.style.top = `${e.clientY}px`;
+    }
+
+    const dropZone = document.getElementById('coin-drop-zone');
+    if (dropZone && coinGameState.draggingCoinVal !== null) {
+      if (isPointInsideDropZone(e.clientX, e.clientY, 25)) {
+        dropZone.classList.add('border-emerald-500', 'bg-emerald-50/60');
+        dropZone.classList.remove('border-amber-400', 'border-indigo-400');
+      } else {
+        dropZone.classList.remove('border-emerald-500', 'bg-emerald-50/60');
+        dropZone.classList.add('border-indigo-400');
+      }
+    }
+  }, { passive: false });
+
+  const handlePointerEnd = (e) => {
+    if (coinGameState.draggingCoinVal === null && coinGameState.draggingPlacedIdx === null) return;
+
+    const dropZone = document.getElementById('coin-drop-zone');
+    if (dropZone) {
+      dropZone.classList.remove('border-indigo-400', 'bg-indigo-50/40', 'border-emerald-500', 'bg-emerald-50/60');
+      if (!coinGameState.isSolved) {
+        dropZone.classList.add('border-amber-400');
+      }
+    }
+
+    if (coinGameState.draggingCoinVal !== null) {
+      const val = coinGameState.draggingCoinVal;
+      const draggedUpward = (coinGameState.startY - e.clientY) > 35;
+      const droppedInZone = isPointInsideDropZone(e.clientX, e.clientY, 28) || draggedUpward;
+
+      if (droppedInZone && !(state.coinHardMode !== false && coinGameState.forbiddenCoin === val)) {
+        coinGameState.placedCoins.push(val);
+        playTone(700, 0.06, 'triangle', 0.18);
+        setTimeout(() => playTone(960, 0.08, 'sine', 0.15), 40);
+        renderCoinDropZoneItems();
+      }
+    } else if (coinGameState.draggingPlacedIdx !== null) {
+      const idx = coinGameState.draggingPlacedIdx;
+      const droppedOutside = !isPointInsideDropZone(e.clientX, e.clientY, 0);
+      if (!coinGameState.hasMoved || droppedOutside) {
+        coinGameState.placedCoins.splice(idx, 1);
+        playTone(380, 0.07, 'sine', 0.15);
+        renderCoinDropZoneItems();
+      }
+    }
+
+    removeCoinDragGhost();
+    coinGameState.draggingCoinVal = null;
+    coinGameState.draggingPlacedIdx = null;
+    coinGameState.hasMoved = false;
+  };
+
+  window.addEventListener('pointerup', handlePointerEnd);
+  window.addEventListener('pointercancel', handlePointerEnd);
+}
+
+function evaluateCoinGame() {
+  if (coinGameState.isSolved) return;
+
+  const target = coinGameState.targetAmount;
+  const coins = coinGameState.placedCoins;
+  const feedbackEl = document.getElementById('coin-game-feedback');
+  const dropZone = document.getElementById('coin-drop-zone');
+
+  if (!coins || coins.length === 0) {
+    if (feedbackEl) {
+      feedbackEl.innerHTML = '<span class="text-amber-700 font-black">⚠️ Nejprve přetáhni mince z nabídky dole do herního pole!</span>';
+    }
+    soundShuffle();
+    return;
+  }
+
+  if (state.coinHardMode !== false && coinGameState.forbiddenCoin && coins.includes(coinGameState.forbiddenCoin)) {
+    if (feedbackEl) {
+      feedbackEl.innerHTML = `<span class="text-rose-700 font-black">🚫 V poli máš zakázanou minci ${coinGameState.forbiddenCoin} Kč! Odeber ji a zkus jinou kombinaci.</span>`;
+    }
+    soundError();
+    return;
+  }
+
+  const sum = coins.reduce((acc, v) => acc + v, 0);
+
+  if (sum === target && coins.length === 1 && target > 1) {
+    if (feedbackEl) {
+      feedbackEl.innerHTML = `<span class="text-indigo-700 font-black">💡 To je jedna mince ${target} Kč! Zkus částku ${target} Kč poskládat z více menších mincí (alespoň ze 2 mincí)!</span>`;
+    }
+    soundShuffle();
+    return;
+  }
+
+  if (sum === target) {
+    coinGameState.isSolved = true;
+    const formulaStr = coins.join(' + ') + ' = ' + target + ' Kč';
+    if (feedbackEl) {
+      feedbackEl.innerHTML = `<span class="text-emerald-700 font-black">✅ Správně! (${formulaStr}) Skvělá práce! 🎉</span>`;
+    }
+    if (dropZone) {
+      dropZone.classList.remove('border-amber-400', 'border-rose-400');
+      dropZone.classList.add('border-emerald-500', 'bg-emerald-50/70');
+    }
+
+    const reward = getLevelReward('math', 1);
+    creditRewardMinutes(reward, `Matematika: Skládání mincí (${target} Kč)`);
+    updateDailyQuestsProgress('math', 1);
+    saveState();
+    playCustomSuccessSound();
+    triggerConfetti();
+
+    setTimeout(() => {
+      if (state.subject === 'math' && state.currentMathLevel === 1) {
+        initCoinGameTask();
+      }
+    }, 1600);
+  } else {
+    if (feedbackEl) {
+      feedbackEl.innerHTML = `<span class="text-rose-600 font-black">❌ Zatím to nesedí! V poli máš ${sum} Kč, ale potřebuješ poskládat ${target} Kč. Zkus mince upravit!</span>`;
+    }
+    if (dropZone) {
+      dropZone.classList.remove('border-amber-400', 'border-emerald-500');
+      dropZone.classList.add('border-rose-400', 'bg-rose-50/40');
+    }
+    soundError();
+  }
 }
 
 function generateMathLevel2(maxVal) {
@@ -1179,7 +1834,7 @@ function selectStrictBatch(pool, desiredCount, subject, level) {
 function updateMathCategoryHeader() {
   const tab1Title = document.getElementById('math-tab-1-title');
   if (tab1Title) {
-    tab1Title.textContent = ((state.mathMax || 10) <= 10) ? '🍎 1. Obrázkové počty' : '🔟 1. Celé desítky';
+    tab1Title.textContent = '🪙 1. Skládání mincí';
   }
 }
 
@@ -1218,6 +1873,7 @@ function generateLessonItems() {
   const mathEvalPanel = document.getElementById('math-eval-panel');
   const generalControlBar = document.getElementById('general-control-bar');
   const coloringView = document.getElementById('content-coloring-view');
+  const coinsView = document.getElementById('content-coins-view');
   const spellingView = document.getElementById('content-spelling-view');
   const gridView = document.getElementById('content-grid-view');
   const flashView = document.getElementById('content-flash-view');
@@ -1225,6 +1881,24 @@ function generateLessonItems() {
   updateMathCategoryHeader();
   updateNavTabRewardLabels();
   clearSpellingTimers();
+
+  if (subj === 'math' && lvl === 1) {
+    readingReviewPanel.classList.add('hidden');
+    mathEvalPanel.classList.add('hidden');
+    generalControlBar.classList.add('hidden');
+    gridView.classList.add('hidden');
+    flashView.classList.add('hidden');
+    spellingView.classList.add('hidden');
+    coloringView.classList.add('hidden');
+    emptyNotice.classList.add('hidden');
+    if (coinsView) coinsView.classList.remove('hidden');
+
+    initCoinGameTask();
+    updateReviewButtonLabel();
+    return;
+  }
+
+  if (coinsView) coinsView.classList.add('hidden');
 
   if (subj === 'math' && lvl === 7) {
     readingReviewPanel.classList.add('hidden');
@@ -1284,8 +1958,7 @@ function generateLessonItems() {
     mathEvalPanel.classList.remove('hidden');
 
     const maxVal = state.mathMax || 10;
-    if (lvl === 1) pool = generateMathLevel1(maxVal);
-    else if (lvl === 2) pool = generateMathLevel2(maxVal);
+    if (lvl === 2) pool = generateMathLevel2(maxVal);
     else if (lvl === 3) pool = generateMathLevel3(maxVal);
     else if (lvl === 4) pool = generateMathLevel4(maxVal);
     else if (lvl === 5) pool = generateMathLevel5(maxVal);
@@ -1329,11 +2002,196 @@ function updateReviewButtonLabel() {
 function formatCase(text) {
   if (!text) return '';
   if (state.subject === 'math') return text;
-  if (state.letterCase === 'lower') return text.toLowerCase();
+
+  let cleaned = text.trim();
+  const isSentence = cleaned.includes(' ');
+
   if (state.letterCase === 'mixed') {
-    return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    let res = cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
+    if (isSentence) {
+      res = res
+        .replace(/\bemu\b/g, 'Emu')
+        .replace(/\bema\b/g, 'Ema')
+        .replace(/\bpepu\b/g, 'Pepu')
+        .replace(/\bpepa\b/g, 'Pepa')
+        .replace(/\balík\b/g, 'Alík')
+        .replace(/\bmíla\b/g, 'Míla')
+        .replace(/\bela\b/g, 'Ela')
+        .replace(/\bola\b/g, 'Ola')
+        .replace(/\bála\b/g, 'Ála')
+        .replace(/\bota\b/g, 'Ota')
+        .replace(/\btom\b/g, 'Tom')
+        .replace(/\bjana\b/g, 'Jana')
+        .replace(/\bsára\b/g, 'Sára')
+        .replace(/\bfilip\b/g, 'Filip')
+        .replace(/\bpetr\b/g, 'Petr')
+        .replace(/\bhonza\b/g, 'Honza')
+        .replace(/\blucka\b/g, 'Lucka');
+    }
+    if (isSentence && !/[.!?]$/.test(res)) {
+      res += '.';
+    }
+    return res;
   }
-  return text.toUpperCase();
+
+  let upperRes = cleaned.toUpperCase();
+  if (isSentence && !/[.!?]$/.test(upperRes)) {
+    upperRes += '.';
+  }
+  return upperRes;
+}
+
+/* ============================================================
+   DĚLENÍ ČESKÝCH SLOV NA SLABIKY A OBLOUČKY POD SLABIKAMI (◡◡)
+   ============================================================ */
+
+function splitCzechWordIntoSyllables(word) {
+  if (!word) return [''];
+  const clean = word.trim();
+  if (clean.length <= 2) return [clean];
+
+  // Tokenizace na fonetické jednotky (CH = 1 souhláska, OU/AU/EU = 1 samohláskové jádro)
+  const tokens = [];
+  let i = 0;
+  while (i < clean.length) {
+    const twoUpper = clean.slice(i, i + 2).toUpperCase();
+    if (twoUpper === 'CH') {
+      tokens.push({ text: clean.slice(i, i + 2), type: 'C', upper: 'CH' });
+      i += 2;
+      continue;
+    }
+    if (twoUpper === 'OU' || twoUpper === 'AU' || twoUpper === 'EU') {
+      tokens.push({ text: clean.slice(i, i + 2), type: 'V', upper: twoUpper });
+      i += 2;
+      continue;
+    }
+    const ch = clean[i];
+    const isV = /[AEIOUYÁÉÍÓÚŮÝĚ]/i.test(ch);
+    tokens.push({ text: ch, type: isV ? 'V' : 'C', upper: ch.toUpperCase() });
+    i++;
+  }
+
+  // Slabikotvorné R a L (pokud stojí za souhláskou a nejsou vedle samohlásky, např. SVE-TR)
+  for (let t = 0; t < tokens.length; t++) {
+    if (tokens[t].type === 'C' && (tokens[t].upper === 'R' || tokens[t].upper === 'L')) {
+      const prevIsC = t > 0 && tokens[t - 1].type === 'C';
+      const nextIsNotV = (t === tokens.length - 1) || (tokens[t + 1].type === 'C');
+      if (prevIsC && nextIsNotV) {
+        tokens[t].type = 'V';
+      }
+    }
+  }
+
+  const vowelIndices = [];
+  tokens.forEach((tk, idx) => {
+    if (tk.type === 'V') vowelIndices.push(idx);
+  });
+
+  if (vowelIndices.length <= 1) {
+    return [clean];
+  }
+
+  // Určení hranic slabik mezi sousedními samohláskovými jádry
+  const splitAfterTokenIndices = [];
+  const inseparableOnsets = new Set(['DL', 'TL', 'KN', 'PR', 'BR', 'BL', 'PL', 'TR', 'DR', 'KR', 'KL', 'HR', 'HL', 'VR', 'VL', 'MR', 'ML', 'CV', 'ČT', 'ŠT', 'SK', 'SP', 'ST']);
+
+  for (let v = 0; v < vowelIndices.length - 1; v++) {
+    const v1 = vowelIndices[v];
+    const v2 = vowelIndices[v + 1];
+    const consCount = v2 - v1 - 1;
+
+    if (consCount <= 1) {
+      // 0 nebo 1 souhláska mezi samohláskami -> souhláska patří k následující slabice (MÁ-MA, E-MA, PE-PA)
+      splitAfterTokenIndices.push(v1);
+    } else if (consCount === 2) {
+      const pair = tokens[v1 + 1].upper + tokens[v1 + 2].upper;
+      if (['DL', 'TL', 'KN', 'PR', 'BR', 'BL', 'PL', 'KR', 'TR', 'DR'].includes(pair)) {
+        splitAfterTokenIndices.push(v1);
+      } else {
+        splitAfterTokenIndices.push(v1 + 1);
+      }
+    } else {
+      // 3 a více souhlásek (např. JABLÍČKO -> JAB-LÍČ-KO, STROMEČEK -> STRO-ME-ČEK)
+      const lastTwo = tokens[v2 - 2].upper + tokens[v2 - 1].upper;
+      if (inseparableOnsets.has(lastTwo)) {
+        splitAfterTokenIndices.push(v2 - 3);
+      } else {
+        splitAfterTokenIndices.push(v1 + 1);
+      }
+    }
+  }
+
+  const syllables = [];
+  let startIdx = 0;
+  splitAfterTokenIndices.forEach(splitIdx => {
+    const sylStr = tokens.slice(startIdx, splitIdx + 1).map(tk => tk.text).join('');
+    syllables.push(sylStr);
+    startIdx = splitIdx + 1;
+  });
+  syllables.push(tokens.slice(startIdx).map(tk => tk.text).join(''));
+
+  return syllables.filter(Boolean);
+}
+
+function renderWordWithSyllableArcsHtml(formattedWord, arcStrokeColor = '#0284c7') {
+  if (!formattedWord) return '';
+  const match = formattedWord.match(/^(.+?)([.,!?]+)?$/);
+  const coreWord = match ? match[1] : formattedWord;
+  const trailingPunct = (match && match[2]) ? match[2] : '';
+
+  const syllables = splitCzechWordIntoSyllables(coreWord);
+  const syllablesHtml = syllables.map(syl => `
+    <span class="inline-flex flex-col items-center justify-end px-[2px] sm:px-[3px]">
+      <span class="leading-none">${syl}</span>
+      <svg class="w-full h-[9px] sm:h-[12px] -mt-[1px] overflow-visible pointer-events-none select-none" viewBox="0 0 100 26" preserveAspectRatio="none">
+        <path d="M 0,2 Q 50,25 100,2" fill="none" stroke="${arcStrokeColor}" stroke-width="6.5" stroke-linecap="round" />
+      </svg>
+    </span>
+  `).join('');
+
+  return `<span class="inline-flex items-baseline whitespace-nowrap">${syllablesHtml}${trailingPunct ? `<span class="leading-none ml-[1px]">${trailingPunct}</span>` : ''}</span>`;
+}
+
+function renderReadingTextHtml(rawText, options = {}) {
+  const formatted = formatCase(rawText);
+  if (!formatted) return '';
+
+  const isSingleLetterLevel = (state.subject === 'reading' && state.currentLevel === 1 && !options.forceEnableArcs);
+  const showArcs = options.forceEnableArcs !== undefined ? options.forceEnableArcs : !!state.showSyllableArcs;
+
+  if (!showArcs || isSingleLetterLevel) {
+    return formatted;
+  }
+
+  const arcColor = options.arcColor || '#e11d48';
+  const words = formatted.split(/\s+/).filter(Boolean);
+  return words.map(w => renderWordWithSyllableArcsHtml(w, arcColor)).join(' <span class="inline-block w-1.5 sm:w-2.5"></span> ');
+}
+
+function toggleSyllableArcs() {
+  state.showSyllableArcs = !state.showSyllableArcs;
+  saveState();
+  updateSyllableArcsToggleUI();
+  renderCurrentContent();
+  if (state.subject === 'reading' && state.currentLevel === 8 && spellingState.currentWordObj) {
+    const wordDisplay = document.getElementById('spelling-word-display');
+    if (wordDisplay) wordDisplay.innerHTML = renderReadingTextHtml(spellingState.currentWordObj.w);
+  }
+  playTone(550, 0.08, 'sine', 0.15);
+}
+
+function updateSyllableArcsToggleUI() {
+  const btn = document.getElementById('toggle-syllables-btn');
+  const text = document.getElementById('toggle-syllables-text');
+  if (!btn || !text) return;
+
+  if (state.showSyllableArcs) {
+    btn.className = 'game-button px-2.5 py-0.5 rounded-xl text-xs font-black transition-all bg-rose-500 hover:bg-rose-600 text-white shadow-sm flex items-center gap-1 ml-1';
+    text.textContent = 'Slabiky: ZAP';
+  } else {
+    btn.className = 'game-button px-2.5 py-0.5 rounded-xl text-xs font-black transition-all bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-sm flex items-center gap-1 ml-1';
+    text.textContent = 'Slabiky: VYP';
+  }
 }
 
 function updateActiveSummaryBadge() {
@@ -1446,9 +2304,7 @@ function setSubject(newSubj) {
     if (readingReviewPanel) readingReviewPanel.classList.add('hidden');
   }
 
-  // Ujistíme se, že grid pro hodiny je schovaný, když jsme v čtení/matematice
   const clockContainer = document.getElementById('content-grid-view');
-  // Poznámka: pokud nejde o hodiny, renderClockSection se nespouští, ale zajistíme čistý stav
   if (typeof showView === 'function') showView('learn');
   if (typeof generateLessonItems === 'function') generateLessonItems();
 }
@@ -1459,7 +2315,6 @@ function setClockView() {
   const btnClocks = document.getElementById('subject-btn-clocks');
   const btnTest = document.getElementById('subject-btn-test');
 
-  // Správné rozsvícení tlačítka Hodiny v horní liště
   if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
   if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
   if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
@@ -1473,16 +2328,21 @@ function setClockView() {
   const readingReviewPanel = document.getElementById('reading-review-panel');
   const mathEvalPanel = document.getElementById('math-eval-panel');
 
-  // Schováme všechny panely z Čtení a Matematiky
+  const coinsView = document.getElementById('content-coins-view');
+  const coloringView = document.getElementById('content-coloring-view');
+  const spellingView = document.getElementById('content-spelling-view');
   if (readingTabs) readingTabs.classList.add('hidden');
   if (mathTabs) mathTabs.classList.add('hidden');
   if (generalControlBar) generalControlBar.classList.add('hidden');
   if (readingReviewPanel) readingReviewPanel.classList.add('hidden');
   if (mathEvalPanel) mathEvalPanel.classList.add('hidden');
+  if (coinsView) coinsView.classList.add('hidden');
+  if (coloringView) coloringView.classList.add('hidden');
+  if (spellingView) spellingView.classList.add('hidden');
 
-  // KLÍČOVÉ: Úplně vyčistíme hlavní kontejner od zděděných grid tříd ze čtení
   const gridView = document.getElementById('content-grid-view');
   if (gridView) {
+    gridView.classList.remove('hidden');
     gridView.className = 'w-full flex flex-col items-center justify-center';
   }
 
@@ -1534,21 +2394,27 @@ function switchMathLevel(lvl) {
 }
 
 function setLetterCase(caseMode) {
-  state.letterCase = caseMode;
+  const normalized = (caseMode === 'mixed') ? 'mixed' : 'upper';
+  state.letterCase = normalized;
   saveState();
 
   const upperBtn = document.getElementById('case-btn-upper');
-  const lowerBtn = document.getElementById('case-btn-lower');
   const mixedBtn = document.getElementById('case-btn-mixed');
 
   const activeClass = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
   const inactiveClass = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
 
-  if (upperBtn) upperBtn.className = (caseMode === 'upper') ? activeClass : inactiveClass;
-  if (lowerBtn) lowerBtn.className = (caseMode === 'lower') ? activeClass : inactiveClass;
-  if (mixedBtn) mixedBtn.className = (caseMode === 'mixed') ? activeClass : inactiveClass;
+  if (upperBtn) upperBtn.className = (normalized === 'upper') ? activeClass : inactiveClass;
+  if (mixedBtn) mixedBtn.className = (normalized === 'mixed') ? activeClass : inactiveClass;
 
   renderCurrentContent();
+  if (state.subject === 'reading' && state.currentLevel === 8) {
+    if (state.spellingMode === 'reverse') {
+      updateReverseSpellingPeekUI();
+    } else {
+      renderSpellingLettersStrip();
+    }
+  }
 }
 
 function setDisplayMode(mode) {
@@ -1696,7 +2562,7 @@ function renderCurrentContent() {
       const padClass = isSentence ? 'p-2 sm:p-2.5 min-h-[72px]' : 'p-2 sm:p-2.5 min-h-[86px] sm:min-h-[92px]';
       card.className = `letter-card bg-white rounded-2xl ${padClass} border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center text-center cursor-pointer transition-all hover:border-amber-400 relative`;
 
-      const textDisplay = formatCase(item.text);
+      const textDisplayHtml = renderReadingTextHtml(item.text);
       let emojiHtml = '';
       if (state.showImages && item.emoji) {
         emojiHtml = `<div class="h-5 sm:h-6 flex items-center justify-center mb-0.5 text-xl sm:text-2xl select-none leading-none">${item.emoji}</div>`;
@@ -1717,8 +2583,8 @@ function renderCurrentContent() {
         ${speakerBtnHtml}
         ${emojiHtml}
         <div class="w-full flex items-center justify-center px-1">
-          <span class="text-xl sm:text-3xl md:text-4xl font-black text-sky-800 game-font leading-tight select-none text-center">
-            ${textDisplay}
+          <span class="text-xl sm:text-3xl md:text-4xl font-black text-sky-800 game-font leading-tight select-none text-center flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+            ${textDisplayHtml}
           </span>
         </div>
       `;
@@ -1837,7 +2703,7 @@ function evaluateMathTasks() {
     statusEl.innerHTML = '<span class="text-emerald-600 font-black">Všechno správně! Skvělá práce! 🎉</span>';
     const lvl = state.currentMathLevel;
     const reward = getLevelReward('math', lvl);
-    const catNames = ['Počty/Desítky', 'Porovnávání', 'Číselná řada', 'Počítadlo', 'Rozklad čísel', 'Slovní úlohy'];
+    const catNames = ['Skládání mincí', 'Porovnávání', 'Číselná řada', 'Počítadlo', 'Rozklad čísel', 'Slovní úlohy'];
 
     creditRewardMinutes(reward, `Matematika: ${catNames[lvl - 1]}`);
     updateDailyQuestsProgress('math', lvl);
@@ -1862,7 +2728,7 @@ function updateFlashcardDisplay() {
 
   if (speakBtn) speakBtn.classList.toggle('hidden', !state.showSpeechButton);
   badge.textContent = `Karta ${state.flashcardIndex + 1} z ${state.currentItems.length}`;
-  text.textContent = formatCase(current.text);
+  text.innerHTML = renderReadingTextHtml(current.text);
   
   if (img) {
     if (!state.showImages) img.innerHTML = '';
@@ -1871,8 +2737,8 @@ function updateFlashcardDisplay() {
   }
 
   text.className = (state.currentLevel === 7)
-    ? 'text-2xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-normal game-font my-2 leading-relaxed break-words'
-    : 'text-4xl sm:text-6xl md:text-7xl font-black text-sky-700 tracking-normal game-font my-2';
+    ? 'text-2xl sm:text-4xl md:text-5xl font-black text-sky-800 tracking-normal game-font my-2 leading-relaxed break-words flex flex-wrap items-center justify-center gap-x-2.5 gap-y-2'
+    : 'text-4xl sm:text-6xl md:text-7xl font-black text-sky-700 tracking-normal game-font my-2 flex flex-wrap items-center justify-center';
 }
 
 function prevFlashcard() {
@@ -3489,9 +4355,31 @@ function generateRandomReadingTaskForLevel(level) {
 function generateRandomMathTaskForLevel(level) {
   const maxVal = state.mathMax || 10;
   if (level === 1) {
-    const tasks = generateMathLevel1(maxVal);
-    const t = tasks[Math.floor(Math.random() * tasks.length)];
-    return { category: 'math', subLabel: 'Počty', renderType: 'html', htmlContent: t.htmlRow, correctAnswer: t.correctAnswer, uniqueKey: `math_1_${t.htmlRow}` };
+    const coinMax = state.coinMaxLimit || 20;
+    const allowedCoins = CZECH_COINS_DATA.filter(c => c.value <= Math.min(20, coinMax));
+    const count = randomInt(2, 4);
+    const picked = [];
+    let sum = 0;
+    for (let i = 0; i < count; i++) {
+      const c = allowedCoins[Math.floor(Math.random() * allowedCoins.length)];
+      if (sum + c.value <= coinMax) {
+        picked.push(c);
+        sum += c.value;
+      }
+    }
+    if (picked.length < 2) {
+      picked.push(CZECH_COINS_DATA[0], CZECH_COINS_DATA[1]);
+      sum = picked.reduce((a, b) => a + b.value, 0);
+    }
+    const coinsHtml = picked.map(c => `<img src="${c.img}" alt="${c.label}" referrerpolicy="no-referrer" class="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-contain inline-block border border-amber-300 bg-white p-0.5 shadow-sm">`).join(' <span class="text-amber-500 font-black text-2xl mx-1">+</span> ');
+    return {
+      category: 'math',
+      subLabel: 'Skládání mincí (Kč)',
+      renderType: 'html',
+      htmlContent: `<div class="flex items-center justify-center flex-wrap gap-1">${coinsHtml} <span class="text-slate-400 font-black text-2xl mx-1">=</span></div>`,
+      correctAnswer: sum.toString(),
+      uniqueKey: `math_1_coins_${picked.map(p => p.value).join('_')}_${sum}`
+    };
   } else if (level === 2) {
     const tasks = generateMathLevel2(maxVal);
     const t = tasks[Math.floor(Math.random() * tasks.length)];
@@ -3604,11 +4492,23 @@ function renderCurrentTestTask() {
     readingEvalBar.classList.remove('hidden');
     mathEvalBar.classList.add('hidden');
 
+    const arcsActive = !!state.showSyllableArcs;
+    const isSingleChar = cur.questionText.trim().length <= 1;
+    const renderedQuestion = renderReadingTextHtml(cur.questionText, { forceEnableArcs: arcsActive && !isSingleChar, arcColor: '#e11d48' });
+
     const card = document.createElement('div');
-    card.className = 'flex flex-col items-center justify-center p-3 max-w-lg';
+    card.className = 'flex flex-col items-center justify-center p-3 max-w-xl w-full relative';
     card.innerHTML = `
-      <h2 class="text-3xl sm:text-5xl font-black text-indigo-950 font-baloo tracking-wide leading-tight my-2">
-        ${formatCase(cur.questionText)}
+      ${!isSingleChar ? `
+        <div class="mb-2">
+          <button type="button" onclick="toggleTestSyllableArcs()" class="game-button px-3 py-1 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 shadow-sm ${arcsActive ? 'bg-rose-500 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300'}">
+            <span>◡◡</span>
+            <span>${arcsActive ? 'Slabiky: ZAP' : 'Slabiky: VYP'}</span>
+          </button>
+        </div>
+      ` : ''}
+      <h2 class="text-3xl sm:text-5xl font-black text-indigo-950 font-baloo tracking-wide leading-tight my-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        ${renderedQuestion}
       </h2>
       <p class="text-xs font-bold text-slate-500 mt-2">Přečti nahlas tátovi! 🗣️</p>
     `;
@@ -4700,6 +5600,7 @@ function openAdminPanel() {
   updateAdminLegendaryUI();
   updateAdminTestUI();
   updateAdminSkinsUI();
+  updateAdminVoiceSettingsUI();
   if (typeof updateAdminPetsUI === 'function') updateAdminPetsUI();
 
   const verTag = document.getElementById('admin-version-tag');
@@ -4746,7 +5647,7 @@ function renderRewardInputs() {
 
   const mathBox = document.getElementById('rewards-math-inputs');
   mathBox.innerHTML = '';
-  const mNames = ['1. Počty/Desítky', '2. Porovnávání', '3. Číselná řada', '4. Počítadlo', '5. Rozklad čísel', '6. Slovní úlohy'];
+  const mNames = ['1. Skládání mincí', '2. Porovnávání', '3. Číselná řada', '4. Počítadlo', '5. Rozklad čísel', '6. Slovní úlohy'];
 
   for (let i = 1; i <= 6; i++) {
     const val = (state.rewards.math && state.rewards.math[i] !== undefined) ? state.rewards.math[i] : DEFAULT_REWARDS.math[i];
@@ -4960,7 +5861,15 @@ function resetAllData() {
     currentLevel: 1,
     currentMathLevel: 1,
     mathMax: 10,
+    coinMaxLimit: 20,
+    coinHardMode: true,
     letterCase: 'upper',
+    showSyllableArcs: false,
+    spellingMode: 'classic',
+    reverseSpellingSpeed: 1,
+    ttsEngine: 'ai',
+    aiVoiceName: 'Kore',
+    preferredSystemVoiceURI: '',
     displayMode: 'grid',
     gridCardCount: 8,
     showImages: true,
@@ -5002,9 +5911,188 @@ function resetAllData() {
   updateTopBadges();
   updateSpeechToggleUI();
   updateImageToggleUI();
+  updateSyllableArcsToggleUI();
   updateDiamondMarketUI();
   renderStoreSkinsUI();
   if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+}
+
+function updateAdminVoiceSettingsUI() {
+  const engine = state.ttsEngine || 'ai';
+  const aiVoice = state.aiVoiceName || 'Kore';
+
+  const btnAi = document.getElementById('admin-tts-engine-btn-ai');
+  const btnSys = document.getElementById('admin-tts-engine-btn-system');
+  const aiBox = document.getElementById('admin-ai-voice-options');
+
+  const activeEngineClass = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all bg-indigo-600 text-white shadow-xs';
+  const inactiveEngineClass = 'px-2.5 py-1 rounded-lg text-xs font-black transition-all text-indigo-900 hover:bg-indigo-100';
+
+  if (btnAi) btnAi.className = (engine === 'ai') ? activeEngineClass : inactiveEngineClass;
+  if (btnSys) btnSys.className = (engine === 'system') ? activeEngineClass : inactiveEngineClass;
+  if (aiBox) {
+    aiBox.style.opacity = (engine === 'ai') ? '1' : '0.6';
+  }
+
+  const voicesList = [
+    { id: 'Kore', label: '👩‍🏫 Kore (Učitelka)' },
+    { id: 'Zephyr', label: '👩 Zephyr (Jemný)' },
+    { id: 'Puck', label: '🧒 Puck (Veselý)' },
+    { id: 'Charon', label: '👨‍🏫 Charon (Učitel)' }
+  ];
+  voicesList.forEach(v => {
+    const el = document.getElementById(`admin-ai-voice-${v.id}`);
+    if (el) {
+      el.className = (aiVoice === v.id)
+        ? 'px-2.5 py-1 rounded-lg text-xs font-black border transition-all bg-indigo-600 text-white border-indigo-700 shadow-xs'
+        : 'px-2.5 py-1 rounded-lg text-xs font-black border transition-all bg-white text-slate-700 border-slate-300 hover:bg-indigo-50';
+    }
+  });
+
+  // Naplnění seznamu systémových českých hlasů v zařízení
+  const selectEl = document.getElementById('admin-system-voice-select');
+  if (selectEl && 'speechSynthesis' in window) {
+    const allVoices = window.speechSynthesis.getVoices() || [];
+    const czechVoices = allVoices.filter(v =>
+      v.lang.toLowerCase().startsWith('cs') ||
+      v.lang.toLowerCase().includes('czech') ||
+      v.name.toLowerCase().includes('zuzana') ||
+      v.name.toLowerCase().includes('iveta') ||
+      v.name.toLowerCase().includes('vlasta') ||
+      v.name.toLowerCase().includes('antonin') ||
+      v.name.toLowerCase().includes('antonín')
+    );
+
+    const currentPref = state.preferredSystemVoiceURI || '';
+    selectEl.innerHTML = `<option value="">✨ Automaticky nejlepší dostupný český hlas</option>`;
+    czechVoices.forEach(v => {
+      const opt = document.createElement('option');
+      opt.value = v.voiceURI || v.name;
+      const isEnhanced = /enhanced|premium|natural|neural|vylepšen/i.test(v.name + ' ' + v.voiceURI);
+      opt.textContent = `${isEnhanced ? '⭐ ' : ''}${v.name} (${v.lang})`;
+      if (opt.value === currentPref) opt.selected = true;
+      selectEl.appendChild(opt);
+    });
+  }
+}
+
+function setAdminTtsEngine(engine) {
+  state.ttsEngine = (engine === 'system') ? 'system' : 'ai';
+  saveState();
+  updateAdminVoiceSettingsUI();
+  playTone(560, 0.07, 'sine', 0.14);
+}
+
+function setAdminAiVoice(voiceName) {
+  state.aiVoiceName = voiceName || 'Kore';
+  state.ttsEngine = 'ai';
+  saveState();
+  updateAdminVoiceSettingsUI();
+  speakCzechWord('Ahoj školáku, jdeme číst!', 0.95);
+}
+
+function setAdminSystemVoiceURI(uri) {
+  state.preferredSystemVoiceURI = uri || '';
+  saveState();
+  updateAdminVoiceSettingsUI();
+  speakCzechWord('Máma má mísu.', 0.9);
+}
+
+function testAdminTtsVoice() {
+  speakCzechWord('Máma mele maso. Hlásky ááá, čé, eř.', 0.95);
+}
+
+async function exportPregeneratedAiTtsFile() {
+  const statusEl = document.getElementById('admin-export-tts-status');
+  const btn = document.getElementById('admin-export-tts-btn');
+  const voiceName = state.aiVoiceName || 'Kore';
+
+  if (statusEl) {
+    statusEl.classList.remove('hidden');
+    statusEl.textContent = `⏳ Generuji český AI hlas pro všechna písmena (A–Ž) a slovní zásobu... Chvilku strpení.`;
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    const itemsToGenerate = [
+      ...FULL_CZECH_ALPHABET.map(ch => sanitizeForCzechPedagogicalTTS(ch)),
+      ...SPELLING_WORDS_DATABASE.map(item => sanitizeForCzechPedagogicalTTS(item.w))
+    ];
+    const uniqueItems = Array.from(new Set(itemsToGenerate.filter(Boolean)));
+    const exportedMap = { ...(window.PREGENERATED_AI_TTS_DATA || {}) };
+    const missingItems = uniqueItems.filter(speechText => !exportedMap[speechText]);
+
+    const chunkSize = 8;
+    for (let i = 0; i < missingItems.length; i += chunkSize) {
+      const slice = missingItems.slice(i, i + chunkSize);
+      if (statusEl) {
+        statusEl.textContent = `🎙️ Generuji AI nahrávky (${Math.min(i + chunkSize, missingItems.length)} / ${missingItems.length})...`;
+      }
+      const resp = await fetch('/api/tts/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ items: slice, voiceName })
+      });
+      if (!resp.ok) {
+        let errDetail = `HTTP ${resp.status}`;
+        try {
+          const errJson = await resp.json();
+          if (errJson && errJson.error) errDetail = errJson.error;
+        } catch (e) {}
+        throw new Error(errDetail);
+      }
+      const data = await resp.json();
+      const results = (data && data.results) || {};
+      Object.entries(results).forEach(([speechText, base64Audio]) => {
+        if (base64Audio) {
+          exportedMap[speechText] = base64Audio;
+          saveTtsClipToIdb(speechText, base64Audio);
+        }
+      });
+    }
+
+    window.PREGENERATED_AI_TTS_DATA = exportedMap;
+
+    // Uložíme ttsData.js také přímo na server do projektu (aby byl rovnou součástí ZIP exportu z AI Studia)
+    try {
+      await fetch('/api/tts/save-pack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dataMap: exportedMap, voiceName })
+      });
+    } catch (e) {}
+
+    const jsContent = `/* Předgenerované AI hlasy pro Školáckou Misi (GitHub Pages / Offline) */\nwindow.PREGENERATED_AI_TTS_DATA = ${JSON.stringify(exportedMap)};\n`;
+    const blob = new Blob([jsContent], { type: 'application/javascript;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ttsData.js';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+
+    if (statusEl) {
+      statusEl.innerHTML = `✅ Hotovo! Soubor <b>ttsData.js</b> (${Object.keys(exportedMap).length} českých AI nahrávek) byl uložen přímo do projektu i stažen do počítače.`;
+    }
+    playCustomSuccessSound();
+  } catch (err) {
+    if (statusEl) {
+      statusEl.textContent = `⚠️ Nepodařilo se vygenerovat balíček (${err.message || 'server nedostupný'}).`;
+    }
+    soundError();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function toggleTestSyllableArcs() {
+  state.showSyllableArcs = !state.showSyllableArcs;
+  saveState();
+  updateSyllableArcsToggleUI();
+  renderCurrentTestTask();
+  playTone(550, 0.08, 'sine', 0.15);
 }
 
 function initSkolackaMiseApp() {
@@ -5019,8 +6107,16 @@ function initSkolackaMiseApp() {
   if (!state.gridCardCount) state.gridCardCount = 8;
   if (state.showImages === undefined) state.showImages = true;
   if (state.showSpeechButton === undefined) state.showSpeechButton = true;
+  if (state.showSyllableArcs === undefined) state.showSyllableArcs = false;
+  if (!state.spellingMode) state.spellingMode = 'classic';
+  if (!state.reverseSpellingSpeed) state.reverseSpellingSpeed = 1;
+  if (!state.ttsEngine) state.ttsEngine = 'ai';
+  if (!state.aiVoiceName) state.aiVoiceName = 'Kore';
+  if (state.preferredSystemVoiceURI === undefined) state.preferredSystemVoiceURI = '';
   if (!state.spellingRepeatCount) state.spellingRepeatCount = 3;
   if (!state.mathMax) state.mathMax = 10;
+  if (!state.coinMaxLimit) state.coinMaxLimit = 20;
+  if (state.coinHardMode === undefined) state.coinHardMode = true;
   if (!state.goldDiamonds) state.goldDiamonds = 0;
   if (!state.bonusMaxLimitMinutes) state.bonusMaxLimitMinutes = 0;
   if (!state.diamondExchangeRate) state.diamondExchangeRate = 20;
@@ -5028,9 +6124,11 @@ function initSkolackaMiseApp() {
   if (!state.tabletSecretPin) state.tabletSecretPin = 'XXXX';
   if (!state.customDailyLevelChoice) state.customDailyLevelChoice = 4;
   if (state.streakDays === undefined) state.streakDays = 0;
+  if (state.letterCase === 'lower') state.letterCase = 'upper';
 
   updateImageToggleUI();
   updateSpeechToggleUI();
+  updateSyllableArcsToggleUI();
   setLetterCase(state.letterCase || 'upper');
   setSubject(state.subject || 'reading');
   setGridCount(state.gridCardCount);
@@ -5038,6 +6136,7 @@ function initSkolackaMiseApp() {
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => {
       window.speechSynthesis.getVoices();
+      updateAdminVoiceSettingsUI();
     };
   }
 
