@@ -28,7 +28,7 @@ const BUILTIN_ACCOUNTS = {
   test: {
     username: 'test',
     password: 'test1',
-    displayName: 'TESTOVACÍ HRDINA',
+    displayName: 'ŠKOLÁK TEST',
     cloudEnabled: false,
     isTestAccount: true
   }
@@ -776,6 +776,35 @@ function updateEnvironmentBadgeUI() {
   }
 }
 
+function snapViewportToTop() {
+  try {
+    window.scrollTo(0, 0);
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  } catch (e) {}
+}
+
+function resetIPadViewportScroll() {
+  try {
+    if (document.activeElement && typeof document.activeElement.blur === 'function' && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+    snapViewportToTop();
+    setTimeout(snapViewportToTop, 80);
+    setTimeout(snapViewportToTop, 220);
+    setTimeout(snapViewportToTop, 420);
+  } catch (e) {}
+}
+
+if (typeof window !== 'undefined' && window.visualViewport) {
+  window.visualViewport.addEventListener('resize', () => {
+    const overlay = document.getElementById('auth-login-overlay');
+    if (overlay && overlay.classList.contains('hidden')) {
+      snapViewportToTop();
+    }
+  });
+}
+
 function showCloudSaveToast(message, icon = '💾', borderClass = 'border-emerald-400') {
   const toast = document.getElementById('cloud-save-toast');
   const iconEl = document.getElementById('cloud-save-toast-icon');
@@ -784,12 +813,12 @@ function showCloudSaveToast(message, icon = '💾', borderClass = 'border-emeral
 
   if (iconEl) iconEl.textContent = icon;
   textEl.textContent = message;
-  toast.className = `fixed top-3 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-100 translate-y-0 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
+  toast.className = `fixed top-14 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-100 translate-y-0 transition-all duration-300 flex items-center gap-2 bg-slate-900 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
 
   if (cloudToastHideTimer) clearTimeout(cloudToastHideTimer);
   cloudToastHideTimer = setTimeout(() => {
-    toast.className = `fixed top-3 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
-  }, 2800);
+    toast.className = `hidden fixed top-14 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 items-center gap-2 bg-slate-900 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
+  }, 2600);
 }
 
 function isValidGameStateObject(obj) {
@@ -810,7 +839,7 @@ function computeStateProgressScore(s) {
   score += (Array.isArray(s.traceabilityHistory) ? s.traceabilityHistory.length : 0) * 25;
   score += Math.round((Number(s.minutesBalance) || 0) * 4);
   score += Math.round((Number(s.vaultBalance) || 0) * 4);
-  score += (Number(s.goldDiamonds) || 0) * 2;
+  score += Math.min(Number(s.goldDiamonds) || 0, 500) * 2;
   score += (Number(s.streakDays) || 0) * 15;
   if (s.petState && Array.isArray(s.petState.ownedPets)) {
     score += s.petState.ownedPets.length * 20;
@@ -823,30 +852,39 @@ function computeStateProgressScore(s) {
   return score;
 }
 
+function isPollutedTestStateForRealAccount(s) {
+  if (!s || typeof s !== 'object') return false;
+  return (Number(s.goldDiamonds) || 0) > 2000;
+}
+
 function mergeLocalAndCloudStates(localObj, cloudObj) {
   if (!isValidGameStateObject(cloudObj)) return localObj;
   if (!isValidGameStateObject(localObj)) return cloudObj;
+
+  // Pokud lokální paměť (např. na PC z dřívějšího testování v AI Studiu) obsahuje testovací miliony diamantů (> 2000),
+  // zatímco v cloudu jsou reálná data z iPadu, vždy použijeme čistý stav z cloudu!
+  if (isPollutedTestStateForRealAccount(localObj) && !isPollutedTestStateForRealAccount(cloudObj)) {
+    return JSON.parse(JSON.stringify(cloudObj));
+  }
 
   const localScore = computeStateProgressScore(localObj);
   const cloudScore = computeStateProgressScore(cloudObj);
   const localTime = Number(localObj.lastSavedAt) || 0;
   const cloudTime = Number(cloudObj.lastSavedAt) || 0;
 
-  if (cloudScore <= 30 && localScore > cloudScore) {
-    return localObj;
-  }
   if (localScore <= 30 && cloudScore > localScore) {
-    return cloudObj;
+    return JSON.parse(JSON.stringify(cloudObj));
+  }
+  if (cloudScore <= 30 && localScore > cloudScore) {
+    return JSON.parse(JSON.stringify(localObj));
   }
 
-  let primary = localObj;
-  let secondary = cloudObj;
-  if (cloudTime > localTime && cloudScore >= localScore * 0.7) {
-    primary = cloudObj;
-    secondary = localObj;
-  } else if (!localTime && cloudScore > localScore) {
-    primary = cloudObj;
-    secondary = localObj;
+  // Pokud má cloud novější nebo stejné časové razítko (nebo lokální záznam razítko nemá), primární je vždy cloud (data uložená z iPadu)
+  let primary = cloudObj;
+  let secondary = localObj;
+  if (localTime > cloudTime && cloudTime > 0) {
+    primary = localObj;
+    secondary = cloudObj;
   }
 
   const merged = JSON.parse(JSON.stringify(primary));
@@ -929,16 +967,26 @@ function normalizeCloudEnvelope(rawRecord) {
 
   if (rawRecord.accounts && typeof rawRecord.accounts === 'object' && !Array.isArray(rawRecord.accounts)) {
     envelope.accounts = { ...rawRecord.accounts };
+    Object.values(envelope.accounts).forEach(acc => {
+      if (acc && acc.state && typeof acc.state === 'object') {
+        const envTime = Number(acc.updatedAt) || Number(rawRecord.updatedAt) || 0;
+        if (envTime > (Number(acc.state.lastSavedAt) || 0)) {
+          acc.state.lastSavedAt = envTime;
+        }
+      }
+    });
     return envelope;
   }
 
   // Zpětná kompatibilita: pokud je v JSONbin.io uložen přímo Míšův herní stav z předchozí verze, přiřadíme ho účtu 'misa'
   if (isValidGameStateObject(rawRecord)) {
+    const ts = Number(rawRecord.lastSavedAt) || Date.now();
+    rawRecord.lastSavedAt = ts;
     envelope.accounts.misa = {
       username: 'misa',
       password: BUILTIN_ACCOUNTS.misa.password,
       displayName: BUILTIN_ACCOUNTS.misa.displayName,
-      updatedAt: Number(rawRecord.lastSavedAt) || Date.now(),
+      updatedAt: ts,
       state: rawRecord
     };
   }
@@ -1173,13 +1221,18 @@ function readLocalParsedStateForUser(username) {
     if (!uname) return null;
 
     const userRaw = localStorage.getItem(`${USER_STORAGE_PREFIX}${uname}`);
-    const userParsed = userRaw ? JSON.parse(userRaw) : null;
+    let userParsed = userRaw ? JSON.parse(userRaw) : null;
 
     // KLÍČOVÁ MIGRACE PRO MÍŠŮV ÚČET ('misa'):
-    // Přečte stávající data z původního klíče STORAGE_KEY ('ctenarska_mise_v20_modular') a sloučí je s účtem 'misa', aby Míša o nic nepřišel!
+    // Přečte stávající data z původního klíče STORAGE_KEY ('ctenarska_mise_v20_modular') a sloučí je s účtem 'misa',
+    // ale ignoruje případná stará testovací data z PC prohlížeče (např. s > 2000 testovacími diamanty).
     if (uname === 'misa') {
       const legacyRaw = localStorage.getItem(STORAGE_KEY);
-      const legacyParsed = legacyRaw ? JSON.parse(legacyRaw) : null;
+      let legacyParsed = legacyRaw ? JSON.parse(legacyRaw) : null;
+
+      if (isPollutedTestStateForRealAccount(userParsed)) userParsed = null;
+      if (isPollutedTestStateForRealAccount(legacyParsed)) legacyParsed = null;
+
       if (userParsed && legacyParsed) {
         return mergeLocalAndCloudStates(legacyParsed, userParsed);
       }
@@ -1258,21 +1311,21 @@ async function syncWithCloudOnStartup() {
     const cloudRecord = cloudAccountEntry && cloudAccountEntry.state ? cloudAccountEntry.state : null;
 
     if (isValidGameStateObject(cloudRecord)) {
+      const cloudTime = Math.max(Number(cloudAccountEntry.updatedAt) || 0, Number(cloudRecord.lastSavedAt) || 0);
+      cloudRecord.lastSavedAt = cloudTime;
+      const localTime = localParsed ? (Number(localParsed.lastSavedAt) || 0) : 0;
+
       const merged = mergeLocalAndCloudStates(localParsed, cloudRecord);
       applyParsedStateToRuntime(merged);
       saveStateToLocalStorageOnly();
       refreshAllUIAfterCloudSync();
 
-      const localScore = computeStateProgressScore(localParsed);
-      const cloudScore = computeStateProgressScore(cloudRecord);
-      const localTime = localParsed ? (Number(localParsed.lastSavedAt) || 0) : 0;
-      const cloudTime = Number(cloudRecord.lastSavedAt) || 0;
-
-      if (localScore > cloudScore || localTime > cloudTime) {
+      // Do cloudu při startu nahráváme pouze tehdy, pokud měl tento tablet prokazatelně novější lokální časové razítko než cloud
+      if (localTime > cloudTime && cloudTime > 0 && !isPollutedTestStateForRealAccount(localParsed)) {
         await pushStateToJsonBin(false);
       }
-    } else if (isValidGameStateObject(localParsed)) {
-      // V cloudu ještě tento účet nemá nahraný stav (např. první přihlášení Míši s jeho lokálními daty z iPadu nebo čerstvě založený účet) -> uložíme ho do cloudu!
+    } else if (isValidGameStateObject(localParsed) && !isPollutedTestStateForRealAccount(localParsed)) {
+      // V cloudu ještě tento účet nemá nahraný stav -> uložíme ho do cloudu!
       saveStateToLocalStorageOnly();
       await pushStateToJsonBin(false);
     }
@@ -1351,6 +1404,9 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
 
   const overlay = document.getElementById('auth-login-overlay');
   if (overlay) overlay.classList.add('hidden');
+  resetIPadViewportScroll();
+  setTimeout(resetIPadViewportScroll, 80);
+  setTimeout(resetIPadViewportScroll, 280);
 
   if (isNewRegistration) {
     state = createCleanDefaultGameState();
@@ -1366,9 +1422,9 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
     showCloudSaveToast(`Vítej! Nový účet "${currentLoggedInUser.username}" byl vytvořen!`, '✨', 'border-indigo-400');
   } else {
     loadState();
-    saveStateToLocalStorageOnly();
     refreshAllUIAfterCloudSync();
     await syncWithCloudOnStartup();
+    saveStateToLocalStorageOnly();
     if (currentLoggedInUser.isTestAccount) {
       showCloudSaveToast('Přihlášen testovací účet (5 000 💎, vše odemčeno, lokální režim)', '🧪', 'border-amber-400');
     } else {
@@ -7123,6 +7179,7 @@ function verifyParentPin() {
 function switchAdminTab(tabKey) {
   const btnGeneral = document.getElementById('admin-tab-btn-general');
   const btnTrace = document.getElementById('admin-tab-btn-traceability');
+  const btnAccounts = document.getElementById('admin-tab-btn-accounts');
   const btnSkins = document.getElementById('admin-tab-btn-skins_admin');
   const btnPets = document.getElementById('admin-tab-btn-pets_admin');
   const btnTest = document.getElementById('admin-tab-btn-test');
@@ -7132,6 +7189,7 @@ function switchAdminTab(tabKey) {
 
   const contentGeneral = document.getElementById('admin-tab-content-general');
   const contentTrace = document.getElementById('admin-tab-content-traceability');
+  const contentAccounts = document.getElementById('admin-tab-content-accounts');
   const contentSkins = document.getElementById('admin-tab-content-skins_admin');
   const contentPets = document.getElementById('admin-tab-content-pets_admin');
   const contentTest = document.getElementById('admin-tab-content-test');
@@ -7139,12 +7197,13 @@ function switchAdminTab(tabKey) {
   const contentMath = document.getElementById('admin-tab-content-math');
   const contentReading = document.getElementById('admin-tab-content-reading');
 
-  [btnGeneral, btnTrace, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
+  [btnGeneral, btnTrace, btnAccounts, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
     if (b) b.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left';
   });
 
   if (contentGeneral) contentGeneral.classList.add('hidden');
   if (contentTrace) contentTrace.classList.add('hidden');
+  if (contentAccounts) contentAccounts.classList.add('hidden');
   if (contentSkins) contentSkins.classList.add('hidden');
   if (contentPets) contentPets.classList.add('hidden');
   if (contentTest) contentTest.classList.add('hidden');
@@ -7156,6 +7215,10 @@ function switchAdminTab(tabKey) {
     if (btnTrace) btnTrace.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-emerald-600 text-white shadow-sm flex items-center gap-2 text-left';
     if (contentTrace) contentTrace.classList.remove('hidden');
     renderAdminTraceabilityUI();
+  } else if (tabKey === 'accounts') {
+    if (btnAccounts) btnAccounts.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-sky-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentAccounts) contentAccounts.classList.remove('hidden');
+    renderAdminAccountsList(true);
   } else if (tabKey === 'skins_admin') {
     if (btnSkins) btnSkins.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left';
     if (contentSkins) contentSkins.classList.remove('hidden');
@@ -7183,6 +7246,208 @@ function switchAdminTab(tabKey) {
     if (contentGeneral) contentGeneral.classList.remove('hidden');
   }
   playTone(520, 0.08, 'sine', 0.12);
+}
+
+async function renderAdminAccountsList(fetchFromCloud = false) {
+  const container = document.getElementById('admin-accounts-list-container');
+  if (!container) return;
+
+  if ((fetchFromCloud || !cachedCloudEnvelope) && navigator.onLine) {
+    container.innerHTML = `
+      <div class="p-4 text-center text-xs font-bold text-slate-500 bg-white rounded-2xl border border-slate-200">
+        🔄 Načítám aktuální stav účtů z cloudu JSONbin.io...
+      </div>
+    `;
+    try {
+      await fetchCloudEnvelopeFromJsonBin();
+    } catch (e) {
+      console.warn('Nelze stáhnout seznam účtů z cloudu:', e);
+    }
+  }
+
+  const localReg = getLocalAccountsRegistry();
+  const cloudAccounts = (cachedCloudEnvelope && cachedCloudEnvelope.accounts) ? cachedCloudEnvelope.accounts : {};
+
+  // Sjednotíme všechny klíče účtů (misa, test + jakékoliv vytvořené účty lokálně či v cloudu)
+  const allUsernames = Array.from(new Set([
+    'misa',
+    'test',
+    ...Object.keys(localReg),
+    ...Object.keys(cloudAccounts)
+  ]));
+
+  container.innerHTML = allUsernames.map(uname => {
+    const localMeta = localReg[uname] || null;
+    const cloudMeta = cloudAccounts[uname] || null;
+    const displayName = (localMeta && localMeta.displayName) || (cloudMeta && cloudMeta.displayName) || `ŠKOLÁK ${uname.toUpperCase()}`;
+    const password = (localMeta && localMeta.password) || (cloudMeta && cloudMeta.password) || '—';
+    const isCurrent = Boolean(currentLoggedInUser && currentLoggedInUser.username === uname);
+
+    const isMisa = uname === 'misa';
+    const isTest = uname === 'test';
+
+    // Zjistíme uložený stav účtu: u cloudových účtů (misa a další) má přednost čerstvý stav z cloudu JSONbin.io!
+    const localState = readLocalParsedStateForUser(uname);
+    const cloudState = cloudMeta && cloudMeta.state ? cloudMeta.state : null;
+
+    let bestState = null;
+    if (isTest) {
+      bestState = isCurrent ? state : (localState || { minutesBalance: 0, goldDiamonds: 5000, streakDays: 0 });
+    } else if (cloudState) {
+      const cloudTime = Math.max(Number(cloudMeta.updatedAt) || 0, Number(cloudState.lastSavedAt) || 0);
+      const localTime = localState ? (Number(localState.lastSavedAt) || 0) : 0;
+      bestState = (localState && localTime > cloudTime && cloudTime > 0 && !isPollutedTestStateForRealAccount(localState))
+        ? localState
+        : cloudState;
+
+      // Zároveň aktualizujeme lokální paměť tohoto zařízení podle cloudu, aby v ní nezůstávala stará testovací data
+      try {
+        const serializedCloud = JSON.stringify(bestState);
+        localStorage.setItem(`${USER_STORAGE_PREFIX}${uname}`, serializedCloud);
+        if (isMisa) {
+          localStorage.setItem(STORAGE_KEY, serializedCloud);
+        }
+      } catch (e) {}
+    } else {
+      bestState = isCurrent ? state : localState;
+    }
+
+    const mins = bestState ? formatMinutes(bestState.minutesBalance || 0) : '0 min';
+    const dias = bestState ? (bestState.goldDiamonds || 0) : 0;
+    const streak = bestState ? (bestState.streakDays || 0) : 0;
+
+    let badgeHtml = '';
+    if (isMisa) {
+      badgeHtml = '<span class="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-lg uppercase">🛡️ Hlavní účet Míši</span>';
+    } else if (isTest) {
+      badgeHtml = '<span class="bg-amber-500 text-white text-[10px] font-black px-2 py-0.5 rounded-lg uppercase">🧪 Vestavěný testovací účet</span>';
+    } else {
+      badgeHtml = '<span class="bg-indigo-600 text-white text-[10px] font-black px-2 py-0.5 rounded-lg uppercase">👤 Vytvořený účet</span>';
+    }
+
+    const activeBadgeHtml = isCurrent
+      ? '<span class="bg-sky-100 text-sky-900 border border-sky-300 text-[10px] font-black px-2 py-0.5 rounded-lg">✨ Právě přihlášen</span>'
+      : '';
+
+    let actionBtnHtml = '';
+    if (isMisa) {
+      actionBtnHtml = `
+        <span class="text-[11px] font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl">
+          🔒 Chráněný účet (nelze smazat)
+        </span>
+      `;
+    } else if (isTest) {
+      actionBtnHtml = `
+        <button type="button" onclick="resetTestAccountFromAdmin()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs border-b-2 border-amber-700 shadow-xs flex items-center gap-1">
+          <span>🔄</span> <span>Resetovat test (5 000 💎)</span>
+        </button>
+      `;
+    } else {
+      actionBtnHtml = `
+        <button type="button" onclick="deleteUserAccountFromAdmin('${uname}')" class="game-button bg-rose-500 hover:bg-rose-600 text-white font-black px-3.5 py-1.5 rounded-xl text-xs border-b-2 border-rose-700 shadow-xs flex items-center gap-1.5">
+          <span>🗑️</span> <span>Smazat účet</span>
+        </button>
+      `;
+    }
+
+    return `
+      <div class="bg-white border-2 ${isCurrent ? 'border-sky-400 ring-2 ring-sky-100' : 'border-slate-200'} rounded-2xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm sm:text-base font-black text-slate-900 font-mono">${uname}</span>
+            <span class="text-xs font-extrabold text-slate-500">(${displayName})</span>
+            ${badgeHtml}
+            ${activeBadgeHtml}
+          </div>
+          <div class="flex items-center gap-3 text-xs font-bold text-slate-600 flex-wrap mt-0.5">
+            <span>🔑 Heslo: <strong class="font-mono text-slate-800">${password}</strong></span>
+            <span>⭐ Kredit: <strong class="text-amber-700">${mins}</strong></span>
+            <span>💎 Diamanty: <strong class="text-cyan-700">${dias}</strong></span>
+            <span>🔥 Řada: <strong class="text-orange-600">${streak} dní</strong></span>
+            <span>💾 Úložiště: <strong>${isTest ? 'Pouze lokální' : (cloudMeta ? 'Lokální + Cloud' : 'Lokální')}</strong></span>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
+          ${actionBtnHtml}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function resetTestAccountFromAdmin() {
+  try {
+    localStorage.removeItem(`${USER_STORAGE_PREFIX}test`);
+    if (currentLoggedInUser && currentLoggedInUser.username === 'test') {
+      state = createCleanDefaultGameState();
+      applyTestAccountPerks(state);
+      window.state = state;
+      saveStateToLocalStorageOnly();
+      refreshAllUIAfterCloudSync();
+    }
+    renderAdminAccountsList(false);
+    alertUserFeedback('Testovací účet "test" byl vyčištěn a nastaven na 5 000 💎!');
+  } catch (e) {
+    console.error('Chyba při resetu test účtu:', e);
+  }
+}
+
+async function deleteUserAccountFromAdmin(username) {
+  const uname = normalizeAccountUsername(username);
+  if (!uname || uname === 'misa' || uname === 'test') {
+    alertUserFeedback('Tento výchozí účet nelze smazat.');
+    return;
+  }
+
+  // 1. Odstraníme z lokálního registru účtů a lokálního úložiště
+  try {
+    const raw = localStorage.getItem(LOCAL_ACCOUNTS_REGISTRY_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (parsed && typeof parsed === 'object') {
+      delete parsed[uname];
+      localStorage.setItem(LOCAL_ACCOUNTS_REGISTRY_KEY, JSON.stringify(parsed));
+    }
+    localStorage.removeItem(`${USER_STORAGE_PREFIX}${uname}`);
+    if (localStorage.getItem(REMEMBERED_USER_KEY) === uname) {
+      localStorage.removeItem(REMEMBERED_USER_KEY);
+    }
+  } catch (e) {
+    console.error('Chyba při mazání lokálního účtu:', e);
+  }
+
+  // 2. Odstraníme i z cloudu JSONbin.io, pokud je zařízení online
+  if (navigator.onLine) {
+    try {
+      if (!cachedCloudEnvelope) {
+        await fetchCloudEnvelopeFromJsonBin();
+      }
+      if (cachedCloudEnvelope && cachedCloudEnvelope.accounts && cachedCloudEnvelope.accounts[uname]) {
+        delete cachedCloudEnvelope.accounts[uname];
+        cachedCloudEnvelope.updatedAt = Date.now();
+        await fetch(JSONBIN_URL, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': JSONBIN_MASTER_KEY
+          },
+          body: JSON.stringify(cachedCloudEnvelope)
+        });
+      }
+    } catch (err) {
+      console.warn('Chyba při mazání účtu z cloudu:', err);
+    }
+  }
+
+  if (typeof playTone === 'function') playTone(500, 0.1, 'sine', 0.18);
+  alertUserFeedback(`Účet "${uname}" byl kompletně odstraněn!`);
+
+  // Pokud jsme smazali právě přihlášený účet, odhlásíme se na úvodní obrazovku
+  if (currentLoggedInUser && currentLoggedInUser.username === uname) {
+    closeAdminPanel();
+    logoutCurrentAccount();
+  } else {
+    renderAdminAccountsList(false);
+  }
 }
 
 function switchTraceabilitySubView(viewKey) {
