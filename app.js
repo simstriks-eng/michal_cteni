@@ -134,7 +134,13 @@ let state = {
   subject: 'reading',
   minutesBalance: 0.0,
   dailyEarnedToday: 0.0,
+  dailyReadingEarnedToday: 0.0,
+  dailyMathEarnedToday: 0.0,
   dailyEarnedDate: getTodayDateString(),
+  vouchersBoughtDate: getTodayDateString(),
+  dailyStandardVoucherBought: null,
+  dailyMaxVoucherBought: null,
+  traceabilityHistory: [],
   vaultBalance: 0.0,
   goldDiamonds: 0,
   bonusMaxLimitMinutes: 0,
@@ -147,6 +153,10 @@ let state = {
   mathMax: 10,
   coinMaxLimit: 20,
   coinHardMode: true,
+  coinGameMode: 'compose',
+  coinHideFormula: false,
+  optimizeReadingTarget: 15,
+  optimizeMathTarget: 15,
   letterCase: 'upper',
   showSyllableArcs: false,
   spellingMode: 'classic',
@@ -664,8 +674,16 @@ function loadState() {
       state = { ...state, ...parsed };
       if (!state.rewards) {
         state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
-      } else if (state.rewards.questRate === undefined || state.rewards.questRate === 1) {
-        state.rewards.questRate = 4.0;
+      } else {
+        if (state.rewards.questRate === undefined || state.rewards.questRate === 1) {
+          state.rewards.questRate = 4.0;
+        }
+        if (state.rewards.readingQuestRate === undefined) {
+          state.rewards.readingQuestRate = state.rewards.questRate || 4.0;
+        }
+        if (state.rewards.mathQuestRate === undefined) {
+          state.rewards.mathQuestRate = state.rewards.questRate || 4.0;
+        }
       }
       window.state = state;
 
@@ -740,6 +758,8 @@ function checkAndHandleDailyResets() {
   if (state.dailyEarnedDate !== today) {
     state.dailyEarnedDate = today;
     state.dailyEarnedToday = 0.0;
+    state.dailyReadingEarnedToday = 0.0;
+    state.dailyMathEarnedToday = 0.0;
 
     if ((state.vaultBalance || 0) > 0) {
       const unlocked = state.vaultBalance;
@@ -756,9 +776,329 @@ function checkAndHandleDailyResets() {
     }
   }
 
+  if (state.vouchersBoughtDate !== today) {
+    state.vouchersBoughtDate = today;
+    state.dailyStandardVoucherBought = null;
+    state.dailyMaxVoucherBought = null;
+  }
+
+  if (!Array.isArray(state.traceabilityHistory)) {
+    state.traceabilityHistory = [];
+  }
+  if (typeof state.dailyReadingEarnedToday !== 'number') state.dailyReadingEarnedToday = 0.0;
+  if (typeof state.dailyMathEarnedToday !== 'number') state.dailyMathEarnedToday = 0.0;
+
   if (typeof checkAndHandlePetDailyReset === 'function') {
     checkAndHandlePetDailyReset();
   }
+}
+
+/* ============================================================
+   STOPKY V HLAVIČCE (3S HOLD-TO-STOP) & TRACEABILITA TRÉNINKU
+   ============================================================ */
+
+let stopwatchState = {
+  status: 'idle', // 'idle' | 'running' | 'paused'
+  elapsedSec: 0,
+  sessionStartTimeStr: '',
+  lastTickMs: 0,
+  intervalId: null,
+  holdAnimFrame: null,
+  holdStartMs: 0,
+  holdListenersAttached: false
+};
+
+function formatStopwatchMMSS(totalSeconds) {
+  const sec = Math.max(0, Math.floor(totalSeconds || 0));
+  const hrs = Math.floor(sec / 3600);
+  const mins = Math.floor((sec % 3600) / 60);
+  const remSec = sec % 60;
+  if (hrs > 0) {
+    return `${hrs}:${String(mins).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`;
+  }
+  return `${String(mins).padStart(2, '0')}:${String(remSec).padStart(2, '0')}`;
+}
+
+function formatDurationHuman(totalSeconds) {
+  const sec = Math.max(0, Math.round(totalSeconds || 0));
+  const hrs = Math.floor(sec / 3600);
+  const mins = Math.floor((sec % 3600) / 60);
+  const remSec = sec % 60;
+  if (hrs > 0) {
+    return `${hrs}h ${mins}m ${remSec}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m ${String(remSec).padStart(2, '0')}s`;
+  }
+  return `${remSec}s`;
+}
+
+let traceabilityExpandedDate = null;
+let traceabilitySubView = 'table'; // 'table' | 'chart'
+let traceabilityChartFilters = {
+  duration: true,
+  minutes: true,
+  diamonds: true
+};
+
+function ensureTodayTraceabilityRecord() {
+  if (!Array.isArray(state.traceabilityHistory)) {
+    state.traceabilityHistory = [];
+  }
+  const todayIso = getTodayDateString();
+  const todayDisplay = new Date().toLocaleDateString('cs-CZ');
+  let rec = state.traceabilityHistory.find(r => r.dateIso === todayIso);
+  if (!rec) {
+    rec = {
+      dateIso: todayIso,
+      dateDisplay: todayDisplay,
+      totalDurationSec: 0,
+      earnedMinutes: 0,
+      earnedDiamonds: 0,
+      lessonsCount: 0,
+      dailyQuestsCompleted: 0,
+      sessions: [],
+      stats: {
+        letters: 0,
+        syllables: 0,
+        words: 0,
+        sentences: 0,
+        spelling: 0,
+        coins: 0,
+        comparisons: 0,
+        sequences: 0,
+        examples: 0,
+        decompositions: 0,
+        wordProblems: 0,
+        coloring: 0
+      }
+    };
+    state.traceabilityHistory.unshift(rec);
+  }
+  if (!rec.stats) rec.stats = {};
+  if (rec.earnedDiamonds === undefined) rec.earnedDiamonds = 0;
+  if (!Array.isArray(rec.sessions)) rec.sessions = [];
+  const completedQuestsCount = Array.isArray(state.quests)
+    ? state.quests.filter(q => q.claimed || q.progress >= q.target).length
+    : 0;
+  rec.dailyQuestsCompleted = Math.max(rec.dailyQuestsCompleted || 0, completedQuestsCount);
+  return rec;
+}
+
+function isStopwatchSessionActive() {
+  return stopwatchState.status === 'running' || stopwatchState.status === 'paused';
+}
+
+function recordTraceabilityPractice(statKey, count = 1, isLesson = true) {
+  if (!isStopwatchSessionActive()) return;
+  const rec = ensureTodayTraceabilityRecord();
+  if (isLesson) {
+    rec.lessonsCount = (rec.lessonsCount || 0) + 1;
+  }
+  if (statKey) {
+    rec.stats[statKey] = (rec.stats[statKey] || 0) + (Number(count) || 1);
+  }
+  saveState();
+}
+
+function recordTraceabilityMinutes(minutesAmount) {
+  if (!isStopwatchSessionActive()) return;
+  const num = Number(minutesAmount) || 0;
+  if (num <= 0) return;
+  const rec = ensureTodayTraceabilityRecord();
+  rec.earnedMinutes = Math.round(((rec.earnedMinutes || 0) + num) * 100) / 100;
+}
+
+function recordTraceabilityDiamonds(count = 1) {
+  if (!isStopwatchSessionActive()) return;
+  const num = Number(count) || 0;
+  if (num <= 0) return;
+  const rec = ensureTodayTraceabilityRecord();
+  rec.earnedDiamonds = (rec.earnedDiamonds || 0) + num;
+  saveState();
+}
+
+function syncTraceabilityQuestsIfActive() {
+  if (!Array.isArray(state.traceabilityHistory)) return;
+  const todayIso = getTodayDateString();
+  const rec = state.traceabilityHistory.find(r => r.dateIso === todayIso);
+  if (rec && Array.isArray(state.quests)) {
+    const completedQuestsCount = state.quests.filter(q => q.claimed || q.progress >= q.target).length;
+    rec.dailyQuestsCompleted = Math.max(rec.dailyQuestsCompleted || 0, completedQuestsCount);
+  }
+}
+
+function updateStopwatchUI() {
+  const dotEl = document.getElementById('stopwatch-status-dot');
+  const timeEl = document.getElementById('stopwatch-time-display');
+  const playPauseBtn = document.getElementById('stopwatch-playpause-btn');
+  const stopBtn = document.getElementById('stopwatch-stop-btn');
+
+  if (timeEl) {
+    timeEl.textContent = formatStopwatchMMSS(stopwatchState.elapsedSec);
+  }
+
+  if (stopwatchState.status === 'running') {
+    if (dotEl) dotEl.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0';
+    if (playPauseBtn) {
+      playPauseBtn.textContent = '⏸';
+      playPauseBtn.title = 'Pozastavit stopky';
+      playPauseBtn.className = 'w-6 h-6 rounded-full bg-amber-500 hover:bg-amber-400 active:scale-90 text-white flex items-center justify-center text-[10px] font-black shadow-xs transition-all';
+    }
+    if (stopBtn) stopBtn.classList.remove('hidden');
+  } else if (stopwatchState.status === 'paused') {
+    if (dotEl) dotEl.className = 'w-2 h-2 rounded-full bg-amber-400 shrink-0';
+    if (playPauseBtn) {
+      playPauseBtn.textContent = '▶';
+      playPauseBtn.title = 'Pokračovat v měření';
+      playPauseBtn.className = 'w-6 h-6 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-90 text-white flex items-center justify-center text-[10px] font-black shadow-xs transition-all animate-pulse';
+    }
+    if (stopBtn) stopBtn.classList.remove('hidden');
+  } else {
+    if (dotEl) dotEl.className = 'w-2 h-2 rounded-full bg-slate-400 shrink-0';
+    if (playPauseBtn) {
+      playPauseBtn.textContent = '▶';
+      playPauseBtn.title = 'Spustit stopky tréninku';
+      playPauseBtn.className = 'w-6 h-6 rounded-full bg-emerald-500 hover:bg-emerald-400 active:scale-90 text-white flex items-center justify-center text-[10px] font-black shadow-xs transition-all';
+    }
+    if (stopBtn) stopBtn.classList.add('hidden');
+  }
+}
+
+function toggleStopwatchPlayPause() {
+  attachStopwatchStopHoldListeners();
+
+  if (stopwatchState.status === 'idle') {
+    stopwatchState.status = 'running';
+    stopwatchState.elapsedSec = 0;
+    stopwatchState.sessionStartTimeStr = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+    stopwatchState.lastTickMs = Date.now();
+    ensureTodayTraceabilityRecord();
+    saveState();
+
+    if (stopwatchState.intervalId) clearInterval(stopwatchState.intervalId);
+    stopwatchState.intervalId = setInterval(() => {
+      if (stopwatchState.status === 'running') {
+        const now = Date.now();
+        const deltaSec = (now - stopwatchState.lastTickMs) / 1000;
+        stopwatchState.lastTickMs = now;
+        stopwatchState.elapsedSec += deltaSec;
+        const timeEl = document.getElementById('stopwatch-time-display');
+        if (timeEl) timeEl.textContent = formatStopwatchMMSS(stopwatchState.elapsedSec);
+      }
+    }, 250);
+
+    playTone(660, 0.08, 'sine', 0.15);
+    alertUserFeedback('⏱️ Stopky spuštěny! Trénink a statistiky se nyní zapisují.');
+  } else if (stopwatchState.status === 'running') {
+    const now = Date.now();
+    stopwatchState.elapsedSec += (now - stopwatchState.lastTickMs) / 1000;
+    stopwatchState.status = 'paused';
+    playTone(480, 0.08, 'sine', 0.15);
+  } else if (stopwatchState.status === 'paused') {
+    stopwatchState.lastTickMs = Date.now();
+    stopwatchState.status = 'running';
+    playTone(620, 0.08, 'sine', 0.15);
+  }
+
+  updateStopwatchUI();
+}
+
+function completeStopwatchStop() {
+  if (stopwatchState.intervalId) {
+    clearInterval(stopwatchState.intervalId);
+    stopwatchState.intervalId = null;
+  }
+  if (stopwatchState.holdAnimFrame) {
+    cancelAnimationFrame(stopwatchState.holdAnimFrame);
+    stopwatchState.holdAnimFrame = null;
+  }
+  stopwatchState.holdStartMs = 0;
+
+  const ringEl = document.getElementById('stopwatch-stop-ring');
+  if (ringEl) ringEl.style.strokeDashoffset = '81.68';
+
+  const durationSec = Math.max(1, Math.round(stopwatchState.elapsedSec || 1));
+  const endTimeStr = new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' });
+  const startTimeStr = stopwatchState.sessionStartTimeStr || endTimeStr;
+
+  const rec = ensureTodayTraceabilityRecord();
+  rec.sessions.push({
+    start: startTimeStr,
+    end: endTimeStr,
+    durationSec: durationSec
+  });
+  rec.totalDurationSec = (rec.totalDurationSec || 0) + durationSec;
+  syncTraceabilityQuestsIfActive();
+
+  stopwatchState.status = 'idle';
+  stopwatchState.elapsedSec = 0;
+  stopwatchState.sessionStartTimeStr = '';
+
+  saveState();
+  updateStopwatchUI();
+  if (typeof renderAdminTraceabilityUI === 'function') renderAdminTraceabilityUI();
+  playCustomSuccessSound();
+  alertUserFeedback(`⏹ Stopky vypnuty (${formatDurationHuman(durationSec)}). Záznam byl uložen do Traceability!`);
+}
+
+function attachStopwatchStopHoldListeners() {
+  if (stopwatchState.holdListenersAttached) return;
+  const stopBtn = document.getElementById('stopwatch-stop-btn');
+  if (!stopBtn) return;
+  stopwatchState.holdListenersAttached = true;
+
+  const RING_CIRCUMFERENCE = 81.68;
+  const HOLD_DURATION_MS = 3000;
+
+  const startHold = (e) => {
+    if (stopwatchState.status === 'idle') return;
+    if (e && e.cancelable) e.preventDefault();
+    if (stopwatchState.holdAnimFrame) cancelAnimationFrame(stopwatchState.holdAnimFrame);
+
+    stopwatchState.holdStartMs = performance.now();
+    playTone(420, 0.05, 'sine', 0.1);
+
+    const step = (now) => {
+      if (!stopwatchState.holdStartMs) return;
+      const elapsed = now - stopwatchState.holdStartMs;
+      const progress = Math.min(1, elapsed / HOLD_DURATION_MS);
+      const ringEl = document.getElementById('stopwatch-stop-ring');
+      if (ringEl) {
+        ringEl.style.strokeDashoffset = (RING_CIRCUMFERENCE * (1 - progress)).toFixed(2);
+      }
+      if (progress >= 1) {
+        completeStopwatchStop();
+      } else {
+        stopwatchState.holdAnimFrame = requestAnimationFrame(step);
+      }
+    };
+
+    stopwatchState.holdAnimFrame = requestAnimationFrame(step);
+  };
+
+  const cancelHold = () => {
+    if (!stopwatchState.holdStartMs) return;
+    const heldMs = performance.now() - stopwatchState.holdStartMs;
+    stopwatchState.holdStartMs = 0;
+    if (stopwatchState.holdAnimFrame) {
+      cancelAnimationFrame(stopwatchState.holdAnimFrame);
+      stopwatchState.holdAnimFrame = null;
+    }
+    const ringEl = document.getElementById('stopwatch-stop-ring');
+    if (ringEl) {
+      ringEl.style.strokeDashoffset = String(RING_CIRCUMFERENCE);
+    }
+    if (heldMs > 80 && heldMs < HOLD_DURATION_MS && stopwatchState.status !== 'idle') {
+      alertUserFeedback('Pro úplné vypnutí stopek podrž tlačítko ⏹ po dobu 3 sekund.');
+    }
+  };
+
+  stopBtn.addEventListener('pointerdown', startHold);
+  stopBtn.addEventListener('pointerup', cancelHold);
+  stopBtn.addEventListener('pointerleave', cancelHold);
+  stopBtn.addEventListener('pointercancel', cancelHold);
+  stopBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 }
 
 function shuffleArray(arr) {
@@ -863,7 +1203,10 @@ const CZECH_COINS_DATA = [
 ];
 
 let coinGameState = {
+  mode: 'compose',
   targetAmount: 20,
+  priceAmount: 32,
+  paidAmount: 50,
   forbiddenCoin: null,
   placedCoins: [],
   isSolved: false,
@@ -876,12 +1219,88 @@ let coinGameState = {
   pointerListenersAttached: false
 };
 
+function setCoinGameMode(mode) {
+  const nextMode = mode === 'change' ? 'change' : 'compose';
+  state.coinGameMode = nextMode;
+  coinGameState.mode = nextMode;
+  // When switching to Vracení peněz, if limit is below 20, bump to at least 50 so shopping scenarios are rich
+  if (nextMode === 'change' && (state.coinMaxLimit || 20) < 20) {
+    state.coinMaxLimit = 50;
+  }
+  saveState();
+  updateCoinModeButtonsUI();
+  playTone(nextMode === 'change' ? 600 : 520, 0.08, 'sine', 0.16);
+  initCoinGameTask();
+}
+
+function updateCoinModeButtonsUI() {
+  const mode = state.coinGameMode === 'change' ? 'change' : 'compose';
+  coinGameState.mode = mode;
+  const btnCompose = document.getElementById('coin-mode-btn-compose');
+  const btnChange = document.getElementById('coin-mode-btn-change');
+  const promptCompose = document.getElementById('coin-prompt-compose');
+  const promptChange = document.getElementById('coin-prompt-change');
+
+  if (btnCompose) {
+    btnCompose.className = mode === 'compose'
+      ? 'px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-amber-500 text-white shadow-sm flex items-center gap-1'
+      : 'px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-slate-700 hover:bg-amber-100 flex items-center gap-1';
+  }
+  if (btnChange) {
+    btnChange.className = mode === 'change'
+      ? 'px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-1'
+      : 'px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-slate-700 hover:bg-amber-100 flex items-center gap-1';
+  }
+  if (promptCompose) {
+    if (mode === 'compose') promptCompose.classList.remove('hidden');
+    else promptCompose.classList.add('hidden');
+  }
+  if (promptChange) {
+    if (mode === 'change') promptChange.classList.remove('hidden');
+    else promptChange.classList.add('hidden');
+  }
+}
+
+function previewCoinSliderLimit(val) {
+  const label = document.getElementById('coin-limit-slider-label');
+  if (label) {
+    label.textContent = `${val} Kč`;
+  }
+}
+
 function setCoinGameMaxLimit(limit) {
-  state.coinMaxLimit = limit;
+  const clamped = Math.max(10, Math.min(100, parseInt(limit, 10) || 20));
+  state.coinMaxLimit = clamped;
   saveState();
   updateCoinLimitButtonsUI();
   playTone(540, 0.08, 'sine', 0.15);
   initCoinGameTask();
+}
+
+function toggleCoinChangeFormula() {
+  state.coinHideFormula = !state.coinHideFormula;
+  saveState();
+  updateCoinFormulaVisibilityUI();
+  playTone(state.coinHideFormula ? 420 : 540, 0.07, 'sine', 0.14);
+}
+
+function updateCoinFormulaVisibilityUI() {
+  const formulaBadge = document.getElementById('coin-change-formula-badge');
+  const toggleBtn = document.getElementById('coin-formula-toggle-btn');
+  const isHidden = !!state.coinHideFormula;
+
+  if (formulaBadge) {
+    if (isHidden) {
+      formulaBadge.classList.add('hidden');
+    } else {
+      formulaBadge.classList.remove('hidden');
+      const answerPart = coinGameState.isSolved ? `${coinGameState.targetAmount} Kč` : '? Kč';
+      formulaBadge.textContent = `${coinGameState.paidAmount} Kč − ${coinGameState.priceAmount} Kč = ${answerPart}`;
+    }
+  }
+  if (toggleBtn) {
+    toggleBtn.innerHTML = isHidden ? '👁️ Zobrazit výpočet' : '🙈 Skrýt výpočet';
+  }
 }
 
 function toggleCoinHardMode() {
@@ -904,15 +1323,7 @@ function toggleCoinHardMode() {
   updateCoinConditionBadgeUI();
   renderCoinTray();
   renderCoinDropZoneItems();
-
-  const feedbackEl = document.getElementById('coin-game-feedback');
-  if (feedbackEl) {
-    if (coinGameState.forbiddenCoin) {
-      feedbackEl.innerHTML = `Přetáhni mince do pole a poskládej <strong>${coinGameState.targetAmount} Kč</strong> – <span class="text-rose-700 font-black">🚫 bez použití mince ${coinGameState.forbiddenCoin} Kč</span>!`;
-    } else {
-      feedbackEl.innerHTML = `Přetáhni mince do pole tak, abys poskládal částku <strong>${coinGameState.targetAmount} Kč</strong>!`;
-    }
-  }
+  updateCoinFeedbackBanner();
 }
 
 function updateCoinHardModeUI() {
@@ -932,7 +1343,7 @@ function updateCoinHardModeUI() {
 }
 
 function pickForbiddenCoinForTarget(target) {
-  const usable = [20, 10, 5, 2, 1].filter(c => c < target);
+  const usable = [50, 20, 10, 5, 2, 1].filter(c => c < target);
   let rem = target;
   const greedyUsed = new Set();
   for (const c of usable) {
@@ -943,6 +1354,18 @@ function pickForbiddenCoinForTarget(target) {
   }
 
   const greedyCandidates = Array.from(greedyUsed);
+  // When target > 50, keep 50 Kč available most of the time so the child can practice using the 50 Kč coin!
+  if (target > 50) {
+    const nonFiftyHigher = greedyCandidates.filter(c => c >= 5 && c !== 50);
+    if (nonFiftyHigher.length > 0 && Math.random() < 0.85) {
+      return nonFiftyHigher[Math.floor(Math.random() * nonFiftyHigher.length)];
+    }
+    const nonFiftyAny = greedyCandidates.filter(c => c !== 50);
+    if (nonFiftyAny.length > 0 && Math.random() < 0.85) {
+      return nonFiftyAny[Math.floor(Math.random() * nonFiftyAny.length)];
+    }
+  }
+
   const higherCandidates = greedyCandidates.filter(c => c >= 5);
   if (higherCandidates.length > 0 && Math.random() < 0.85) {
     return higherCandidates[Math.floor(Math.random() * higherCandidates.length)];
@@ -969,59 +1392,138 @@ function updateCoinConditionBadgeUI() {
 }
 
 function updateCoinLimitButtonsUI() {
-  const currentLimit = state.coinMaxLimit || 20;
-  [20, 30, 40, 50].forEach(lim => {
+  const currentLimit = Math.max(10, Math.min(100, state.coinMaxLimit || 20));
+  const slider = document.getElementById('coin-limit-slider');
+  const sliderLabel = document.getElementById('coin-limit-slider-label');
+  if (slider) slider.value = currentLimit.toString();
+  if (sliderLabel) sliderLabel.textContent = `${currentLimit} Kč`;
+
+  [20, 50, 100].forEach(lim => {
     const btn = document.getElementById(`coin-limit-btn-${lim}`);
     if (btn) {
       if (lim === currentLimit) {
-        btn.className = 'px-2.5 py-1 rounded-xl text-xs font-black transition-all bg-amber-500 text-white shadow-sm';
+        btn.className = 'px-1.5 py-0.5 rounded-lg text-[11px] font-black transition-all bg-amber-500 text-white shadow-sm';
       } else {
-        btn.className = 'px-2.5 py-1 rounded-xl text-xs font-black transition-all text-amber-900 hover:bg-amber-200';
+        btn.className = 'px-1.5 py-0.5 rounded-lg text-[11px] font-black transition-all text-amber-900 hover:bg-amber-200';
       }
     }
   });
 }
 
+function updateCoinFeedbackBanner() {
+  const feedbackEl = document.getElementById('coin-game-feedback');
+  if (!feedbackEl) return;
+
+  if (coinGameState.mode === 'change') {
+    if (coinGameState.forbiddenCoin) {
+      feedbackEl.innerHTML = `Přetáhni do pole mince, které vrátíš zákazníkovi zpět – <span class="text-rose-700 font-black">🚫 bez použití mince ${coinGameState.forbiddenCoin} Kč</span>!`;
+    } else {
+      feedbackEl.innerHTML = `Přetáhni do pole mince, které dohromady dají částku k vrácení zákazníkovi!`;
+    }
+  } else {
+    if (coinGameState.forbiddenCoin) {
+      feedbackEl.innerHTML = `Přetáhni mince do pole a poskládej <strong>${coinGameState.targetAmount} Kč</strong> – <span class="text-rose-700 font-black">🚫 bez použití mince ${coinGameState.forbiddenCoin} Kč</span>!`;
+    } else {
+      feedbackEl.innerHTML = `Přetáhni mince do pole tak, abys poskládal částku <strong>${coinGameState.targetAmount} Kč</strong>!`;
+    }
+  }
+}
+
 function initCoinGameTask() {
-  const maxLimit = state.coinMaxLimit || 20;
+  const maxLimit = Math.max(10, Math.min(100, state.coinMaxLimit || 20));
   const isHard = state.coinHardMode !== false;
+  const mode = state.coinGameMode === 'change' ? 'change' : 'compose';
+  coinGameState.mode = mode;
+
+  updateCoinModeButtonsUI();
   updateCoinLimitButtonsUI();
   updateCoinHardModeUI();
 
   const minTarget = isHard ? 6 : 2;
-  const favoriteTargets = [6, 7, 8, 9, 10, 12, 13, 15, 17, 18, 20, 22, 23, 25, 27, 30, 34, 37, 40, 43, 47, 50].filter(v => v >= minTarget && v <= maxLimit);
-  let nextTarget = 20;
-  let attempts = 0;
 
-  do {
-    if (Math.random() < 0.5 && favoriteTargets.length > 0) {
-      nextTarget = favoriteTargets[Math.floor(Math.random() * favoriteTargets.length)];
-    } else {
-      nextTarget = randomInt(minTarget, maxLimit);
+  if (mode === 'change') {
+    // Vracení peněz (Making Change): pick paidAmount and priceAmount so difference is targetAmount
+    const candidatePaidAmounts = [20, 30, 40, 50, 60, 70, 80, 90, 100].filter(p => p <= maxLimit && p >= minTarget + 2);
+    // Prefer realistic round banknote/coin payments (20, 50, 100)
+    const preferredPaid = [20, 50, 100].filter(p => p <= maxLimit && p >= minTarget + 2);
+    let paid = maxLimit;
+    let price = 10;
+    let diff = 10;
+    let attempts = 0;
+
+    do {
+      if (preferredPaid.length > 0 && Math.random() < 0.78) {
+        // Prefer the upper available realistic banknotes (e.g. 50 or 100 when slider is high)
+        const upperPreferred = preferredPaid.filter(p => p >= Math.min(50, maxLimit));
+        const pool = (upperPreferred.length > 0 && Math.random() < 0.75) ? upperPreferred : preferredPaid;
+        paid = pool[Math.floor(Math.random() * pool.length)];
+      } else if (candidatePaidAmounts.length > 0) {
+        paid = candidatePaidAmounts[Math.floor(Math.random() * candidatePaidAmounts.length)];
+      } else {
+        paid = Math.max(10, maxLimit);
+      }
+
+      const maxDiff = paid - 2;
+      if (paid > 50 && Math.random() < 0.55) {
+        // Generate change > 50 Kč so the child uses the 50 Kč coin when returning change from 100 Kč!
+        diff = randomInt(51, Math.max(52, paid - 5));
+      } else {
+        diff = randomInt(minTarget, Math.max(minTarget, maxDiff));
+      }
+      price = paid - diff;
+      attempts++;
+    } while ((diff === coinGameState.targetAmount || price <= 0) && attempts < 18);
+
+    coinGameState.paidAmount = paid;
+    coinGameState.priceAmount = price;
+    coinGameState.targetAmount = diff;
+
+    const storyEl = document.getElementById('coin-change-story-text');
+    if (storyEl) {
+      storyEl.innerHTML = `Nákup stál <strong class="text-rose-700 text-sm sm:text-base">${price} Kč</strong>, zákazník zaplatil <strong class="text-emerald-700 text-sm sm:text-base">${paid} Kč</strong>. Kolik Kč vrátíš zpět?`;
     }
-    attempts++;
-  } while (nextTarget === coinGameState.targetAmount && attempts < 15);
+  } else {
+    // Skládání mincí (Compose Amount) up to 100 Kč
+    const favoriteTargets = [
+      6, 7, 8, 9, 10, 12, 13, 15, 17, 18, 20, 22, 23, 25, 27, 30, 34, 37, 40, 43, 47, 50,
+      52, 54, 55, 57, 58, 60, 62, 65, 67, 70, 72, 75, 78, 80, 83, 85, 88, 90, 93, 95, 98, 100
+    ].filter(v => v >= minTarget && v <= maxLimit);
 
-  coinGameState.targetAmount = nextTarget;
-  coinGameState.forbiddenCoin = isHard ? pickForbiddenCoinForTarget(nextTarget) : null;
+    const overFiftyTargets = favoriteTargets.filter(v => v > 50);
+    let nextTarget = 20;
+    let attempts = 0;
+
+    do {
+      if (maxLimit > 50 && Math.random() < 0.68) {
+        // Ensure frequent examples over 50 Kč when slider is above 50 Kč so 50 Kč coin can be used!
+        if (overFiftyTargets.length > 0 && Math.random() < 0.6) {
+          nextTarget = overFiftyTargets[Math.floor(Math.random() * overFiftyTargets.length)];
+        } else {
+          nextTarget = randomInt(51, maxLimit);
+        }
+      } else if (Math.random() < 0.5 && favoriteTargets.length > 0) {
+        nextTarget = favoriteTargets[Math.floor(Math.random() * favoriteTargets.length)];
+      } else {
+        nextTarget = randomInt(minTarget, maxLimit);
+      }
+      attempts++;
+    } while (nextTarget === coinGameState.targetAmount && attempts < 15);
+
+    coinGameState.targetAmount = nextTarget;
+  }
+
+  coinGameState.forbiddenCoin = isHard ? pickForbiddenCoinForTarget(coinGameState.targetAmount) : null;
   coinGameState.placedCoins = [];
   coinGameState.isSolved = false;
 
   const targetBadge = document.getElementById('coin-target-amount-badge');
   if (targetBadge) {
-    targetBadge.textContent = `${nextTarget} Kč`;
+    targetBadge.textContent = `${coinGameState.targetAmount} Kč`;
   }
 
+  updateCoinFormulaVisibilityUI();
   updateCoinConditionBadgeUI();
-
-  const feedbackEl = document.getElementById('coin-game-feedback');
-  if (feedbackEl) {
-    if (coinGameState.forbiddenCoin) {
-      feedbackEl.innerHTML = `Přetáhni mince do pole a poskládej <strong>${nextTarget} Kč</strong> – <span class="text-rose-700 font-black">🚫 bez použití mince ${coinGameState.forbiddenCoin} Kč</span>!`;
-    } else {
-      feedbackEl.innerHTML = `Přetáhni mince do pole tak, abys poskládal částku <strong>${nextTarget} Kč</strong>!`;
-    }
-  }
+  updateCoinFeedbackBanner();
 
   const dropZone = document.getElementById('coin-drop-zone');
   if (dropZone) {
@@ -1038,14 +1540,7 @@ function clearCoinDropZone() {
   coinGameState.placedCoins = [];
   playTone(360, 0.08, 'sine', 0.15);
   renderCoinDropZoneItems();
-  const feedbackEl = document.getElementById('coin-game-feedback');
-  if (feedbackEl) {
-    if (coinGameState.forbiddenCoin) {
-      feedbackEl.innerHTML = `Herní pole vyčištěno. Poskládej <strong>${coinGameState.targetAmount} Kč</strong> <span class="text-rose-700 font-black">🚫 bez mince ${coinGameState.forbiddenCoin} Kč</span>!`;
-    } else {
-      feedbackEl.innerHTML = `Herní pole vyčištěno. Poskládej částku <strong>${coinGameState.targetAmount} Kč</strong>!`;
-    }
-  }
+  updateCoinFeedbackBanner();
 }
 
 function renderCoinTray() {
@@ -1163,7 +1658,7 @@ function startCoinDragFromTray(e, coinMeta) {
     soundError();
     const feedbackEl = document.getElementById('coin-game-feedback');
     if (feedbackEl) {
-      feedbackEl.innerHTML = `<span class="text-rose-700 font-black">🚫 Ztížení: Minci ${coinMeta.label} v tomto příkladu nesmíš použít! Poskládej ${coinGameState.targetAmount} Kč z jiných mincí.</span>`;
+      feedbackEl.innerHTML = `<span class="text-rose-700 font-black">🚫 Ztížení: Minci ${coinMeta.label} v tomto příkladu nesmíš použít! Použij jiné mince.</span>`;
     }
     return;
   }
@@ -1275,6 +1770,7 @@ function evaluateCoinGame() {
   const coins = coinGameState.placedCoins;
   const feedbackEl = document.getElementById('coin-game-feedback');
   const dropZone = document.getElementById('coin-drop-zone');
+  const isChangeMode = coinGameState.mode === 'change';
 
   if (!coins || coins.length === 0) {
     if (feedbackEl) {
@@ -1294,7 +1790,7 @@ function evaluateCoinGame() {
 
   const sum = coins.reduce((acc, v) => acc + v, 0);
 
-  if (sum === target && coins.length === 1 && target > 1) {
+  if (!isChangeMode && sum === target && coins.length === 1 && target > 1) {
     if (feedbackEl) {
       feedbackEl.innerHTML = `<span class="text-indigo-700 font-black">💡 To je jedna mince ${target} Kč! Zkus částku ${target} Kč poskládat z více menších mincí (alespoň ze 2 mincí)!</span>`;
     }
@@ -1304,9 +1800,14 @@ function evaluateCoinGame() {
 
   if (sum === target) {
     coinGameState.isSolved = true;
+    updateCoinFormulaVisibilityUI();
     const formulaStr = coins.join(' + ') + ' = ' + target + ' Kč';
     if (feedbackEl) {
-      feedbackEl.innerHTML = `<span class="text-emerald-700 font-black">✅ Správně! (${formulaStr}) Skvělá práce! 🎉</span>`;
+      if (isChangeMode) {
+        feedbackEl.innerHTML = `<span class="text-emerald-700 font-black">✅ Správně vráceno ${target} Kč! (${coinGameState.paidAmount} − ${coinGameState.priceAmount} = ${target} Kč | mince: ${formulaStr}) 🎉</span>`;
+      } else {
+        feedbackEl.innerHTML = `<span class="text-emerald-700 font-black">✅ Správně! (${formulaStr}) Skvělá práce! 🎉</span>`;
+      }
     }
     if (dropZone) {
       dropZone.classList.remove('border-amber-400', 'border-rose-400');
@@ -1314,7 +1815,11 @@ function evaluateCoinGame() {
     }
 
     const reward = getLevelReward('math', 1);
-    creditRewardMinutes(reward, `Matematika: Skládání mincí (${target} Kč)`);
+    const noteText = isChangeMode
+      ? `Matematika: Vracení peněz (${coinGameState.paidAmount} − ${coinGameState.priceAmount} = ${target} Kč)`
+      : `Matematika: Skládání mincí (${target} Kč)`;
+    recordTraceabilityPractice('coins', 1, true);
+    creditRewardMinutes(reward, noteText, 'math');
     updateDailyQuestsProgress('math', 1);
     saveState();
     playCustomSuccessSound();
@@ -1327,7 +1832,11 @@ function evaluateCoinGame() {
     }, 1600);
   } else {
     if (feedbackEl) {
-      feedbackEl.innerHTML = `<span class="text-rose-600 font-black">❌ Zatím to nesedí! V poli máš ${sum} Kč, ale potřebuješ poskládat ${target} Kč. Zkus mince upravit!</span>`;
+      if (isChangeMode) {
+        feedbackEl.innerHTML = `<span class="text-rose-600 font-black">❌ Zatím to nesedí! V poli máš ${sum} Kč, ale zákazníkovi máš vrátit jinou částku. Zkus to přepočítat!</span>`;
+      } else {
+        feedbackEl.innerHTML = `<span class="text-rose-600 font-black">❌ Zatím to nesedí! V poli máš ${sum} Kč, ale potřebuješ poskládat ${target} Kč. Zkus mince upravit!</span>`;
+      }
     }
     if (dropZone) {
       dropZone.classList.remove('border-amber-400', 'border-emerald-500');
@@ -1799,6 +2308,8 @@ function evaluateColoringAnswer(answer) {
 
 function handlePokemonCompleted() {
   state.goldDiamonds = (state.goldDiamonds || 0) + 1;
+  recordTraceabilityDiamonds(1);
+  recordTraceabilityPractice('coloring', 1, true);
   updateDailyQuestsProgress('math', 7);
   saveState();
 
@@ -2614,50 +3125,101 @@ function selectCompareOption(index, sign) {
   playTone(520, 0.08, 'sine', 0.15);
 }
 
-function creditRewardMinutes(amount, note) {
+const SUBJECT_DAILY_MAX_MINUTES = 15.0;
+
+function detectRewardSubject(note, subjectHint) {
+  if (subjectHint === 'reading' || subjectHint === 'math') return subjectHint;
+  const text = String(note || '').toLowerCase();
+  if (text.includes('čtení') || text.includes('hláskování') || text.includes('písmen') || text.includes('slabik') || text.includes('vět') || text.includes('ostrov čtení')) {
+    return 'reading';
+  }
+  if (text.includes('matematika') || text.includes('minc') || text.includes('počt') || text.includes('úloh') || text.includes('ostrov počtů')) {
+    return 'math';
+  }
+  return 'other';
+}
+
+function creditRewardMinutes(amount, note, subjectHint = '') {
   checkAndHandleDailyResets();
-  const currentEarnedToday = state.dailyEarnedToday || 0;
-  const maxDailyDirect = getMaxDailyDirectLimit();
+  const numAmount = Math.max(0, Math.round((Number(amount) || 0) * 100) / 100);
+  if (numAmount <= 0) {
+    updateBalanceUI();
+    return;
+  }
 
-  if (currentEarnedToday + amount <= maxDailyDirect) {
-    state.dailyEarnedToday = Math.round((currentEarnedToday + amount) * 100) / 100;
-    state.minutesBalance = Math.round((state.minutesBalance + amount) * 100) / 100;
-    state.history.unshift({
-      id: Date.now(),
-      time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-      date: new Date().toLocaleDateString('cs-CZ'),
-      type: 'earned',
-      minutes: amount,
-      note: `${note} (+${formatMinutes(amount)})`
-    });
-  } else {
-    const directPart = Math.max(0, maxDailyDirect - currentEarnedToday);
-    const vaultPart = Math.round((amount - directPart) * 100) / 100;
+  recordTraceabilityMinutes(numAmount);
 
-    if (directPart > 0) {
-      state.dailyEarnedToday = maxDailyDirect;
-      state.minutesBalance = Math.round((state.minutesBalance + directPart) * 100) / 100;
+  const subj = detectRewardSubject(note, subjectHint);
+
+  if (subj === 'reading' || subj === 'math') {
+    const isReading = subj === 'reading';
+    const currentSubjEarned = isReading ? (state.dailyReadingEarnedToday || 0) : (state.dailyMathEarnedToday || 0);
+    const subjLabel = isReading ? 'Čtení' : 'Matematika';
+    const remainingDirect = Math.max(0, Math.round((SUBJECT_DAILY_MAX_MINUTES - currentSubjEarned) * 100) / 100);
+
+    if (numAmount <= remainingDirect) {
+      if (isReading) {
+        state.dailyReadingEarnedToday = Math.round((currentSubjEarned + numAmount) * 100) / 100;
+      } else {
+        state.dailyMathEarnedToday = Math.round((currentSubjEarned + numAmount) * 100) / 100;
+      }
+      state.dailyEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + (state.dailyMathEarnedToday || 0)) * 100) / 100;
+      state.minutesBalance = Math.round((state.minutesBalance + numAmount) * 100) / 100;
       state.history.unshift({
         id: Date.now(),
         time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
         date: new Date().toLocaleDateString('cs-CZ'),
         type: 'earned',
-        minutes: directPart,
-        note: `${note} (+${formatMinutes(directPart)})`
+        minutes: numAmount,
+        note: `${note} (+${formatMinutes(numAmount)})`
       });
-    }
+    } else {
+      const directPart = remainingDirect;
+      const vaultPart = Math.round((numAmount - directPart) * 100) / 100;
 
-    state.dailyEarnedToday = maxDailyDirect;
-    state.vaultBalance = Math.round(((state.vaultBalance || 0) + vaultPart) * 100) / 100;
+      if (isReading) {
+        state.dailyReadingEarnedToday = SUBJECT_DAILY_MAX_MINUTES;
+      } else {
+        state.dailyMathEarnedToday = SUBJECT_DAILY_MAX_MINUTES;
+      }
+      state.dailyEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + (state.dailyMathEarnedToday || 0)) * 100) / 100;
+
+      if (directPart > 0) {
+        state.minutesBalance = Math.round((state.minutesBalance + directPart) * 100) / 100;
+        state.history.unshift({
+          id: Date.now(),
+          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString('cs-CZ'),
+          type: 'earned',
+          minutes: directPart,
+          note: `${note} (+${formatMinutes(directPart)})`
+        });
+      }
+
+      if (vaultPart > 0) {
+        state.vaultBalance = Math.round(((state.vaultBalance || 0) + vaultPart) * 100) / 100;
+        state.history.unshift({
+          id: Date.now() + 1,
+          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString('cs-CZ'),
+          type: 'vault_saved',
+          minutes: vaultPart,
+          note: `Dnešní limit ${SUBJECT_DAILY_MAX_MINUTES} min (${subjLabel}) dosažen. Uloženo do Trezoru (+${formatMinutes(vaultPart)})`
+        });
+        alertUserFeedback(`Dnešní limit ${SUBJECT_DAILY_MAX_MINUTES} min v kategorii ${subjLabel} dosažen! +${formatMinutes(vaultPart)} uloženo do Nočního trezoru! 🏦`);
+      }
+    }
+  } else {
+    // Ostatní zdroje (např. Denní truhla)
+    state.minutesBalance = Math.round((state.minutesBalance + numAmount) * 100) / 100;
     state.history.unshift({
-      id: Date.now() + 1,
+      id: Date.now(),
       time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
       date: new Date().toLocaleDateString('cs-CZ'),
-      type: 'vault_saved',
-      minutes: vaultPart,
-      note: `Dnešní limit ${maxDailyDirect} min dosažen. Uloženo do Trezoru (+${formatMinutes(vaultPart)})`
+      type: 'earned',
+      minutes: numAmount,
+      note: `${note} (+${formatMinutes(numAmount)})`
     });
-    alertUserFeedback(`Dnešní limit ${maxDailyDirect} min dosažen! +${formatMinutes(vaultPart)} uloženo do Trezoru! 🏦`);
   }
   updateBalanceUI();
 }
@@ -2704,8 +3266,16 @@ function evaluateMathTasks() {
     const lvl = state.currentMathLevel;
     const reward = getLevelReward('math', lvl);
     const catNames = ['Skládání mincí', 'Porovnávání', 'Číselná řada', 'Počítadlo', 'Rozklad čísel', 'Slovní úlohy'];
-
-    creditRewardMinutes(reward, `Matematika: ${catNames[lvl - 1]}`);
+    const mathStatKeyMap = {
+      1: 'coins',
+      2: 'comparisons',
+      3: 'sequences',
+      4: 'examples',
+      5: 'decompositions',
+      6: 'wordProblems'
+    };
+    recordTraceabilityPractice(mathStatKeyMap[lvl] || 'examples', 1, true);
+    creditRewardMinutes(reward, `Matematika: ${catNames[lvl - 1]}`, 'math');
     updateDailyQuestsProgress('math', lvl);
     saveState();
     playCustomSuccessSound();
@@ -2757,6 +3327,14 @@ function nextFlashcard() {
   }
 }
 
+function getReadingStatKeyForLevel(lvl) {
+  if (lvl === 1) return 'letters';
+  if (lvl === 2) return 'syllables';
+  if (lvl === 7) return 'sentences';
+  if (lvl === 8) return 'spelling';
+  return 'words';
+}
+
 function parentReview(isSuccess) {
   clearSpellingTimers();
 
@@ -2764,8 +3342,10 @@ function parentReview(isSuccess) {
     const lvl = state.currentLevel;
     const reward = getLevelReward('reading', lvl);
     const catNames = ['Písmena', 'Slabiky', 'Jednoslabičná', 'Dvouslabičná', 'Shluky/OU', 'DĚ/TĚ/NĚ', 'Věty', 'Hláskování'];
+    const statKey = getReadingStatKeyForLevel(lvl);
 
-    creditRewardMinutes(reward, `Čtení: ${catNames[lvl - 1]}`);
+    recordTraceabilityPractice(statKey, 1, true);
+    creditRewardMinutes(reward, `Čtení: ${catNames[lvl - 1]}`, 'reading');
     updateDailyQuestsProgress('reading', lvl);
     saveState();
     playCustomSuccessSound();
@@ -2785,6 +3365,9 @@ function parentReviewOnlyQuest() {
   clearSpellingTimers();
 
   const lvl = state.currentLevel;
+  const statKey = getReadingStatKeyForLevel(lvl);
+
+  recordTraceabilityPractice(statKey, 1, true);
   updateDailyQuestsProgress('reading', lvl);
   saveState();
   playCustomSuccessSound();
@@ -2867,6 +3450,7 @@ function claimStreakDiamondDay7() {
 
   state.streakClaimedDay7 = true;
   state.goldDiamonds = (state.goldDiamonds || 0) + 1;
+  recordTraceabilityDiamonds(1);
 
   state.history.unshift({
     id: Date.now(),
@@ -2992,7 +3576,6 @@ function renderStreakView() {
 function updateDailyQuestsProgress(subj, completedLvl) {
   checkAndHandleDailyResets();
   let questCompletedNow = false;
-  const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 4.0;
 
   state.quests.forEach(q => {
     if (!q.claimed && q.progress < q.target) {
@@ -3002,7 +3585,9 @@ function updateDailyQuestsProgress(subj, completedLvl) {
           questCompletedNow = true;
           q.claimed = true;
           if (!q.isTrackerOnly) {
-            creditRewardMinutes(qRate, `Denní úkol: ${q.title}`);
+            const qRate = getQuestRewardRate(q.id);
+            const qSubj = q.id === 'q_math_all' ? 'math' : 'reading';
+            creditRewardMinutes(qRate, `Denní úkol: ${q.title}`, qSubj);
             alertUserFeedback(`🎯 Splněn denní úkol "${q.title}"! Získáváš +${formatMinutes(qRate)} ⭐`);
           }
         }
@@ -3011,6 +3596,7 @@ function updateDailyQuestsProgress(subj, completedLvl) {
   });
 
   syncTrackerQuestsWithState();
+  syncTraceabilityQuestsIfActive();
 
   if (questCompletedNow) playTone(900, 0.25, 'triangle', 0.3);
   saveState();
@@ -3503,6 +4089,107 @@ function updateDiamondMarketUI() {
   } else {
     if (pinDesc) pinDesc.textContent = `Nasbírej 50 diamantů k odemčení tajného PINu tabletu (zbývá ${50 - state.goldDiamonds} 💎).`;
   }
+
+  updateVoucherStoreUI();
+}
+
+function updateVoucherStoreUI() {
+  checkAndHandleDailyResets();
+  const stdBought = state.dailyStandardVoucherBought;
+  const maxBought = state.dailyMaxVoucherBought;
+
+  const bannerEl = document.getElementById('store-voucher-status-banner');
+  if (bannerEl) {
+    const stdStatusHtml = stdBought !== null
+      ? `<span class="text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-lg">✅ Poukaz ${stdBought} min koupen</span>`
+      : `<span class="text-amber-900 bg-white/80 border border-amber-300 px-2 py-0.5 rounded-lg">🟢 5/10/15 min: volný (1×)</span>`;
+    const maxStatusHtml = maxBought !== null
+      ? `<span class="text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-lg">✅ MAX poukaz (${maxBought} min) koupen</span>`
+      : `<span class="text-amber-900 bg-white/80 border border-amber-300 px-2 py-0.5 rounded-lg">🟢 MAX poukaz: volný (1×)</span>`;
+    bannerEl.innerHTML = `
+      <div class="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-black">
+        <span>🎟️ Dnešní limit (reset 00:00):</span>
+        ${stdStatusHtml}
+        ${maxStatusHtml}
+      </div>
+    `;
+  }
+
+  [5, 10, 15].forEach(m => {
+    const cardEl = document.getElementById(`voucher-card-${m}`);
+    const badgeEl = document.getElementById(`voucher-badge-${m}`);
+    const btnEl = document.getElementById(`voucher-btn-${m}`);
+
+    if (stdBought === m) {
+      if (cardEl) {
+        cardEl.className = 'bg-emerald-50 border-3 border-emerald-500 ring-2 ring-emerald-300 rounded-2xl p-3 flex flex-col justify-between text-center shadow-md relative transition-all';
+      }
+      if (badgeEl) {
+        badgeEl.textContent = '✅ KOUPENO DNES';
+        badgeEl.className = 'mb-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs inline-block mx-auto';
+      }
+      if (btnEl) {
+        btnEl.textContent = `✅ Koupeno dnes (${m} min)`;
+        btnEl.className = 'w-full bg-emerald-600 text-white font-black py-2 rounded-xl border-b-4 border-emerald-800 text-sm cursor-not-allowed opacity-90';
+      }
+    } else if (stdBought !== null) {
+      if (cardEl) {
+        cardEl.className = 'bg-slate-100 border-3 border-slate-300 rounded-2xl p-3 flex flex-col justify-between text-center opacity-65 relative transition-all';
+      }
+      if (badgeEl) {
+        badgeEl.textContent = `🔒 Vyčerpáno (koupeno ${stdBought} min)`;
+        badgeEl.className = 'mb-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-300 text-slate-700 inline-block mx-auto';
+      }
+      if (btnEl) {
+        btnEl.textContent = '🔒 Limit 1× denně vyčerpán';
+        btnEl.className = 'w-full bg-slate-400 text-white font-black py-2 rounded-xl border-b-4 border-slate-500 text-xs cursor-not-allowed';
+      }
+    } else {
+      if (cardEl) {
+        cardEl.className = m === 15
+          ? 'bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-amber-400 rounded-2xl p-3 flex flex-col justify-between text-center hover:border-orange-500 transition-all shadow-sm relative'
+          : 'bg-amber-50/70 border-3 border-amber-300 rounded-2xl p-3 flex flex-col justify-between text-center hover:border-amber-400 transition-all shadow-sm relative';
+      }
+      if (badgeEl) {
+        badgeEl.className = 'hidden mb-1 text-[10px] font-black px-2 py-0.5 rounded-full';
+      }
+      if (btnEl) {
+        btnEl.textContent = 'Koupit lístek 🎟️';
+        btnEl.className = m === 15
+          ? 'game-button w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2 rounded-xl border-b-4 border-orange-700 text-sm shadow-game-btn'
+          : 'game-button w-full bg-amber-400 hover:bg-amber-500 text-indigo-950 font-black py-2 rounded-xl border-b-4 border-amber-600 text-sm shadow-game-btn';
+      }
+    }
+  });
+
+  const cardMax = document.getElementById('voucher-card-max');
+  const badgeMax = document.getElementById('voucher-badge-max');
+  const btnMax = document.getElementById('voucher-btn-max');
+
+  if (maxBought !== null) {
+    if (cardMax) {
+      cardMax.className = 'bg-gradient-to-b from-emerald-700 to-teal-900 text-white border-3 border-emerald-300 ring-2 ring-emerald-300 rounded-2xl p-3 flex flex-col justify-between text-center shadow-lg relative transition-all';
+    }
+    if (badgeMax) {
+      badgeMax.textContent = `✅ KOUPENO DNES (${maxBought} min)`;
+      badgeMax.className = 'mt-1 mb-0.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-400 text-emerald-950 shadow-xs inline-block mx-auto';
+    }
+    if (btnMax) {
+      btnMax.textContent = '✅ Koupeno dnes!';
+      btnMax.className = 'w-full bg-emerald-500 text-emerald-950 font-black py-2 rounded-xl border-b-4 border-emerald-700 text-sm cursor-not-allowed';
+    }
+  } else {
+    if (cardMax) {
+      cardMax.className = 'bg-gradient-to-b from-indigo-600 to-purple-700 text-white border-3 border-amber-300 rounded-2xl p-3 flex flex-col justify-between text-center shadow-lg relative transition-all';
+    }
+    if (badgeMax) {
+      badgeMax.className = 'hidden mt-1 mb-0.5 text-[10px] font-black px-2 py-0.5 rounded-full';
+    }
+    if (btnMax) {
+      btnMax.textContent = 'Koupit MAX lístek 🚀';
+      btnMax.className = 'game-button w-full bg-emerald-400 hover:bg-emerald-300 text-indigo-950 font-black py-2 rounded-xl border-b-4 border-emerald-600 text-sm shadow-game-btn';
+    }
+  }
 }
 
 function buyLimitExtension() {
@@ -3547,7 +4234,23 @@ function revealSecretPinAction() {
   alertUserFeedback(`🎉 TAJNÝ PIN K TABLETU JE: ${pin}`);
 }
 
-function buyTimePackage(minutes) {
+function buyTimePackage(minutes, isMaxPackage = false) {
+  checkAndHandleDailyResets();
+
+  if (isMaxPackage) {
+    if (state.dailyMaxVoucherBought !== null && state.dailyMaxVoucherBought !== undefined) {
+      soundError();
+      alertUserFeedback(`Dnes už byl MAXIMÁLNÍ poukaz (${state.dailyMaxVoucherBought} min) koupen! Další lze koupit po půlnoci. 🌙`);
+      return;
+    }
+  } else {
+    if (state.dailyStandardVoucherBought !== null && state.dailyStandardVoucherBought !== undefined) {
+      soundError();
+      alertUserFeedback(`Dnes už byl koupen poukaz na ${state.dailyStandardVoucherBought} min! Z kategorie 5/10/15 min lze koupit max 1 denně (reset o půlnoci). 🌙`);
+      return;
+    }
+  }
+
   if (state.minutesBalance < minutes) {
     soundError();
     alertUserFeedback(`Máš ${formatMinutes(state.minutesBalance)}. Potřebuješ ${minutes} minut ⭐!`);
@@ -3555,13 +4258,20 @@ function buyTimePackage(minutes) {
   }
 
   state.minutesBalance = Math.round((state.minutesBalance - minutes) * 100) / 100;
+  state.vouchersBoughtDate = getTodayDateString();
+  if (isMaxPackage) {
+    state.dailyMaxVoucherBought = minutes;
+  } else {
+    state.dailyStandardVoucherBought = minutes;
+  }
+
   state.history.unshift({
     id: Date.now(),
     time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
     date: new Date().toLocaleDateString('cs-CZ'),
     type: 'spent',
     minutes: -minutes,
-    note: `Vyzvednut poukaz: ${minutes} min na tabletu`
+    note: `Vyzvednut ${isMaxPackage ? 'MAX ' : ''}poukaz: ${minutes} min na tabletu`
   });
 
   saveState();
@@ -3573,11 +4283,12 @@ function buyTimePackage(minutes) {
   if (voucherText) voucherText.textContent = `LÍSTEK NA ${minutes} MINUT HRANÍ JE TVŮJ! 🎮`;
   if (voucherModal) voucherModal.classList.remove('hidden');
   updateBalanceUI();
+  updateVoucherStoreUI();
 }
 
 function buyDynamicTimePackage() {
   const currentMax = getMaxDailyDirectLimit();
-  buyTimePackage(currentMax);
+  buyTimePackage(currentMax, true);
 }
 
 function closeVoucher() {
@@ -3624,6 +4335,11 @@ function showView(viewName) {
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
 }
 
+function formatCapNum(val) {
+  const rounded = Math.round((Number(val) || 0) * 100) / 100;
+  return Number.isInteger(rounded) ? String(rounded) : String(rounded).replace('.', ',');
+}
+
 function updateBalanceUI() {
   const displayTop = document.getElementById('top-balance-display');
   const displayStore = document.getElementById('store-balance-display');
@@ -3636,6 +4352,19 @@ function updateBalanceUI() {
   if (displayAdmin) displayAdmin.textContent = formatMinutes(state.minutesBalance);
   if (vaultStore) vaultStore.textContent = formatMinutes(state.vaultBalance || 0);
   if (vaultAdmin) vaultAdmin.textContent = formatMinutes(state.vaultBalance || 0);
+
+  const rEarned = state.dailyReadingEarnedToday || 0;
+  const mEarned = state.dailyMathEarnedToday || 0;
+  const topReadingCapEl = document.getElementById('top-reading-cap-display');
+  const topMathCapEl = document.getElementById('top-math-cap-display');
+  if (topReadingCapEl) {
+    topReadingCapEl.textContent = `${formatCapNum(rEarned)}/15`;
+    topReadingCapEl.className = rEarned >= 15 ? 'text-emerald-700 font-black' : 'text-slate-900 font-black';
+  }
+  if (topMathCapEl) {
+    topMathCapEl.textContent = `${formatCapNum(mEarned)}/15`;
+    topMathCapEl.className = mEarned >= 15 ? 'text-emerald-700 font-black' : 'text-slate-900 font-black';
+  }
 
   const diamondsTop = document.getElementById('top-diamonds-display');
   if (diamondsTop) diamondsTop.textContent = (state.goldDiamonds || 0).toString();
@@ -3989,6 +4718,7 @@ function openChestAction() {
       burstShortLabel = `+${drop.amount} 💎`;
       if (rewardIcon) rewardIcon.textContent = burstIcon;
       state.goldDiamonds = (state.goldDiamonds || 0) + drop.amount;
+      recordTraceabilityDiamonds(drop.amount);
       state.lastBoxReward = 0;
       state.lastBoxRewardText = `+${drop.amount} Diamantů 💎`;
       rewardAmount.textContent = `+${drop.amount} Modrých Diamantů!`;
@@ -4687,6 +5417,7 @@ function finishDailyTest() {
 
   if (diamondsAwarded > 0) {
     state.goldDiamonds = (state.goldDiamonds || 0) + diamondsAwarded;
+    recordTraceabilityDiamonds(diamondsAwarded);
     state.history.unshift({
       id: Date.now(),
       time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
@@ -5204,6 +5935,21 @@ function goToQuestLevel(questId) {
   playTone(500, 0.1, 'sine', 0.15);
 }
 
+function getQuestRewardRate(questId) {
+  if (!state.rewards) return 4.0;
+  if (questId === 'q_reading_all') {
+    return state.rewards.readingQuestRate !== undefined
+      ? state.rewards.readingQuestRate
+      : (state.rewards.questRate !== undefined ? state.rewards.questRate : 4.0);
+  }
+  if (questId === 'q_math_all') {
+    return state.rewards.mathQuestRate !== undefined
+      ? state.rewards.mathQuestRate
+      : (state.rewards.questRate !== undefined ? state.rewards.questRate : 4.0);
+  }
+  return state.rewards.questRate !== undefined ? state.rewards.questRate : 4.0;
+}
+
 function renderDailyQuests() {
   checkAndHandleDailyResets();
   syncTrackerQuestsWithState();
@@ -5214,9 +5960,9 @@ function renderDailyQuests() {
   dateDisplay.textContent = todayFormatted;
 
   container.innerHTML = '';
-  const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 4.0;
 
   state.quests.forEach(quest => {
+    const qRate = getQuestRewardRate(quest.id);
     const isDone = quest.progress >= quest.target || quest.claimed;
     const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
     const isTracker = !!quest.isTrackerOnly;
@@ -5312,10 +6058,12 @@ function claimQuestReward(questId) {
 
   quest.claimed = true;
   if (!quest.isTrackerOnly) {
-    const qRate = (state.rewards && state.rewards.questRate) ? state.rewards.questRate : 4.0;
-    creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`);
+    const qRate = getQuestRewardRate(questId);
+    const qSubj = questId === 'q_math_all' ? 'math' : 'reading';
+    creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`, qSubj);
   }
 
+  syncTraceabilityQuestsIfActive();
   saveState();
   playCustomSuccessSound();
   triggerConfetti();
@@ -5427,10 +6175,17 @@ function adminResetChest() {
 
 function adminResetDailyDirectLimit() {
   state.dailyEarnedToday = 0.0;
+  state.dailyReadingEarnedToday = 0.0;
+  state.dailyMathEarnedToday = 0.0;
   state.dailyEarnedDate = getTodayDateString();
+  state.vouchersBoughtDate = getTodayDateString();
+  state.dailyStandardVoucherBought = null;
+  state.dailyMaxVoucherBought = null;
   saveState();
+  updateBalanceUI();
+  updateVoucherStoreUI();
   playTone(700, 0.15, 'sine', 0.2);
-  alertUserFeedback('Dnešní limit vynulován!');
+  alertUserFeedback('Dnešní limity (Čtení 15m, Matematika 15m i poukazy v obchodě) byly vynulovány!');
 }
 
 function adminTransferCustomVault() {
@@ -5532,6 +6287,7 @@ function verifyParentPin() {
 
 function switchAdminTab(tabKey) {
   const btnGeneral = document.getElementById('admin-tab-btn-general');
+  const btnTrace = document.getElementById('admin-tab-btn-traceability');
   const btnSkins = document.getElementById('admin-tab-btn-skins_admin');
   const btnPets = document.getElementById('admin-tab-btn-pets_admin');
   const btnTest = document.getElementById('admin-tab-btn-test');
@@ -5540,6 +6296,7 @@ function switchAdminTab(tabKey) {
   const btnReading = document.getElementById('admin-tab-btn-reading');
 
   const contentGeneral = document.getElementById('admin-tab-content-general');
+  const contentTrace = document.getElementById('admin-tab-content-traceability');
   const contentSkins = document.getElementById('admin-tab-content-skins_admin');
   const contentPets = document.getElementById('admin-tab-content-pets_admin');
   const contentTest = document.getElementById('admin-tab-content-test');
@@ -5547,11 +6304,12 @@ function switchAdminTab(tabKey) {
   const contentMath = document.getElementById('admin-tab-content-math');
   const contentReading = document.getElementById('admin-tab-content-reading');
 
-  [btnGeneral, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
+  [btnGeneral, btnTrace, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
     if (b) b.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left';
   });
 
   if (contentGeneral) contentGeneral.classList.add('hidden');
+  if (contentTrace) contentTrace.classList.add('hidden');
   if (contentSkins) contentSkins.classList.add('hidden');
   if (contentPets) contentPets.classList.add('hidden');
   if (contentTest) contentTest.classList.add('hidden');
@@ -5559,7 +6317,11 @@ function switchAdminTab(tabKey) {
   if (contentMath) contentMath.classList.add('hidden');
   if (contentReading) contentReading.classList.add('hidden');
 
-  if (tabKey === 'skins_admin') {
+  if (tabKey === 'traceability') {
+    if (btnTrace) btnTrace.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-emerald-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentTrace) contentTrace.classList.remove('hidden');
+    renderAdminTraceabilityUI();
+  } else if (tabKey === 'skins_admin') {
     if (btnSkins) btnSkins.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-pink-600 text-white shadow-sm flex items-center gap-2 text-left';
     if (contentSkins) contentSkins.classList.remove('hidden');
     updateAdminSkinsUI();
@@ -5588,6 +6350,380 @@ function switchAdminTab(tabKey) {
   playTone(520, 0.08, 'sine', 0.12);
 }
 
+function switchTraceabilitySubView(viewKey) {
+  traceabilitySubView = (viewKey === 'chart') ? 'chart' : 'table';
+  const btnTable = document.getElementById('traceability-subtab-btn-table');
+  const btnChart = document.getElementById('traceability-subtab-btn-chart');
+  const viewTable = document.getElementById('traceability-subview-table');
+  const viewChart = document.getElementById('traceability-subview-chart');
+
+  if (traceabilitySubView === 'chart') {
+    if (btnTable) btnTable.className = 'px-3 py-1 rounded-lg text-xs font-black transition-all text-emerald-950 hover:bg-emerald-100';
+    if (btnChart) btnChart.className = 'px-3 py-1 rounded-lg text-xs font-black transition-all bg-emerald-600 text-white shadow-xs';
+    if (viewTable) viewTable.classList.add('hidden');
+    if (viewChart) viewChart.classList.remove('hidden');
+    renderTraceabilityChart();
+  } else {
+    if (btnTable) btnTable.className = 'px-3 py-1 rounded-lg text-xs font-black transition-all bg-emerald-600 text-white shadow-xs';
+    if (btnChart) btnChart.className = 'px-3 py-1 rounded-lg text-xs font-black transition-all text-emerald-950 hover:bg-emerald-100';
+    if (viewTable) viewTable.classList.remove('hidden');
+    if (viewChart) viewChart.classList.add('hidden');
+    renderAdminTraceabilityUI();
+  }
+  playTone(520, 0.06, 'sine', 0.1);
+}
+
+function toggleTraceabilityChartFilter(metricKey) {
+  if (!traceabilityChartFilters) {
+    traceabilityChartFilters = { duration: true, minutes: true, diamonds: true };
+  }
+  const currentVal = !!traceabilityChartFilters[metricKey];
+  const activeCount = Object.values(traceabilityChartFilters).filter(Boolean).length;
+  if (currentVal && activeCount <= 1) {
+    alertUserFeedback('Musí zůstat zapnutá alespoň jedna metrika.');
+    return;
+  }
+  traceabilityChartFilters[metricKey] = !currentVal;
+
+  const btnDuration = document.getElementById('trace-filter-btn-duration');
+  const btnMinutes = document.getElementById('trace-filter-btn-minutes');
+  const btnDiamonds = document.getElementById('trace-filter-btn-diamonds');
+
+  if (btnDuration) {
+    btnDuration.className = traceabilityChartFilters.duration
+      ? 'px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-indigo-600 text-white border-indigo-700 shadow-xs'
+      : 'px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-slate-100 text-slate-500 border-slate-300 opacity-60';
+  }
+  if (btnMinutes) {
+    btnMinutes.className = traceabilityChartFilters.minutes
+      ? 'px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-amber-500 text-white border-amber-600 shadow-xs'
+      : 'px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-slate-100 text-slate-500 border-slate-300 opacity-60';
+  }
+  if (btnDiamonds) {
+    btnDiamonds.className = traceabilityChartFilters.diamonds
+      ? 'px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-cyan-600 text-white border-cyan-700 shadow-xs'
+      : 'px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-slate-100 text-slate-500 border-slate-300 opacity-60';
+  }
+
+  playTone(560, 0.05, 'sine', 0.1);
+  renderTraceabilityChart();
+}
+
+function toggleTraceabilityRowDetail(dateIso) {
+  traceabilityExpandedDate = (traceabilityExpandedDate === dateIso) ? null : dateIso;
+  renderAdminTraceabilityUI();
+  playTone(480, 0.05, 'sine', 0.08);
+}
+
+function renderAdminTraceabilityUI() {
+  const listEl = document.getElementById('admin-traceability-list');
+  if (!listEl) return;
+
+  syncTraceabilityQuestsIfActive();
+  const records = Array.isArray(state.traceabilityHistory) ? state.traceabilityHistory : [];
+
+  if (traceabilitySubView === 'chart') {
+    renderTraceabilityChart();
+    return;
+  }
+
+  if (records.length === 0) {
+    listEl.innerHTML = `
+      <div class="bg-white/80 border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center">
+        <div class="text-3xl mb-1">⏱️</div>
+        <div class="text-sm font-black text-slate-700">Zatím žádná zaznamenaná historie tréninku.</div>
+        <div class="text-xs font-bold text-slate-500 mt-1">Spusť stopky v horní liště (▶) během učení. Po vypnutí stopek (podržením ⏹ na 3 sekundy) se zde zobrazí jednořádkový denní přehled i detailní rozpis.</div>
+      </div>
+    `;
+    return;
+  }
+
+  const todayIso = getTodayDateString();
+  const totalQuestsCount = Array.isArray(state.quests) ? state.quests.length : 6;
+
+  const statLabels = [
+    { key: 'letters', label: '🔤 Písmena' },
+    { key: 'syllables', label: '🗣️ Slabiky' },
+    { key: 'words', label: '📖 Slova' },
+    { key: 'sentences', label: '📝 Věty' },
+    { key: 'spelling', label: '🐝 Hláskování' },
+    { key: 'coins', label: '🪙 Mince / Vracení' },
+    { key: 'examples', label: '➕ Příklady' },
+    { key: 'comparisons', label: '⚖️ Porovnávání' },
+    { key: 'sequences', label: '🔢 Číselné řady' },
+    { key: 'decompositions', label: '🔺 Rozklady čísel' },
+    { key: 'wordProblems', label: '📘 Slovní úlohy' },
+    { key: 'coloringSegments', label: '🎨 Dílky omalovánky' }
+  ];
+
+  listEl.innerHTML = records.map(rec => {
+    const isToday = rec.dateIso === todayIso;
+    const isRunning = isToday && isStopwatchSessionActive();
+    const activeExtraSec = isRunning ? Math.floor(stopwatchState.elapsedSec || 0) : 0;
+    const totalSec = (rec.totalDurationSec || 0) + activeExtraSec;
+    const sessions = Array.isArray(rec.sessions) ? rec.sessions : [];
+    const st = rec.stats || {};
+    const isExpanded = traceabilityExpandedDate === rec.dateIso;
+
+    // Sloupec B: Časové intervaly procvičení v kompaktní podobě
+    const intervalsText = sessions.length > 0
+      ? sessions.map(s => `${s.start}–${s.end} (${formatDurationHuman(s.durationSec)})`).join(', ')
+      : (isRunning ? `Měří: ${formatDurationHuman(activeExtraSec)}` : 'Žádný interval');
+
+    // Detailní rozpis aktivních jednotkových statistik pro rozbalený detail
+    const activeStatsBadges = statLabels
+      .filter(item => (st[item.key] || 0) > 0)
+      .map(item => `
+        <span class="inline-flex items-center gap-1.5 bg-white border border-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-800 shadow-2xs">
+          <span>${item.label}:</span>
+          <strong class="text-indigo-700 font-black text-sm">${st[item.key]}×</strong>
+        </span>
+      `).join('');
+
+    const sessionsDetailHtml = sessions.length > 0
+      ? sessions.map((s, idx) => `
+          <div class="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-300 text-emerald-950 px-2.5 py-1 rounded-xl text-xs font-bold shadow-2xs">
+            <span class="font-black text-emerald-700">#${idx + 1}</span>
+            <span>${s.start} – ${s.end}</span>
+            <span class="bg-emerald-600 text-white px-1.5 py-0.5 rounded-md text-[10px] font-black">${formatDurationHuman(s.durationSec)}</span>
+          </div>
+        `).join('')
+      : '<span class="text-xs text-slate-400 italic font-bold">Stopky zatím nebyly ukončeny (běží nebo čekají na uložení).</span>';
+
+    return `
+      <div class="rounded-2xl border-2 transition-all ${isToday ? 'border-emerald-400 bg-emerald-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-emerald-300 shadow-xs'} overflow-hidden">
+        <!-- Hlavní jednořádkový panel (Sloupec A až F) -->
+        <div onclick="toggleTraceabilityRowDetail('${rec.dateIso}')" class="p-2.5 sm:p-3 cursor-pointer select-none hover:bg-emerald-50/50 transition-colors flex flex-col md:grid md:grid-cols-12 gap-2 md:items-center">
+          
+          <!-- Sloupec A: Datum -->
+          <div class="md:col-span-2 flex items-center gap-1.5">
+            <span class="text-sm font-black text-slate-900">${rec.dateDisplay || rec.dateIso}</span>
+            ${isToday ? '<span class="bg-emerald-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">Dnes</span>' : ''}
+            ${isRunning ? '<span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping" title="Stopky aktivní"></span>' : ''}
+          </div>
+
+          <!-- Sloupec B: Intervaly procvičení -->
+          <div class="md:col-span-3 text-xs text-slate-600 font-medium truncate" title="${intervalsText}">
+            <span class="md:hidden font-black text-slate-700 mr-1">Intervaly:</span>
+            <span class="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-lg text-slate-700 font-mono text-[11px]">${intervalsText}</span>
+          </div>
+
+          <!-- Sloupec C: Čas trénování -->
+          <div class="md:col-span-2 flex md:justify-center items-center gap-1 text-xs">
+            <span class="md:hidden font-black text-slate-700 mr-1">Čas:</span>
+            <span class="inline-flex items-center gap-1 bg-indigo-50 border border-indigo-200 text-indigo-950 font-black px-2 py-0.5 rounded-lg">
+              ⏱️ ${formatDurationHuman(totalSec)}
+            </span>
+          </div>
+
+          <!-- Sloupec D: Získané minuty -->
+          <div class="md:col-span-2 flex md:justify-center items-center gap-1 text-xs">
+            <span class="md:hidden font-black text-slate-700 mr-1">Minuty:</span>
+            <span class="inline-flex items-center gap-1 bg-amber-50 border border-amber-300 text-amber-950 font-black px-2 py-0.5 rounded-lg">
+              ⭐ +${formatMinutes(rec.earnedMinutes || 0)} min
+            </span>
+          </div>
+
+          <!-- Sloupec E: Mise -->
+          <div class="md:col-span-1 flex md:justify-center items-center gap-1 text-xs">
+            <span class="md:hidden font-black text-slate-700 mr-1">Mise:</span>
+            <span class="inline-flex items-center gap-0.5 bg-sky-50 border border-sky-200 text-sky-950 font-black px-1.5 py-0.5 rounded-lg text-[11px]">
+              🎯 ${rec.dailyQuestsCompleted || 0}/${totalQuestsCount}
+            </span>
+          </div>
+
+          <!-- Sloupec F: Drahokamy + Šipka -->
+          <div class="md:col-span-2 flex items-center justify-between md:justify-center gap-2 text-xs">
+            <div class="flex items-center gap-1">
+              <span class="md:hidden font-black text-slate-700 mr-1">Diamanty:</span>
+              <span class="inline-flex items-center gap-1 bg-cyan-50 border border-cyan-300 text-cyan-950 font-black px-2 py-0.5 rounded-lg">
+                💎 +${rec.earnedDiamonds || 0}
+              </span>
+            </div>
+            <span class="text-xs text-slate-400 font-black ml-auto md:ml-1 transition-transform ${isExpanded ? 'rotate-180 text-emerald-700' : ''}">
+              ▼
+            </span>
+          </div>
+
+        </div>
+
+        <!-- Rozbalovací detail po kliknutí na řádek -->
+        ${isExpanded ? `
+          <div class="border-t-2 border-emerald-200/80 bg-gradient-to-b from-white to-emerald-50/30 p-3 sm:p-4 space-y-3">
+            <div>
+              <div class="text-[11px] font-black text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                <span>⏱️</span> <span>Časové intervaly stopek v tomto dni:</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                ${sessionsDetailHtml}
+              </div>
+            </div>
+
+            <div>
+              <div class="text-[11px] font-black text-slate-600 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                <span>📚</span> <span>Procvičené lekce za celý den (jednotkový počet splnění):</span>
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                ${activeStatsBadges || '<span class="text-xs text-slate-400 italic font-bold">V tomto dni nebyly zaznamenány žádné procvičené lekce při spuštěných stopkách.</span>'}
+              </div>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderTraceabilityChart() {
+  const container = document.getElementById('traceability-chart-container');
+  if (!container) return;
+
+  const records = Array.isArray(state.traceabilityHistory) ? [...state.traceabilityHistory] : [];
+  if (records.length === 0) {
+    container.innerHTML = `
+      <div class="text-center py-10">
+        <div class="text-3xl mb-1">📈</div>
+        <div class="text-sm font-black text-slate-700">Graf zatím nemá dostatek dat.</div>
+        <div class="text-xs font-bold text-slate-500 mt-1">Po ukončení prvního tréninku se stopkami se zde vykreslí vývoj v čase.</div>
+      </div>
+    `;
+    return;
+  }
+
+  // Zobrazujeme chronologicky (od nejstaršího po nejnovější)
+  records.sort((a, b) => (a.dateIso || '').localeCompare(b.dateIso || ''));
+  // Maximálně posledních 14 dnů pro přehlednost
+  const displayRecords = records.slice(-14);
+
+  const filters = traceabilityChartFilters || { duration: true, minutes: true, diamonds: true };
+
+  // Data pro každý den
+  const chartData = displayRecords.map(rec => {
+    const isToday = rec.dateIso === getTodayDateString();
+    const activeExtraSec = (isToday && isStopwatchSessionActive()) ? Math.floor(stopwatchState.elapsedSec || 0) : 0;
+    const totalSec = (rec.totalDurationSec || 0) + activeExtraSec;
+    const durationMin = Math.round((totalSec / 60) * 10) / 10;
+    const earnedMin = Math.round((rec.earnedMinutes || 0) * 100) / 100;
+    const earnedDiamonds = rec.earnedDiamonds || 0;
+
+    // Krátký popisek data (např. 9.11.)
+    const dateParts = (rec.dateIso || '').split('-');
+    const shortLabel = dateParts.length === 3 ? `${parseInt(dateParts[2], 10)}.${parseInt(dateParts[1], 10)}.` : (rec.dateDisplay || rec.dateIso);
+
+    return {
+      dateIso: rec.dateIso,
+      shortLabel,
+      durationMin,
+      earnedMin,
+      earnedDiamonds
+    };
+  });
+
+  // Určení maximální hodnoty pro škálu Y
+  let maxVal = 5;
+  chartData.forEach(d => {
+    if (filters.duration && d.durationMin > maxVal) maxVal = d.durationMin;
+    if (filters.minutes && d.earnedMin > maxVal) maxVal = d.earnedMin;
+    if (filters.diamonds && d.earnedDiamonds > maxVal) maxVal = d.earnedDiamonds;
+  });
+  // Přidáme 15% rezervu nahoru pro popisky
+  maxVal = Math.ceil(maxVal * 1.15) || 5;
+
+  const svgWidth = Math.max(500, chartData.length * 68 + 80);
+  const svgHeight = 260;
+  const chartTop = 30;
+  const chartBottom = svgHeight - 40;
+  const chartHeight = chartBottom - chartTop;
+  const chartLeft = 50;
+  const chartRight = svgWidth - 20;
+  const chartPlotWidth = chartRight - chartLeft;
+
+  const dayWidth = chartPlotWidth / chartData.length;
+
+  // Počet aktivních sloupců na den
+  const activeSeries = [];
+  if (filters.duration) activeSeries.push({ key: 'durationMin', color: '#6366f1', label: 'Čas (min)' });
+  if (filters.minutes) activeSeries.push({ key: 'earnedMin', color: '#f59e0b', label: 'Minuty' });
+  if (filters.diamonds) activeSeries.push({ key: 'earnedDiamonds', color: '#06b6d4', label: 'Diamanty' });
+
+  const barWidth = Math.min(18, Math.max(8, (dayWidth - 14) / (activeSeries.length || 1)));
+
+  // Horizontální vodicí linky (4 úrovně)
+  const gridSteps = 4;
+  let gridLinesSvg = '';
+  for (let i = 0; i <= gridSteps; i++) {
+    const yVal = Math.round((maxVal / gridSteps) * i * 10) / 10;
+    const yPos = chartBottom - (i / gridSteps) * chartHeight;
+    gridLinesSvg += `
+      <line x1="${chartLeft}" y1="${yPos}" x2="${chartRight}" y2="${yPos}" stroke="#e2e8f0" stroke-dasharray="4 4" stroke-width="1" />
+      <text x="${chartLeft - 8}" y="${yPos + 4}" fill="#64748b" font-size="11" font-weight="700" text-anchor="end">${yVal}</text>
+    `;
+  }
+
+  // Sloupce pro jednotlivé dny
+  let barsSvg = '';
+  chartData.forEach((day, dayIndex) => {
+    const dayCenterX = chartLeft + dayIndex * dayWidth + dayWidth / 2;
+    const totalBarsWidth = activeSeries.length * barWidth;
+    const startX = dayCenterX - totalBarsWidth / 2;
+
+    activeSeries.forEach((series, sIdx) => {
+      const val = day[series.key] || 0;
+      const barH = maxVal > 0 ? (val / maxVal) * chartHeight : 0;
+      const barX = startX + sIdx * barWidth;
+      const barY = chartBottom - barH;
+
+      // Zaoblení nahoře
+      barsSvg += `
+        <rect x="${barX + 1}" y="${barY}" width="${Math.max(1, barWidth - 2)}" height="${Math.max(2, barH)}" rx="3" fill="${series.color}" opacity="0.9" />
+        ${val > 0 ? `
+          <text x="${barX + barWidth / 2}" y="${Math.max(chartTop - 6, barY - 4)}" fill="${series.color}" font-size="10" font-weight="900" text-anchor="middle">
+            ${val}
+          </text>
+        ` : ''}
+      `;
+    });
+
+    // Popisek data na ose X
+    barsSvg += `
+      <text x="${dayCenterX}" y="${chartBottom + 18}" fill="#334155" font-size="11" font-weight="800" text-anchor="middle">
+        ${day.shortLabel}
+      </text>
+    `;
+  });
+
+  container.innerHTML = `
+    <div class="w-full flex flex-col items-center">
+      <svg width="${svgWidth}" height="${svgHeight}" class="max-w-full overflow-visible">
+        <!-- Vodící mřížka -->
+        ${gridLinesSvg}
+
+        <!-- Osy -->
+        <line x1="${chartLeft}" y1="${chartBottom}" x2="${chartRight}" y2="${chartBottom}" stroke="#94a3b8" stroke-width="2" />
+        <line x1="${chartLeft}" y1="${chartTop}" x2="${chartLeft}" y2="${chartBottom}" stroke="#94a3b8" stroke-width="2" />
+
+        <!-- Sloupce dat -->
+        ${barsSvg}
+      </svg>
+
+      <!-- Legenda barev pod grafem -->
+      <div class="flex items-center justify-center gap-4 mt-3 pt-2 border-t border-slate-200 text-xs font-black flex-wrap">
+        ${filters.duration ? '<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-indigo-500 inline-block"></span><span class="text-indigo-950">⏱️ Celkový čas (minuty)</span></div>' : ''}
+        ${filters.minutes ? '<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-amber-500 inline-block"></span><span class="text-amber-950">⭐ Získané minuty</span></div>' : ''}
+        ${filters.diamonds ? '<div class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-md bg-cyan-500 inline-block"></span><span class="text-cyan-950">💎 Počet diamantů</span></div>' : ''}
+      </div>
+    </div>
+  `;
+}
+
+function clearTraceabilityHistory() {
+  state.traceabilityHistory = [];
+  saveState();
+  renderAdminTraceabilityUI();
+  playTone(450, 0.1, 'sine', 0.15);
+  alertUserFeedback('Historie traceability byla vymazána.');
+}
+
 function openAdminPanel() {
   const panel = document.getElementById('admin-panel-modal');
   updateBalanceUI();
@@ -5601,6 +6737,7 @@ function openAdminPanel() {
   updateAdminTestUI();
   updateAdminSkinsUI();
   updateAdminVoiceSettingsUI();
+  renderAdminTraceabilityUI();
   if (typeof updateAdminPetsUI === 'function') updateAdminPetsUI();
 
   const verTag = document.getElementById('admin-version-tag');
@@ -5622,10 +6759,93 @@ function closeAdminPanel() {
   generateLessonItems();
 }
 
+function updateOptimizerSummariesUI() {
+  if (!state.rewards) return;
+  const rQuest = getQuestRewardRate('q_reading_all');
+  const mQuest = getQuestRewardRate('q_math_all');
+
+  const rVals = [1, 2, 3, 4, 5, 6, 7, 8].map(i => Number(state.rewards.reading?.[i] ?? 0.25));
+  const mVals = [1, 2, 3, 4, 5, 6].map(i => Number(state.rewards.math?.[i] ?? 0.25));
+
+  const rMaxTask = Math.max(...rVals);
+  const mMaxTask = Math.max(...mVals);
+
+  const rTotalMax = Math.round(((16 * rMaxTask) + rQuest) * 100) / 100;
+  const mTotalMax = Math.round(((16 * mMaxTask) + mQuest) * 100) / 100;
+
+  const rSummaryEl = document.getElementById('optimize-reading-summary');
+  if (rSummaryEl) {
+    rSummaryEl.innerHTML = `Aktuálně: 16× až <strong>${rMaxTask} min</strong> + mise <strong>${rQuest} min</strong> = max <strong class="text-sky-800">${rTotalMax} min</strong>`;
+  }
+
+  const mSummaryEl = document.getElementById('optimize-math-summary');
+  if (mSummaryEl) {
+    mSummaryEl.innerHTML = `Aktuálně: 16× až <strong>${mMaxTask} min</strong> + mise <strong>${mQuest} min</strong> = max <strong class="text-amber-800">${mTotalMax} min</strong>`;
+  }
+
+  const rTargetInput = document.getElementById('optimize-reading-target-input');
+  if (rTargetInput && state.optimizeReadingTarget) {
+    rTargetInput.value = state.optimizeReadingTarget;
+  }
+  const mTargetInput = document.getElementById('optimize-math-target-input');
+  if (mTargetInput && state.optimizeMathTarget) {
+    mTargetInput.value = state.optimizeMathTarget;
+  }
+}
+
+function optimizeSubjectRewards(subject) {
+  if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+  const isReading = subject === 'reading';
+  const inputId = isReading ? 'optimize-reading-target-input' : 'optimize-math-target-input';
+  const inputEl = document.getElementById(inputId);
+  const rawVal = inputEl ? parseFloat(inputEl.value.replace(',', '.')) : 15;
+
+  if (isNaN(rawVal) || rawVal < 1) {
+    alertUserFeedback('Zadej platný strop minut (alespoň 1 min)!');
+    return;
+  }
+
+  const targetTotal = Math.round(rawVal * 100) / 100;
+  // Distribute targetTotal between 16 exercises (80% = 16/20) and 1 Daily Quest bonus (20% = 4/20)
+  // so 16 * perTask + questBonus === targetTotal (never exceeding targetTotal)
+  const perTask = Math.max(0.05, Math.floor((targetTotal / 20) * 100) / 100);
+  const questBonus = Math.max(0, Math.round((targetTotal - (16 * perTask)) * 100) / 100);
+
+  if (isReading) {
+    state.optimizeReadingTarget = targetTotal;
+    for (let i = 1; i <= 8; i++) {
+      state.rewards.reading[i] = perTask;
+    }
+    state.rewards.readingQuestRate = questBonus;
+  } else {
+    state.optimizeMathTarget = targetTotal;
+    for (let i = 1; i <= 6; i++) {
+      state.rewards.math[i] = perTask;
+    }
+    state.rewards.mathQuestRate = questBonus;
+  }
+
+  saveState();
+  renderRewardInputs();
+  updateNavTabRewardLabels();
+  updateReviewButtonLabel();
+  renderDailyQuests();
+  playTone(660, 0.12, 'triangle', 0.22);
+
+  const subjName = isReading ? 'Čtení' : 'Matematika';
+  alertUserFeedback(`${subjName} optimalizováno na max ${targetTotal} min (16× ${perTask} min + denní mise ${questBonus} min)!`);
+}
+
 function renderRewardInputs() {
   if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
   const qRateInput = document.getElementById('reward-quest-rate');
-  if (qRateInput) qRateInput.value = state.rewards.questRate || 1.0;
+  if (qRateInput) qRateInput.value = state.rewards.questRate || 4.0;
+
+  const rQuestInput = document.getElementById('reward-reading-quest-rate');
+  if (rQuestInput) rQuestInput.value = getQuestRewardRate('q_reading_all');
+
+  const mQuestInput = document.getElementById('reward-math-quest-rate');
+  if (mQuestInput) mQuestInput.value = getQuestRewardRate('q_math_all');
 
   const readingBox = document.getElementById('rewards-reading-inputs');
   readingBox.innerHTML = '';
@@ -5638,7 +6858,7 @@ function renderRewardInputs() {
     item.innerHTML = `
       <span class="text-[10px] font-black text-slate-700 truncate mb-0.5">${rNames[i - 1]}</span>
       <div class="flex items-center gap-1">
-        <input type="number" step="0.25" min="0.0" max="10" value="${val}" onchange="saveRewardRate('reading', ${i}, this.value)" class="w-full text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+        <input type="number" step="0.05" min="0.0" max="20" value="${val}" onchange="saveRewardRate('reading', ${i}, this.value)" class="w-full text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
         <span class="text-[9px] font-bold text-slate-500">min</span>
       </div>
     `;
@@ -5656,25 +6876,39 @@ function renderRewardInputs() {
     item.innerHTML = `
       <span class="text-[10px] font-black text-slate-700 truncate mb-0.5">${mNames[i - 1]}</span>
       <div class="flex items-center gap-1">
-        <input type="number" step="0.25" min="0.0" max="10" value="${val}" onchange="saveRewardRate('math', ${i}, this.value)" class="w-full text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+        <input type="number" step="0.05" min="0.0" max="20" value="${val}" onchange="saveRewardRate('math', ${i}, this.value)" class="w-full text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
         <span class="text-[9px] font-bold text-slate-500">min</span>
       </div>
     `;
     mathBox.appendChild(item);
   }
+
+  updateOptimizerSummariesUI();
 }
 
 function saveRewardRate(category, level, valStr) {
-  const num = Math.max(0, parseFloat(valStr.replace(',', '.')) || 0);
+  const num = Math.max(0, Math.round((parseFloat(valStr.replace(',', '.')) || 0) * 100) / 100);
   if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
 
-  if (category === 'quest') state.rewards.questRate = num;
-  else if (category === 'reading') state.rewards.reading[level] = num;
-  else if (category === 'math') state.rewards.math[level] = num;
+  if (category === 'quest') {
+    state.rewards.questRate = num;
+    state.rewards.readingQuestRate = num;
+    state.rewards.mathQuestRate = num;
+  } else if (category === 'reading_quest') {
+    state.rewards.readingQuestRate = num;
+  } else if (category === 'math_quest') {
+    state.rewards.mathQuestRate = num;
+  } else if (category === 'reading') {
+    state.rewards.reading[level] = num;
+  } else if (category === 'math') {
+    state.rewards.math[level] = num;
+  }
 
   saveState();
   updateNavTabRewardLabels();
   updateReviewButtonLabel();
+  updateOptimizerSummariesUI();
+  renderDailyQuests();
   playTone(550, 0.08, 'sine', 0.15);
 }
 
@@ -5684,6 +6918,7 @@ function resetDefaultRewards() {
   renderRewardInputs();
   updateNavTabRewardLabels();
   updateReviewButtonLabel();
+  renderDailyQuests();
   playTone(600, 0.1, 'sine', 0.2);
   alertUserFeedback('Odměny obnoveny na výchozí hodnoty!');
 }
@@ -5845,12 +7080,25 @@ function clearHistory() {
 
 function resetAllData() {
   clearSpellingTimers();
+  if (stopwatchState && stopwatchState.intervalId) {
+    clearInterval(stopwatchState.intervalId);
+    stopwatchState.intervalId = null;
+  }
+  stopwatchState.status = 'idle';
+  stopwatchState.elapsedSec = 0;
+
   state = {
     appVersion: APP_VERSION,
     subject: 'reading',
     minutesBalance: 0.0,
     dailyEarnedToday: 0.0,
+    dailyReadingEarnedToday: 0.0,
+    dailyMathEarnedToday: 0.0,
     dailyEarnedDate: getTodayDateString(),
+    vouchersBoughtDate: getTodayDateString(),
+    dailyStandardVoucherBought: null,
+    dailyMaxVoucherBought: null,
+    traceabilityHistory: [],
     vaultBalance: 0.0,
     goldDiamonds: 0,
     bonusMaxLimitMinutes: 0,
@@ -5863,6 +7111,10 @@ function resetAllData() {
     mathMax: 10,
     coinMaxLimit: 20,
     coinHardMode: true,
+    coinGameMode: 'compose',
+    coinHideFormula: false,
+    optimizeReadingTarget: 15,
+    optimizeMathTarget: 15,
     letterCase: 'upper',
     showSyllableArcs: false,
     spellingMode: 'classic',
@@ -5903,6 +7155,7 @@ function resetAllData() {
   closeAdminPanel();
   applyCurrentTheme();
   updateTopAvatarDisplay();
+  updateStopwatchUI();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
   setSubject('reading');
   setGridCount(8);
@@ -6099,6 +7352,8 @@ function initSkolackaMiseApp() {
   loadState();
   if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+  attachStopwatchStopHoldListeners();
+  updateStopwatchUI();
   updateBalanceUI();
   updateTopBadges();
   updateDiamondMarketUI();

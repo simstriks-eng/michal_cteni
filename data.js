@@ -37,6 +37,8 @@ const MATH_EMOJIS = ['🍎', '🍐', '🚗', '⭐', '🎈', '🐶', '🐱', '⚽
 
 const DEFAULT_REWARDS = {
   questRate: 4.0,
+  readingQuestRate: 4.0,
+  mathQuestRate: 4.0,
   reading: { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 0.50, 7: 1.00, 8: 0.25 },
   math:    { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 1.00, 7: 0.00 }
 };

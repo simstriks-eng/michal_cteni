@@ -332,6 +332,22 @@
           <div id="top-pet-companion-widget" onclick="openArenaView()" title="Klepni pro otevření Pet Arény!" class="relative cursor-pointer flex items-center gap-2 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[38px] hover:scale-105 active:scale-95 transition-transform">
             <!-- Renderováno z petSystem.js -->
           </div>
+
+          <!-- Karta 3: Malé Stopky pro měření denního tréninku (podrž 3s pro STOP) -->
+          <div id="top-stopwatch-widget" class="flex items-center gap-1.5 bg-slate-900 text-white border-2 border-indigo-400 px-2.5 py-0.5 rounded-2xl shadow-sm h-[38px] select-none">
+            <span id="stopwatch-status-dot" class="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
+            <span id="stopwatch-time-display" class="font-mono font-black text-xs sm:text-sm tracking-wider text-amber-300 min-w-[44px] text-center">00:00</span>
+            <button type="button" id="stopwatch-playpause-btn" onclick="toggleStopwatchPlayPause()" title="Spustit / Pozastavit měření tréninku" class="w-6 h-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shadow-sm active:scale-90 transition-all">
+              ▶
+            </button>
+            <button type="button" id="stopwatch-stop-btn" title="Podrž 3 sekundy pro ukončení a uložení tréninku" class="hidden relative w-7 h-7 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white font-black text-[10px] items-center justify-center shadow-sm select-none touch-none">
+              <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 32 32">
+                <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3"></circle>
+                <circle id="stopwatch-stop-ring" cx="16" cy="16" r="13" fill="none" stroke="#fde047" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="81.68" stroke-dashoffset="81.68"></circle>
+              </svg>
+              <span class="relative z-10 leading-none pointer-events-none">⏹</span>
+            </button>
+          </div>
         </div>
 
         <!-- 2. řada vlevo: Řada + Truhla + Úkoly + Obchod -->
@@ -365,7 +381,7 @@
         </div>
       </div>
 
-      <!-- PRAVÝ BLOK: 1. řada Čtení / Matematika / Hodiny / TEST | 2. řada přímo pod ní Diamanty + Minuty -->
+      <!-- PRAVÝ BLOK: 1. řada Čtení / Matematika / Hodiny / TEST | 2. řada přímo pod ní Denní limity X/15 + Diamanty + Minuty -->
       <div class="flex flex-col items-start sm:items-end gap-1.5">
         <!-- 1. řada vpravo: Přepínač předmětů -->
         <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0 h-[38px] items-center gap-1">
@@ -384,17 +400,30 @@
           </button>
         </div>
 
-        <!-- 2. řada vpravo (PŘÍMO POD LIŠTOU ČTENÍ / MATEMATIKA / HODINY / TEST): Diamanty a Minuty -->
-        <div class="flex items-center gap-2">
+        <!-- 2. řada vpravo: Denní limity (X/15 Čtení & X/15 Matematika) + Diamanty + Minuty -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <!-- DENNÍ SPLNĚNÉ MINUTY (MAX 15 MIN ČTENÍ + MAX 15 MIN MATEMATIKA) -->
+          <div id="top-subject-caps-widget" title="Dnešní vyčtené a vypočítané minuty (max 15 min Čtení + 15 min Matematika přímo, zbytek jde do Nočního trezoru)" class="bg-white border-2 border-slate-300 px-2.5 rounded-xl shadow-xs flex items-center gap-2 h-[34px] text-[10px] sm:text-[11px] font-black text-slate-900">
+            <span class="flex items-center gap-1 whitespace-nowrap">
+              <span>📖</span>
+              <span id="top-reading-cap-display" class="text-slate-900 font-black">0/15</span>
+            </span>
+            <span class="text-slate-300 font-black">|</span>
+            <span class="flex items-center gap-1 whitespace-nowrap">
+              <span>🔢</span>
+              <span id="top-math-cap-display" class="text-slate-900 font-black">0/15</span>
+            </span>
+          </div>
+
           <!-- MODRÉ DIAMANTY -->
-          <div onclick="showStoreTab('skins')" title="Diamanty & Obchod" class="cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-3 rounded-xl border-2 border-cyan-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px]">
+          <div onclick="showStoreTab('skins')" title="Diamanty & Obchod" class="cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-2.5 sm:px-3 rounded-xl border-2 border-cyan-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px]">
             <span class="text-sm sm:text-base leading-none">💎</span>
             <span class="text-xs sm:text-sm font-black leading-none" id="top-diamonds-display">0</span>
             <span class="text-[10px] font-bold text-cyan-100 uppercase tracking-wider">Diamantů</span>
           </div>
 
           <!-- HERNÍ ČAS NA TABLETU (MINUTY / HVĚZDIČKY) -->
-          <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-3 rounded-xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px]">
+          <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 sm:px-3 rounded-xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px]">
             <span class="text-sm sm:text-base leading-none animate-pulse">⭐</span>
             <span class="text-xs sm:text-sm font-black whitespace-nowrap leading-none" id="top-balance-display">0 min</span>
           </div>
@@ -653,31 +682,30 @@
           </div>
         </div>
 
-        <!-- NOVÁ HRA: 1. SKLÁDÁNÍ MINCÍ (PŘETAHOVÁNÍ MINCÍ PRSTEM) -->
-        <div id="content-coins-view" class="hidden w-full max-w-4xl bg-white/95 rounded-3xl p-3 sm:p-3.5 border-4 border-amber-300 shadow-xl flex flex-col gap-2">
-          <!-- Horní lišta: Zadání částky + Podmínka ztížení + Volba rozsahu (Do 20 / 30 / 40 / 50 Kč) + Tlačítko Ztížení -->
+        <!-- NOVÁ HRA: 1. SKLÁDÁNÍ MINCÍ & VRACENÍ PENĚZ (PŘETAHOVÁNÍ MINCÍ PRSTEM) -->
+        <div id="content-coins-view" class="hidden w-full max-w-4xl bg-white/95 rounded-3xl p-2.5 sm:p-3.5 border-4 border-amber-300 shadow-xl flex flex-col gap-2">
+          <!-- Horní ovládací lišta: Přepínač režimu (Skládání / Vracení peněz) + Posuvník až do 100 Kč + Ztížení -->
           <div class="w-full flex flex-wrap items-center justify-between gap-2 border-b-2 border-amber-200 pb-2">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-2xl sm:text-3xl select-none">🪙</span>
-              <div class="flex items-center gap-2 flex-wrap">
-                <span class="text-sm sm:text-base font-black text-slate-700">Vytvoř mi:</span>
-                <span id="coin-target-amount-badge" class="bg-gradient-to-r from-amber-400 to-yellow-300 border-2 border-amber-600 text-amber-950 font-black text-xl sm:text-2xl px-3.5 py-0.5 rounded-2xl shadow-sm font-baloo leading-tight">20 Kč</span>
-                <span id="coin-condition-badge" class="inline-flex items-center gap-1 bg-rose-100 border-2 border-rose-500 text-rose-800 font-black text-xs sm:text-sm px-3 py-1 rounded-2xl shadow-sm">
-                  <span>🚫</span>
-                  <span id="coin-condition-text">Bez mince 5 Kč</span>
-                </span>
-              </div>
+            <!-- Přepínač herního módu mincí -->
+            <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 gap-1">
+              <button type="button" onclick="setCoinGameMode('compose')" id="coin-mode-btn-compose" class="px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all bg-amber-500 text-white shadow-sm flex items-center gap-1">
+                <span>🪙</span> Skládání mincí
+              </button>
+              <button type="button" onclick="setCoinGameMode('change')" id="coin-mode-btn-change" class="px-3 py-1 rounded-xl text-xs sm:text-sm font-black transition-all text-slate-700 hover:bg-amber-100 flex items-center gap-1">
+                <span>🏪</span> Vracení peněz
+              </button>
             </div>
 
-            <!-- Volba rozsahu přímo v herním layoutu + tlačítko Ztížení vedle Generovat do -->
+            <!-- Posuvník rozsahu až do 100 Kč + rychlé volby + tlačítko Ztížení -->
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="flex items-center gap-1.5 flex-wrap">
-                <span class="text-xs font-black text-slate-600">Generovat do:</span>
-                <div class="inline-flex bg-amber-100/90 p-0.5 rounded-2xl border-2 border-amber-300 gap-1">
-                  <button type="button" onclick="setCoinGameMaxLimit(20)" id="coin-limit-btn-20" class="px-2.5 py-1 rounded-xl text-xs font-black transition-all bg-amber-500 text-white shadow-sm">20 Kč</button>
-                  <button type="button" onclick="setCoinGameMaxLimit(30)" id="coin-limit-btn-30" class="px-2.5 py-1 rounded-xl text-xs font-black transition-all text-amber-900 hover:bg-amber-200">30 Kč</button>
-                  <button type="button" onclick="setCoinGameMaxLimit(40)" id="coin-limit-btn-40" class="px-2.5 py-1 rounded-xl text-xs font-black transition-all text-amber-900 hover:bg-amber-200">40 Kč</button>
-                  <button type="button" onclick="setCoinGameMaxLimit(50)" id="coin-limit-btn-50" class="px-2.5 py-1 rounded-xl text-xs font-black transition-all text-amber-900 hover:bg-amber-200">50 Kč</button>
+              <div class="flex items-center gap-2 bg-amber-50/90 px-2.5 py-1 rounded-2xl border-2 border-amber-300">
+                <span class="text-[11px] sm:text-xs font-black text-slate-700 whitespace-nowrap">Do částky:</span>
+                <input type="range" id="coin-limit-slider" min="10" max="100" step="5" value="20" oninput="previewCoinSliderLimit(this.value)" onchange="setCoinGameMaxLimit(Number(this.value))" class="w-24 sm:w-32 accent-amber-500 cursor-pointer" />
+                <span id="coin-limit-slider-label" class="bg-amber-500 text-white font-black text-xs px-2 py-0.5 rounded-lg min-w-[48px] text-center shadow-sm">20 Kč</span>
+                <div class="hidden sm:inline-flex items-center gap-1 border-l border-amber-300 pl-1.5">
+                  <button type="button" onclick="setCoinGameMaxLimit(20)" id="coin-limit-btn-20" class="px-1.5 py-0.5 rounded-lg text-[11px] font-black transition-all bg-amber-500 text-white">20</button>
+                  <button type="button" onclick="setCoinGameMaxLimit(50)" id="coin-limit-btn-50" class="px-1.5 py-0.5 rounded-lg text-[11px] font-black transition-all text-amber-900 hover:bg-amber-200">50</button>
+                  <button type="button" onclick="setCoinGameMaxLimit(100)" id="coin-limit-btn-100" class="px-1.5 py-0.5 rounded-lg text-[11px] font-black transition-all text-amber-900 hover:bg-amber-200">100</button>
                 </div>
               </div>
 
@@ -686,6 +714,40 @@
                 <span id="coin-hard-mode-label">Ztížení: ZAP</span>
               </button>
             </div>
+          </div>
+
+          <!-- Zadání úkolu podle zvoleného režimu (Skládání částky vs. Vracení peněz v obchodě) -->
+          <div class="w-full flex flex-wrap items-center justify-between gap-2 bg-amber-50/70 border-2 border-amber-200 rounded-2xl px-3 py-1.5">
+            <!-- Režim 1: Skládání částky -->
+            <div id="coin-prompt-compose" class="flex items-center gap-2 flex-wrap">
+              <span class="text-xl sm:text-2xl select-none">🪙</span>
+              <span class="text-sm sm:text-base font-black text-slate-700">Poskládej částku:</span>
+              <span id="coin-target-amount-badge" class="bg-gradient-to-r from-amber-400 to-yellow-300 border-2 border-amber-600 text-amber-950 font-black text-xl sm:text-2xl px-3.5 py-0.5 rounded-2xl shadow-sm font-baloo leading-tight">20 Kč</span>
+            </div>
+
+            <!-- Režim 2: Vracení peněz (Nákup vs. Zaplaceno + skrývatelný výpočet) -->
+            <div id="coin-prompt-change" class="hidden flex-1 flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="text-xl sm:text-2xl select-none">🏪</span>
+                <span id="coin-change-story-text" class="text-xs sm:text-sm font-black text-slate-800">
+                  Nákup stál <strong class="text-rose-700 text-sm sm:text-base">32 Kč</strong>, zákazník zaplatil <strong class="text-emerald-700 text-sm sm:text-base">50 Kč</strong>. Kolik Kč vrátíš zpět?
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span id="coin-change-formula-badge" class="bg-indigo-100 border-2 border-indigo-400 text-indigo-950 font-black text-xs sm:text-sm px-3 py-0.5 rounded-xl font-baloo shadow-sm">
+                  50 Kč − 32 Kč = ? Kč
+                </span>
+                <button type="button" onclick="toggleCoinChangeFormula()" id="coin-formula-toggle-btn" class="game-button bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-black px-2.5 py-1 rounded-xl text-[11px] flex items-center gap-1 shadow-sm">
+                  🙈 Skrýt výpočet
+                </button>
+              </div>
+            </div>
+
+            <!-- Badge zakázané mince při zapnutém ztížení -->
+            <span id="coin-condition-badge" class="inline-flex items-center gap-1 bg-rose-100 border-2 border-rose-500 text-rose-800 font-black text-xs sm:text-sm px-3 py-0.5 rounded-2xl shadow-sm ml-auto">
+              <span>🚫</span>
+              <span id="coin-condition-text">Bez mince 5 Kč</span>
+            </span>
           </div>
 
           <!-- Střední část: Herní pole (Drop zóna pro mince) -->
@@ -1182,64 +1244,73 @@
 
             <!-- KATEGORIE 5: HERNÍ LÍSTKY (ZA MINUTY ⭐) -->
             <div id="store-tab-content-tickets" class="space-y-4">
-              <div class="border-b border-slate-200 pb-2">
-                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎟️ Herní Lístky na Tablet (za hvězdičky ⭐)</h3>
-                <p class="text-xs text-slate-500 font-bold">Vyměň vyčtené minuty za lístek na hraní a ukaž ho rodičům</p>
+              <div class="border-b border-slate-200 pb-2 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎟️ Herní Lístky na Tablet (za hvězdičky ⭐)</h3>
+                  <p class="text-xs text-slate-500 font-bold">Denně lze koupit max. 1× poukaz z kategorie (5 / 10 / 15 min) a max. 1× MAXIMÁLNÍ poukaz (reset o půlnoci)</p>
+                </div>
+                <div id="store-voucher-status-banner" class="bg-indigo-50 border-2 border-indigo-200 px-3 py-1.5 rounded-2xl text-xs font-black text-indigo-900">
+                  Dnešní nákupy: 0 / 2 poukazy
+                </div>
               </div>
 
               <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div class="bg-sky-50/60 border-3 border-sky-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center">
+                <div id="voucher-card-5" class="bg-sky-50/60 border-3 border-sky-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
+                  <div id="voucher-badge-5" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
                   <div>
                     <div class="text-3xl mb-1">⏱️</div>
                     <h3 class="text-lg sm:text-xl font-black text-sky-800">5 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Rychlá pauza</p>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Kategorie 5 / 10 / 15 min</p>
                   </div>
                   <div class="mt-3">
                     <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 5 hvězd ⭐</div>
-                    <button onclick="buyTimePackage(5)" class="game-button w-full bg-sky-500 hover:bg-sky-600 text-white font-black py-2 rounded-xl border-b-3 border-sky-700 text-xs shadow-sm">
+                    <button id="voucher-btn-5" onclick="buyTimePackage(5)" class="game-button w-full bg-sky-500 hover:bg-sky-600 text-white font-black py-2 rounded-xl border-b-3 border-sky-700 text-xs shadow-sm">
                       Koupit lístek
                     </button>
                   </div>
                 </div>
 
-                <div class="bg-emerald-50/60 border-3 border-emerald-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center">
+                <div id="voucher-card-10" class="bg-emerald-50/60 border-3 border-emerald-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
+                  <div id="voucher-badge-10" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
                   <div>
                     <div class="text-3xl mb-1">🎮</div>
                     <h3 class="text-lg sm:text-xl font-black text-emerald-800">10 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Herní level</p>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Kategorie 5 / 10 / 15 min</p>
                   </div>
                   <div class="mt-3">
                     <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 10 hvězd ⭐</div>
-                    <button onclick="buyTimePackage(10)" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl border-b-3 border-emerald-700 text-xs shadow-sm">
+                    <button id="voucher-btn-10" onclick="buyTimePackage(10)" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl border-b-3 border-emerald-700 text-xs shadow-sm">
                       Koupit lístek
                     </button>
                   </div>
                 </div>
 
-                <div class="bg-purple-50/60 border-3 border-purple-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center">
+                <div id="voucher-card-15" class="bg-purple-50/60 border-3 border-purple-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
+                  <div id="voucher-badge-15" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
                   <div>
                     <div class="text-3xl mb-1">🚀</div>
                     <h3 class="text-lg sm:text-xl font-black text-purple-800">15 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Velký balíček</p>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Kategorie 5 / 10 / 15 min</p>
                   </div>
                   <div class="mt-3">
                     <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 15 hvězd ⭐</div>
-                    <button onclick="buyTimePackage(15)" class="game-button w-full bg-purple-500 hover:bg-purple-600 text-white font-black py-2 rounded-xl border-b-3 border-purple-700 text-xs shadow-sm">
+                    <button id="voucher-btn-15" onclick="buyTimePackage(15)" class="game-button w-full bg-purple-500 hover:bg-purple-600 text-white font-black py-2 rounded-xl border-b-3 border-purple-700 text-xs shadow-sm">
                       Koupit lístek
                     </button>
                   </div>
                 </div>
 
-                <div class="bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-orange-400 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative">
+                <div id="voucher-card-max" class="bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-orange-400 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
                   <div class="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Maximum</div>
+                  <div id="voucher-badge-max" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
                   <div>
                     <div class="text-3xl mb-1">👑</div>
                     <h3 class="text-lg sm:text-xl font-black text-orange-900" id="dynamic-package-title">15 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Plná porce</p>
+                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Plná porce (1× denně)</p>
                   </div>
                   <div class="mt-3">
                     <div class="text-amber-700 font-black text-xs mb-1.5" id="dynamic-package-cost">Cena: 15 hvězd ⭐</div>
-                    <button onclick="buyDynamicTimePackage()" class="game-button w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-2 rounded-xl border-b-3 border-orange-700 text-xs shadow-sm">
+                    <button id="voucher-btn-max" onclick="buyDynamicTimePackage()" class="game-button w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-2 rounded-xl border-b-3 border-orange-700 text-xs shadow-sm">
                       Koupit Maximum
                     </button>
                   </div>
@@ -1253,7 +1324,7 @@
                   <div>
                     <h4 class="text-xs sm:text-sm font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
                     <p class="text-[11px] text-amber-900 font-bold">
-                      Po dosažení denního limitu (<span id="vault-direct-limit-label" class="font-black">15 min</span>) se další vyčtené minuty ukládají do trezoru na zítra!
+                      Denně lze přímo získat max. <strong>15 min ve Čtení</strong> a <strong>15 min v Matematice</strong>. Vše nad rámec se automaticky ukládá sem do trezoru na další den!
                     </p>
                   </div>
                 </div>
@@ -1841,6 +1912,10 @@
             <span class="text-base">📖</span>
             <span>Čtení & Hláskování</span>
           </button>
+          <button onclick="switchAdminTab('traceability')" id="admin-tab-btn-traceability" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-emerald-800 hover:bg-emerald-100 flex items-center gap-2 text-left">
+            <span class="text-base">📊</span>
+            <span>Traceabilita & Historie</span>
+          </button>
         </nav>
 
         <!-- Pravý rolovatelný obsah záložek -->
@@ -2025,7 +2100,7 @@
               </div>
             </div>
 
-            <!-- RUČNÍ NASTAVENÍ ODMĚN -->
+            <!-- RUČNÍ NASTAVENÍ ODMĚN & OPTIMALIZÁTOR DENNÍCH MISÍ -->
             <div class="bg-emerald-50 border-2 border-emerald-300 rounded-2xl p-3.5">
               <div class="flex items-center justify-between mb-2">
                 <h4 class="font-black text-emerald-950 text-sm sm:text-base">Nastavení výše odměn (Minuty k tabletu):</h4>
@@ -2034,18 +2109,80 @@
                 </button>
               </div>
 
-              <div class="bg-white p-2 rounded-xl border border-emerald-200 mb-2.5 flex items-center justify-between">
-                <span class="text-xs font-black text-slate-800">Odměna za splnění denního úkolu (16× Čtení / 16× Matematika):</span>
-                <div class="flex items-center gap-1">
-                  <input type="number" step="0.5" min="0.5" max="20" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
-                  <span class="text-[11px] font-black text-slate-600">min</span>
+              <!-- CHYTRÝ OPTIMALIZÁTOR ODMĚN (2 TLAČÍTKA: ČTENÍ & MATEMATIKA) -->
+              <div class="bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 border-2 border-indigo-300 rounded-2xl p-3 mb-3 shadow-sm">
+                <div class="mb-2">
+                  <h5 class="text-xs sm:text-sm font-black text-indigo-950 flex items-center gap-1.5">
+                    <span>⚡</span> Chytrá optimalizace odměn (16 úkolů + odměna za denní misi = max strop)
+                  </h5>
+                  <p class="text-[11px] font-bold text-slate-600 leading-snug">
+                    Zadej maximální počet minut za splnění všech 16 denních úkolů + bonus za denní misi. Tlačítko automaticky rozpočítá odměnu za jednotlivé úkoly i za denní misi tak, aby celkový zisk nepřesáhl zvolený počet minut.
+                  </p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <!-- Optimalizace Čtení -->
+                  <div class="bg-white p-2.5 rounded-xl border-2 border-sky-300 flex flex-col gap-1.5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-black text-sky-900">📖 Max strop pro Čtení (16× + mise):</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-1 bg-sky-50 border-2 border-sky-300 rounded-xl px-2 py-1">
+                        <input type="number" id="optimize-reading-target-input" step="1" min="2" max="120" value="15" class="w-14 text-center font-black text-sky-950 bg-transparent focus:outline-none text-sm" />
+                        <span class="text-xs font-black text-sky-700">min</span>
+                      </div>
+                      <button type="button" onclick="optimizeSubjectRewards('reading')" class="game-button flex-1 bg-sky-600 hover:bg-sky-700 text-white font-black py-1.5 px-3 rounded-xl border-b-3 border-sky-800 text-xs flex items-center justify-center gap-1 shadow-sm">
+                        <span>⚡</span> Optimalizovat Čtení
+                      </button>
+                    </div>
+                    <div id="optimize-reading-summary" class="text-[10px] font-extrabold text-slate-600">
+                      16× čtení + denní mise = nastaví se na míru
+                    </div>
+                  </div>
+
+                  <!-- Optimalizace Matematiky -->
+                  <div class="bg-white p-2.5 rounded-xl border-2 border-amber-300 flex flex-col gap-1.5 shadow-sm">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-black text-amber-900">🔢 Max strop pro Matematiku (16× + mise):</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-1 bg-amber-50 border-2 border-amber-300 rounded-xl px-2 py-1">
+                        <input type="number" id="optimize-math-target-input" step="1" min="2" max="120" value="15" class="w-14 text-center font-black text-amber-950 bg-transparent focus:outline-none text-sm" />
+                        <span class="text-xs font-black text-amber-700">min</span>
+                      </div>
+                      <button type="button" onclick="optimizeSubjectRewards('math')" class="game-button flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black py-1.5 px-3 rounded-xl border-b-3 border-amber-700 text-xs flex items-center justify-center gap-1 shadow-sm">
+                        <span>⚡</span> Optimalizovat Matematiku
+                      </button>
+                    </div>
+                    <div id="optimize-math-summary" class="text-[10px] font-extrabold text-slate-600">
+                      16× matematika + denní mise = nastaví se na míru
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za Čtení:</h5>
+              <!-- Odměny za denní úkoly (zvlášť Čtení a Matematika) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
+                <div class="bg-white p-2 rounded-xl border border-emerald-200 flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-black text-slate-800">📖 Bonus za denní misi Čtení (16×):</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" step="0.25" min="0" max="30" id="reward-reading-quest-rate" onchange="saveRewardRate('reading_quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+                    <span class="text-[11px] font-black text-slate-600">min</span>
+                  </div>
+                </div>
+                <div class="bg-white p-2 rounded-xl border border-emerald-200 flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-black text-slate-800">🔢 Bonus za denní misi Matematika (16×):</span>
+                  <div class="flex items-center gap-1">
+                    <input type="number" step="0.25" min="0" max="30" id="reward-math-quest-rate" onchange="saveRewardRate('math_quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+                    <span class="text-[11px] font-black text-slate-600">min</span>
+                  </div>
+                </div>
+              </div>
+
+              <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za jednotlivé úkoly – Čtení:</h5>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3" id="rewards-reading-inputs"></div>
 
-              <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za Matematiku:</h5>
+              <h5 class="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1.5">Odměny za jednotlivé úkoly – Matematika:</h5>
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="rewards-math-inputs"></div>
             </div>
 
@@ -2542,6 +2679,85 @@
                   </select>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- ZÁLOŽKA 8: TRACEABILITA & HISTORIE TRÉNINKU (MĚŘENO STOPKAMI) -->
+          <div id="admin-tab-content-traceability" class="hidden space-y-3">
+            <div class="bg-gradient-to-r from-emerald-50 via-teal-50 to-sky-50 border-2 border-emerald-300 rounded-2xl p-3 sm:p-4 shadow-sm">
+              <!-- Horní lišta: Nadpis + Přepínač (Tabulka / Graf) + Smazat -->
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3 border-b border-emerald-200 pb-2.5">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-2xl">📊</span>
+                  <div>
+                    <h4 class="font-black text-emerald-950 text-base">Traceabilita & Historie Tréninku</h4>
+                    <p class="text-xs text-emerald-800 font-bold">
+                      Měřeno stopkami. V tabulce se statistika vejde na jeden řádek, kliknutím rozbalíš detail.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2 flex-wrap flex-shrink-0">
+                  <!-- Přepínač zobrazení: Tabulka vs Graf -->
+                  <div class="bg-white/90 border border-emerald-300 p-1 rounded-xl flex items-center shadow-xs">
+                    <button id="traceability-subtab-btn-table" onclick="switchTraceabilitySubView('table')" class="px-3 py-1 rounded-lg text-xs font-black transition-all bg-emerald-600 text-white shadow-xs">
+                      📋 Tabulka
+                    </button>
+                    <button id="traceability-subtab-btn-chart" onclick="switchTraceabilitySubView('chart')" class="px-3 py-1 rounded-lg text-xs font-black transition-all text-emerald-950 hover:bg-emerald-100">
+                      📈 Graf vývoje
+                    </button>
+                  </div>
+
+                  <button onclick="clearTraceabilityHistory()" class="game-button bg-rose-100 hover:bg-rose-200 text-rose-800 font-black px-3 py-1.5 rounded-xl text-xs border border-rose-300 flex items-center gap-1 shadow-2xs">
+                    <span>🗑️</span> Smazat
+                  </button>
+                </div>
+              </div>
+
+              <!-- POHLED 1: JEDNOŘÁDKOVÁ TABULKA A ROZBALOVACÍ DETAIL -->
+              <div id="traceability-subview-table">
+                <!-- Hlavička sloupců A až F -->
+                <div class="hidden md:grid grid-cols-12 gap-2 px-3 py-2 bg-emerald-900/90 text-white rounded-xl text-[11px] font-black uppercase tracking-wider mb-2 shadow-xs">
+                  <div class="col-span-2">A: Datum</div>
+                  <div class="col-span-3">B: Intervaly procvičení</div>
+                  <div class="col-span-2 text-center">C: Čas trénování</div>
+                  <div class="col-span-2 text-center">D: Získané minuty</div>
+                  <div class="col-span-1 text-center">E: Mise</div>
+                  <div class="col-span-2 text-center">F: Drahokamy</div>
+                </div>
+
+                <!-- Tělo tabulky (jednotlivé jednořádkové dny) -->
+                <div id="admin-traceability-list" class="space-y-2">
+                  <!-- Dynamicky vykreslené řádky -->
+                </div>
+              </div>
+
+              <!-- POHLED 2: GRAF VÝVOJE TRÉNINKU -->
+              <div id="traceability-subview-chart" class="hidden space-y-3">
+                <!-- Filtry metrik grafu -->
+                <div class="bg-white/90 border border-emerald-200 rounded-xl p-2.5 flex flex-wrap items-center justify-between gap-2 shadow-xs">
+                  <span class="text-xs font-black text-slate-700">Filtrovat metriky v grafu:</span>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <button id="trace-filter-btn-duration" onclick="toggleTraceabilityChartFilter('duration')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-indigo-600 text-white border-indigo-700 shadow-xs">
+                      <span>⏱️</span> <span>Čas tréninku (min)</span>
+                    </button>
+                    <button id="trace-filter-btn-minutes" onclick="toggleTraceabilityChartFilter('minutes')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-amber-500 text-white border-amber-600 shadow-xs">
+                      <span>⭐</span> <span>Získané minuty</span>
+                    </button>
+                    <button id="trace-filter-btn-diamonds" onclick="toggleTraceabilityChartFilter('diamonds')" class="px-2.5 py-1 rounded-lg text-xs font-black transition-all border-2 flex items-center gap-1.5 bg-cyan-600 text-white border-cyan-700 shadow-xs">
+                      <span>💎</span> <span>Získané diamanty</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Samotný graf (SVG) -->
+                <div class="bg-white border-2 border-emerald-200 rounded-2xl p-3 sm:p-4 shadow-inner">
+                  <div id="traceability-chart-container" class="w-full overflow-x-auto min-h-[260px] flex items-center justify-center">
+                    <!-- SVG graf vykreslený JS -->
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
