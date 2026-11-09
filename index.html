@@ -305,18 +305,119 @@
   <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
 
   <!-- Plovoucí notifikace pro uložení progresu (Disketa / Cloud) -->
-  <div id="cloud-save-toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 border-emerald-400 px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black">
+  <div id="cloud-save-toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 border-emerald-400 px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black">
     <span id="cloud-save-toast-icon" class="text-base">💾</span>
     <span id="cloud-save-toast-text">Progres uložen do cloudu!</span>
+  </div>
+
+  <!-- ÚVODNÍ PŘIHLAŠOVACÍ OBRAZOVKA (LOG IN & VYTVOŘENÍ ÚČTU) -->
+  <div id="auth-login-overlay" class="fixed inset-0 z-[60] bg-gradient-to-br from-sky-500 via-indigo-600 to-purple-800 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+    <!-- Dekorativní plovoucí prvky v pozadí -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden opacity-20 select-none">
+      <div class="absolute top-8 left-10 text-6xl animate-bounce">📖</div>
+      <div class="absolute top-14 right-14 text-6xl animate-pulse">⭐</div>
+      <div class="absolute bottom-12 left-16 text-6xl animate-pulse">💎</div>
+      <div class="absolute bottom-10 right-12 text-6xl animate-bounce">🔢</div>
+    </div>
+
+    <div class="relative bg-white rounded-[2rem] max-w-md w-full p-5 sm:p-6 border-4 border-amber-400 shadow-2xl flex flex-col gap-4 my-auto">
+      <!-- Hlavička přihlašovací karty -->
+      <div class="flex flex-col items-center text-center bg-gradient-to-r from-amber-50 via-yellow-50 to-sky-50 border-2 border-amber-200 rounded-2xl p-3.5 shadow-inner">
+        <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-400 to-yellow-300 border-3 border-amber-500 shadow-md flex items-center justify-center text-4xl mb-1.5 select-none">
+          🎒
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black text-slate-800 tracking-wide font-baloo leading-none">
+          ŠKOLÁCKÁ MISE
+        </h1>
+        <p class="text-xs font-extrabold text-slate-600 mt-1">
+          Přihlas se ke svému hrdinovi nebo si založ nový účet!
+        </p>
+      </div>
+
+      <!-- Přepínač záložek: Přihlášení vs. Nový účet -->
+      <div class="grid grid-cols-2 gap-1.5 bg-slate-100 p-1.5 rounded-2xl border-2 border-slate-200">
+        <button type="button" id="auth-tab-login-btn" onclick="switchAuthOverlayTab('login')" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center justify-center gap-1.5">
+          <span>🔑</span> <span>Přihlásit se</span>
+        </button>
+        <button type="button" id="auth-tab-register-btn" onclick="switchAuthOverlayTab('register')" class="py-2 px-3 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-white flex items-center justify-center gap-1.5">
+          <span>➕</span> <span>Vytvořit účet</span>
+        </button>
+      </div>
+
+      <!-- ZÁLOŽKA 1: PŘIHLÁŠENÍ -->
+      <div id="auth-panel-login" class="flex flex-col gap-3">
+        <div>
+          <label for="auth-login-username" class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+            👤 Přihlašovací jméno
+          </label>
+          <input type="text" id="auth-login-username" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Zadej jméno (např. misa)" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-sky-300 focus:border-sky-500 focus:outline-none bg-sky-50/50 text-slate-900 font-black text-base">
+        </div>
+
+        <div>
+          <label for="auth-login-password" class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+            🔒 Heslo
+          </label>
+          <div class="relative flex items-center">
+            <input type="password" id="auth-login-password" autocomplete="current-password" placeholder="Zadej heslo" class="w-full px-3.5 py-2.5 pr-11 rounded-xl border-2 border-sky-300 focus:border-sky-500 focus:outline-none bg-sky-50/50 text-slate-900 font-black text-base">
+            <button type="button" onclick="toggleAuthPasswordVisibility('auth-login-password')" title="Zobrazit / Skrýt heslo" class="absolute right-2.5 text-lg opacity-70 hover:opacity-100 select-none">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <label class="flex items-center gap-2 cursor-pointer select-none bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl">
+          <input type="checkbox" id="auth-remember-me" class="w-4 h-4 rounded accent-emerald-600">
+          <span class="text-xs font-bold text-slate-700">Zapamatovat přihlášení na tomto zařízení</span>
+        </label>
+
+        <div id="auth-login-error" class="hidden p-2.5 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-800 text-xs font-black text-center"></div>
+
+        <button type="button" id="auth-login-submit-btn" onclick="submitAccountLogin()" class="game-button w-full py-3 rounded-2xl bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-black text-base border-b-4 border-emerald-800 shadow-lg flex items-center justify-center gap-2">
+          <span>🚀</span> <span>VSTOUPIT DO HRY</span>
+        </button>
+      </div>
+
+      <!-- ZÁLOŽKA 2: VYTVOŘENÍ NOVÉHO ÚČTU -->
+      <div id="auth-panel-register" class="hidden flex flex-col gap-3">
+        <div class="p-2.5 rounded-xl bg-indigo-50 border border-indigo-200 text-[11px] font-bold text-indigo-900 leading-snug">
+          ✨ Nový účet začíná od 0 a má své vlastní oddělené ukládání na tabletu i v cloudu (nepřepíše Míšův progres).
+        </div>
+
+        <div>
+          <label for="auth-reg-username" class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+            👤 Nové přihlašovací jméno
+          </label>
+          <input type="text" id="auth-reg-username" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Např. kubik nebo lukas" class="w-full px-3.5 py-2.5 rounded-xl border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none bg-indigo-50/40 text-slate-900 font-black text-base">
+        </div>
+
+        <div>
+          <label for="auth-reg-password" class="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+            🔑 Zvol si heslo
+          </label>
+          <div class="relative flex items-center">
+            <input type="password" id="auth-reg-password" autocomplete="new-password" placeholder="Zadej heslo pro nový účet" class="w-full px-3.5 py-2.5 pr-11 rounded-xl border-2 border-indigo-300 focus:border-indigo-500 focus:outline-none bg-indigo-50/40 text-slate-900 font-black text-base">
+            <button type="button" onclick="toggleAuthPasswordVisibility('auth-reg-password')" title="Zobrazit / Skrýt heslo" class="absolute right-2.5 text-lg opacity-70 hover:opacity-100 select-none">
+              👁️
+            </button>
+          </div>
+        </div>
+
+        <div id="auth-reg-error" class="hidden p-2.5 rounded-xl bg-rose-50 border-2 border-rose-300 text-rose-800 text-xs font-black text-center"></div>
+
+        <button type="button" id="auth-reg-submit-btn" onclick="submitAccountRegister()" class="game-button w-full py-3 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-black text-base border-b-4 border-indigo-900 shadow-lg flex items-center justify-center gap-2">
+          <span>✨</span> <span>VYTVOŘIT ÚČET A HRÁT</span>
+        </button>
+      </div>
+    </div>
   </div>
 
   <!-- Top Navigation (Optimalizováno pro iPad 11" na šířku - 2 symetrické řádky bez spodní bílé lišty) -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-3 border-amber-300 shadow-sm header-safe py-1 flex-shrink-0">
     <div class="max-w-6xl mx-auto flex flex-wrap items-start justify-between gap-2">
       
-      <!-- LEVÝ BLOK: 1. řada Avatar + Pet + Stopky + Disketa/Mód | 2. řada Řada + Truhla + Úkoly + Obchod -->
+      <!-- LEVÝ BLOK: 1. řada Avatar + Pet + Stopky + Disketa/Účet | 2. řada Řada + Truhla + Úkoly + Obchod -->
       <div class="flex flex-col gap-1.5">
-        <!-- 1. řada vlevo: Školák Míša + Aktivní Pet Společník + Stopky + Disketa & Prostředí -->
+        <!-- 1. řada vlevo: Školák Míša + Aktivní Pet Společník + Stopky + Disketa & Účet -->
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Karta 1: Školák Míša (Šatník) -->
           <div onclick="openWardrobeModal()" title="Klepni pro otevření šatníku a výběr výbavy" class="cursor-pointer flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[38px] hover:scale-105 active:scale-95 transition-transform">
@@ -355,14 +456,17 @@
             </button>
           </div>
 
-          <!-- Karta 4: Tlačítko Diskety (Uložit progres) + Indikace prostředí (TESTOVACÍ MÓD / PRODUKCE) -->
+          <!-- Karta 4: Tlačítko Diskety (Uložit progres) + Aktivní Účet & Odhlášení -->
           <div class="flex items-center gap-1 bg-slate-100 border-2 border-slate-300 px-1.5 py-0.5 rounded-2xl shadow-sm h-[38px] select-none">
             <button type="button" id="top-cloud-save-btn" onclick="manualSaveProgress()" title="Okamžitě uložit progres (lokálně i do cloudu)" class="game-button bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black px-2 py-1 rounded-xl border-b-2 border-emerald-700 shadow-xs flex items-center gap-1 h-[28px] transition-all">
               <span id="top-cloud-save-icon" class="text-sm leading-none">💾</span>
               <span class="text-[10px] font-black uppercase tracking-wide hidden sm:inline">Uložit</span>
             </button>
-            <button type="button" id="top-env-mode-badge" onclick="openCloudEnvModal()" title="Klikni pro detail a nastavení ochrany cloudu (PC vs. Míšův iPad)" class="cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300">
-              TESTOVACÍ MÓD
+            <button type="button" id="top-env-mode-badge" onclick="openCloudEnvModal()" title="Aktivní hráčský účet – klikni pro detail nebo změnu účtu" class="cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300">
+              👤 ÚČET
+            </button>
+            <button type="button" onclick="logoutCurrentAccount()" title="Odhlásit se / Přepnout účet" class="w-7 h-7 rounded-xl bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 font-black text-xs flex items-center justify-center transition-colors">
+              🚪
             </button>
           </div>
         </div>
@@ -2829,57 +2933,40 @@
     </div>
   </div>
 
-  <!-- MODAL 4: NASTAVENÍ CLOUD SYNCHRONIZACE & OCHRANA MÍŠOVA IPADU -->
+  <!-- MODAL 4: PŘEHLED AKTIVNÍHO ÚČTU & CLOUD SYNCHRONIZACE -->
   <div id="cloud-env-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 border-4 border-indigo-500 shadow-2xl flex flex-col gap-3">
       <div class="flex items-center justify-between w-full border-b pb-2">
-        <span class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5"><span>☁️</span> Cloud Záloha & Ochrana iPadu</span>
+        <span class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5"><span>👤</span> Aktivní Hráčský Účet & Cloud</span>
         <button type="button" onclick="closeCloudEnvModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center">✕</button>
       </div>
 
-      <div id="cloud-env-status-box" class="p-3 rounded-2xl border-2 bg-slate-50 border-slate-200 text-xs font-bold text-slate-700 leading-relaxed">
-        Načítám informace o zařízení...
+      <div id="cloud-env-status-box" class="p-3.5 rounded-2xl border-2 bg-slate-50 border-slate-200 text-xs font-bold text-slate-700 leading-relaxed">
+        Načítám informace o účtu...
       </div>
 
-      <div class="bg-indigo-50/80 border-2 border-indigo-200 rounded-2xl p-3 flex flex-col gap-2">
-        <div class="text-xs font-black text-indigo-950">Režim tohoto zařízení (uloženo v tomto prohlížeči):</div>
-        <div class="grid grid-cols-1 gap-1.5">
-          <button type="button" id="cloud-mode-btn-auto" onclick="setDeviceCloudMode('auto')" class="text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all">
-            🤖 Automaticky (Pouze Míšův iPad na ostré doméně)
-            <div class="text-[10px] font-bold opacity-80 mt-0.5">Na iPadu synchronizuje s cloudem. Na PC a mobilu chrání cloud (Testovací mód).</div>
-          </button>
-          <button type="button" id="cloud-mode-btn-test" onclick="setDeviceCloudMode('test')" class="text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all">
-            🧪 Vždy TESTOVACÍ MÓD (Nikdy nezapisovat do cloudu)
-            <div class="text-[10px] font-bold opacity-80 mt-0.5">Ideální pro PC, mobil nebo prezentaci – Míšova data v cloudu nikdy nepřepíše.</div>
-          </button>
-          <button type="button" id="cloud-mode-btn-prod" onclick="setDeviceCloudMode('prod')" class="text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all">
-            🟢 Vynutit PRODUKCI (Autorizovat toto zařízení pro zápis)
-            <div class="text-[10px] font-bold opacity-80 mt-0.5">Zapni jen tehdy, pokud je toto Míšův hlavní tablet.</div>
-          </button>
-        </div>
-      </div>
+      <div class="flex flex-col gap-2">
+        <button type="button" onclick="manualSaveProgress(); closeCloudEnvModal();" class="game-button w-full py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs border-b-3 border-emerald-700 shadow-sm flex items-center justify-center gap-2">
+          <span>💾</span> <span>Okamžitě uložit progres tohoto účtu</span>
+        </button>
 
-      <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3 flex flex-col gap-2">
-        <div class="text-[11px] font-bold text-sky-900 leading-snug">
-          Chceš na PC nebo mobilu při prezentaci ukázat Míšův aktuální stav z cloudu, aniž by tvé klikání cokoliv přepsalo?
-        </div>
-        <button type="button" onclick="loadCloudPreviewReadOnly()" class="game-button w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs shadow-sm flex items-center justify-center gap-1.5">
-          <span>📥</span> <span>Načíst z cloudu jen na ukázku (bez zápisu zpět)</span>
+        <button type="button" onclick="closeCloudEnvModal(); logoutCurrentAccount();" class="game-button w-full py-2.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs border-b-3 border-rose-700 shadow-sm flex items-center justify-center gap-2">
+          <span>🚪</span> <span>Odhlásit se / Přepnout na jiný účet</span>
         </button>
       </div>
 
-      <button type="button" onclick="closeCloudEnvModal()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs">
+      <button type="button" onclick="closeCloudEnvModal()" class="w-full py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs">
         Zavřít
       </button>
     </div>
   </div>
 
   <!-- Načtení všech modulů v přesném pořadí závislostí (s cache-busting verzí pro GitHub Pages) -->
-  <script src="data.js?v=6.8"></script>
-  <script src="audio.js?v=6.8"></script>
-  <script src="wardrobe.js?v=6.8"></script>
-  <script src="clocks.js?v=6.8"></script>
-  <script src="petSystem.js?v=6.8"></script>
-  <script src="app.js?v=6.8"></script>
+  <script src="data.js?v=6.9"></script>
+  <script src="audio.js?v=6.9"></script>
+  <script src="wardrobe.js?v=6.9"></script>
+  <script src="clocks.js?v=6.9"></script>
+  <script src="petSystem.js?v=6.9"></script>
+  <script src="app.js?v=6.9"></script>
 </body>
 </html>
