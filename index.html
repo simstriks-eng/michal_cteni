@@ -304,13 +304,19 @@
 
   <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
 
+  <!-- Plovoucí notifikace pro uložení progresu (Disketa / Cloud) -->
+  <div id="cloud-save-toast" class="fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 border-emerald-400 px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black">
+    <span id="cloud-save-toast-icon" class="text-base">💾</span>
+    <span id="cloud-save-toast-text">Progres uložen do cloudu!</span>
+  </div>
+
   <!-- Top Navigation (Optimalizováno pro iPad 11" na šířku - 2 symetrické řádky bez spodní bílé lišty) -->
   <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b-3 border-amber-300 shadow-sm header-safe py-1 flex-shrink-0">
     <div class="max-w-6xl mx-auto flex flex-wrap items-start justify-between gap-2">
       
-      <!-- LEVÝ BLOK: 1. řada Avatar + Pet | 2. řada Řada + Truhla + Úkoly + Obchod -->
+      <!-- LEVÝ BLOK: 1. řada Avatar + Pet + Stopky + Disketa/Mód | 2. řada Řada + Truhla + Úkoly + Obchod -->
       <div class="flex flex-col gap-1.5">
-        <!-- 1. řada vlevo: Školák Míša + Aktivní Pet Společník -->
+        <!-- 1. řada vlevo: Školák Míša + Aktivní Pet Společník + Stopky + Disketa & Prostředí -->
         <div class="flex items-center gap-2 flex-wrap">
           <!-- Karta 1: Školák Míša (Šatník) -->
           <div onclick="openWardrobeModal()" title="Klepni pro otevření šatníku a výběr výbavy" class="cursor-pointer flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[38px] hover:scale-105 active:scale-95 transition-transform">
@@ -346,6 +352,17 @@
                 <circle id="stopwatch-stop-ring" cx="16" cy="16" r="13" fill="none" stroke="#fde047" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="81.68" stroke-dashoffset="81.68"></circle>
               </svg>
               <span class="relative z-10 leading-none pointer-events-none">⏹</span>
+            </button>
+          </div>
+
+          <!-- Karta 4: Tlačítko Diskety (Uložit progres) + Indikace prostředí (TESTOVACÍ MÓD / PRODUKCE) -->
+          <div class="flex items-center gap-1 bg-slate-100 border-2 border-slate-300 px-1.5 py-0.5 rounded-2xl shadow-sm h-[38px] select-none">
+            <button type="button" id="top-cloud-save-btn" onclick="manualSaveProgress()" title="Okamžitě uložit progres (lokálně i do cloudu)" class="game-button bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black px-2 py-1 rounded-xl border-b-2 border-emerald-700 shadow-xs flex items-center gap-1 h-[28px] transition-all">
+              <span id="top-cloud-save-icon" class="text-sm leading-none">💾</span>
+              <span class="text-[10px] font-black uppercase tracking-wide hidden sm:inline">Uložit</span>
+            </button>
+            <button type="button" id="top-env-mode-badge" onclick="openCloudEnvModal()" title="Klikni pro detail a nastavení ochrany cloudu (PC vs. Míšův iPad)" class="cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300">
+              TESTOVACÍ MÓD
             </button>
           </div>
         </div>
@@ -400,18 +417,18 @@
           </button>
         </div>
 
-        <!-- 2. řada vpravo: Denní limity (X/15 Čtení & X/15 Matematika) + Diamanty + Minuty -->
+        <!-- 2. řada vpravo: Denní úkoly (X/16) & Celkový denní čas (X/30) + Diamanty + Minuty -->
         <div class="flex items-center gap-1.5 flex-wrap">
-          <!-- DENNÍ SPLNĚNÉ MINUTY (MAX 15 MIN ČTENÍ + MAX 15 MIN MATEMATIKA) -->
-          <div id="top-subject-caps-widget" title="Dnešní vyčtené a vypočítané minuty (max 15 min Čtení + 15 min Matematika přímo, zbytek jde do Nočního trezoru)" class="bg-white border-2 border-slate-300 px-2.5 rounded-xl shadow-xs flex items-center gap-2 h-[34px] text-[10px] sm:text-[11px] font-black text-slate-900">
-            <span class="flex items-center gap-1 whitespace-nowrap">
-              <span>📖</span>
-              <span id="top-reading-cap-display" class="text-slate-900 font-black">0/15</span>
+          <!-- DENNÍ ÚKOLY (X/16) & CELKOVÝ DENNÍ ČAS (MAX 30 MIN PŘÍMO, PŘEBYTEK DO TREZORU) -->
+          <div id="top-subject-caps-widget" title="Denní úkoly (x/16 cvičení ze Čtení/Matematiky) a celkový dnešní čas (max 30 min přímo, přebytek jde do Nočního trezoru)" class="bg-white border-2 border-slate-300 px-2.5 rounded-xl shadow-xs flex items-center gap-2 h-[34px] text-[10px] sm:text-[11px] font-black text-slate-900">
+            <span class="flex items-center gap-1 whitespace-nowrap" title="Denní úkoly (16× cvičení)">
+              <span>🎯</span>
+              <span id="top-reading-cap-display" class="text-slate-900 font-black">0/16</span>
             </span>
             <span class="text-slate-300 font-black">|</span>
-            <span class="flex items-center gap-1 whitespace-nowrap">
-              <span>🔢</span>
-              <span id="top-math-cap-display" class="text-slate-900 font-black">0/15</span>
+            <span class="flex items-center gap-1 whitespace-nowrap" title="Dnešní celkový čas (max 30 min přímo)">
+              <span>⏱️</span>
+              <span id="top-math-cap-display" class="text-slate-900 font-black">0/30</span>
             </span>
           </div>
 
@@ -1077,7 +1094,7 @@
             <div class="text-3xl sm:text-4xl font-black font-baloo mt-0.5 text-white drop-shadow-md" id="streak-hero-days">0 DNÍ</div>
             <h3 class="text-base sm:text-lg font-black text-amber-100 font-baloo">Tvoje tréninková řada</h3>
             <p class="text-xs font-bold text-orange-100 mt-0.5 max-w-sm" id="streak-hero-desc">
-              Splň dnes 16× Čtení nebo 16× Matematiku k započtení dnešního dne!
+              Splň dnes 16× cvičení (Čtení nebo Matematika) a získej alespoň 15 min odměn k započtení dnešního dne!
             </p>
           </div>
         </div>
@@ -1324,7 +1341,7 @@
                   <div>
                     <h4 class="text-xs sm:text-sm font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
                     <p class="text-[11px] text-amber-900 font-bold">
-                      Denně lze přímo získat max. <strong>15 min ve Čtení</strong> a <strong>15 min v Matematice</strong>. Vše nad rámec se automaticky ukládá sem do trezoru na další den!
+                      Denně lze přímo získat maximálně <strong>30 minut</strong>. Vše nad rámec 30 minut se automaticky ukládá sem do trezoru na další den!
                     </p>
                   </div>
                 </div>
@@ -2109,71 +2126,43 @@
                 </button>
               </div>
 
-              <!-- CHYTRÝ OPTIMALIZÁTOR ODMĚN (2 TLAČÍTKA: ČTENÍ & MATEMATIKA) -->
+              <!-- CHYTRÝ OPTIMALIZÁTOR ODMĚN (JEDNO SPOLEČNÉ TLAČÍTKO PRO ČTENÍ + MATEMATIKU + DENNÍ ÚKOL 16×) -->
               <div class="bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 border-2 border-indigo-300 rounded-2xl p-3 mb-3 shadow-sm">
                 <div class="mb-2">
                   <h5 class="text-xs sm:text-sm font-black text-indigo-950 flex items-center gap-1.5">
-                    <span>⚡</span> Chytrá optimalizace odměn (16 úkolů + odměna za denní misi = max strop)
+                    <span>⚡</span> Chytrá optimalizace odměn (Čtení + Matematika + Denní úkol 16× cvičení)
                   </h5>
                   <p class="text-[11px] font-bold text-slate-600 leading-snug">
-                    Zadej maximální počet minut za splnění všech 16 denních úkolů + bonus za denní misi. Tlačítko automaticky rozpočítá odměnu za jednotlivé úkoly i za denní misi tak, aby celkový zisk nepřesáhl zvolený počet minut.
+                    Zadej celkový počet minut (minimálně <strong>15 min</strong>) za splnění všech 16 denních cvičení (libovolný mix Čtení a Matematiky) včetně odměny za denní úkol. Tlačítko automaticky rozpočítá odměny za jednotlivé úkoly ve Čtení i Matematice a bonus za denní úkol.
                   </p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <!-- Optimalizace Čtení -->
-                  <div class="bg-white p-2.5 rounded-xl border-2 border-sky-300 flex flex-col gap-1.5 shadow-sm">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-black text-sky-900">📖 Max strop pro Čtení (16× + mise):</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <div class="flex items-center gap-1 bg-sky-50 border-2 border-sky-300 rounded-xl px-2 py-1">
-                        <input type="number" id="optimize-reading-target-input" step="1" min="2" max="120" value="15" class="w-14 text-center font-black text-sky-950 bg-transparent focus:outline-none text-sm" />
-                        <span class="text-xs font-black text-sky-700">min</span>
-                      </div>
-                      <button type="button" onclick="optimizeSubjectRewards('reading')" class="game-button flex-1 bg-sky-600 hover:bg-sky-700 text-white font-black py-1.5 px-3 rounded-xl border-b-3 border-sky-800 text-xs flex items-center justify-center gap-1 shadow-sm">
-                        <span>⚡</span> Optimalizovat Čtení
-                      </button>
-                    </div>
-                    <div id="optimize-reading-summary" class="text-[10px] font-extrabold text-slate-600">
-                      16× čtení + denní mise = nastaví se na míru
-                    </div>
+                <div class="bg-white p-3 rounded-xl border-2 border-indigo-300 flex flex-col gap-2 shadow-sm">
+                  <div class="flex items-center justify-between flex-wrap gap-1">
+                    <span class="text-xs font-black text-indigo-950">🎯 Cílová odměna za 16 cvičení + denní úkol (min. 15 min):</span>
+                    <span class="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full">Podmínka: alespoň 15 min</span>
                   </div>
-
-                  <!-- Optimalizace Matematiky -->
-                  <div class="bg-white p-2.5 rounded-xl border-2 border-amber-300 flex flex-col gap-1.5 shadow-sm">
-                    <div class="flex items-center justify-between">
-                      <span class="text-xs font-black text-amber-900">🔢 Max strop pro Matematiku (16× + mise):</span>
+                  <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <div class="flex items-center justify-center gap-1 bg-indigo-50 border-2 border-indigo-300 rounded-xl px-3 py-1.5">
+                      <input type="number" id="optimize-all-target-input" step="1" min="15" max="120" value="15" class="w-16 text-center font-black text-indigo-950 bg-transparent focus:outline-none text-sm" />
+                      <span class="text-xs font-black text-indigo-700">min</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                      <div class="flex items-center gap-1 bg-amber-50 border-2 border-amber-300 rounded-xl px-2 py-1">
-                        <input type="number" id="optimize-math-target-input" step="1" min="2" max="120" value="15" class="w-14 text-center font-black text-amber-950 bg-transparent focus:outline-none text-sm" />
-                        <span class="text-xs font-black text-amber-700">min</span>
-                      </div>
-                      <button type="button" onclick="optimizeSubjectRewards('math')" class="game-button flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black py-1.5 px-3 rounded-xl border-b-3 border-amber-700 text-xs flex items-center justify-center gap-1 shadow-sm">
-                        <span>⚡</span> Optimalizovat Matematiku
-                      </button>
-                    </div>
-                    <div id="optimize-math-summary" class="text-[10px] font-extrabold text-slate-600">
-                      16× matematika + denní mise = nastaví se na míru
-                    </div>
+                    <button type="button" onclick="optimizeAllRewards()" class="game-button flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2 px-4 rounded-xl border-b-3 border-indigo-800 text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-sm">
+                      <span>⚡</span> Optimalizovat Čtení, Matematiku & Denní úkol (16×)
+                    </button>
+                  </div>
+                  <div id="optimize-all-summary" class="text-[11px] font-extrabold text-slate-600">
+                    16× cvičení (Čtení / Matematika) + denní úkol = nastaví se společně (min. 15 min)
                   </div>
                 </div>
               </div>
 
-              <!-- Odměny za denní úkoly (zvlášť Čtení a Matematika) -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2.5">
-                <div class="bg-white p-2 rounded-xl border border-emerald-200 flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black text-slate-800">📖 Bonus za denní misi Čtení (16×):</span>
+              <!-- Odměna za společný denní úkol (16× cvičení Čtení / Matematika) -->
+              <div class="mb-2.5">
+                <div class="bg-white p-2.5 rounded-xl border border-emerald-200 flex items-center justify-between gap-2">
+                  <span class="text-xs font-black text-slate-800">🎯 Bonus za splnění denního úkolu (16× cvičení Čtení/Matematika):</span>
                   <div class="flex items-center gap-1">
-                    <input type="number" step="0.25" min="0" max="30" id="reward-reading-quest-rate" onchange="saveRewardRate('reading_quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
-                    <span class="text-[11px] font-black text-slate-600">min</span>
-                  </div>
-                </div>
-                <div class="bg-white p-2 rounded-xl border border-emerald-200 flex items-center justify-between gap-2">
-                  <span class="text-[11px] font-black text-slate-800">🔢 Bonus za denní misi Matematika (16×):</span>
-                  <div class="flex items-center gap-1">
-                    <input type="number" step="0.25" min="0" max="30" id="reward-math-quest-rate" onchange="saveRewardRate('math_quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
+                    <input type="number" step="0.25" min="0" max="30" id="reward-quest-rate" onchange="saveRewardRate('quest', 0, this.value)" class="w-16 text-center font-black text-indigo-900 bg-emerald-50 border border-emerald-300 rounded-lg py-0.5 text-xs">
                     <span class="text-[11px] font-black text-slate-600">min</span>
                   </div>
                 </div>
@@ -2840,12 +2829,57 @@
     </div>
   </div>
 
+  <!-- MODAL 4: NASTAVENÍ CLOUD SYNCHRONIZACE & OCHRANA MÍŠOVA IPADU -->
+  <div id="cloud-env-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-md w-full p-5 border-4 border-indigo-500 shadow-2xl flex flex-col gap-3">
+      <div class="flex items-center justify-between w-full border-b pb-2">
+        <span class="text-sm sm:text-base font-black text-slate-800 flex items-center gap-1.5"><span>☁️</span> Cloud Záloha & Ochrana iPadu</span>
+        <button type="button" onclick="closeCloudEnvModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-black flex items-center justify-center">✕</button>
+      </div>
+
+      <div id="cloud-env-status-box" class="p-3 rounded-2xl border-2 bg-slate-50 border-slate-200 text-xs font-bold text-slate-700 leading-relaxed">
+        Načítám informace o zařízení...
+      </div>
+
+      <div class="bg-indigo-50/80 border-2 border-indigo-200 rounded-2xl p-3 flex flex-col gap-2">
+        <div class="text-xs font-black text-indigo-950">Režim tohoto zařízení (uloženo v tomto prohlížeči):</div>
+        <div class="grid grid-cols-1 gap-1.5">
+          <button type="button" id="cloud-mode-btn-auto" onclick="setDeviceCloudMode('auto')" class="text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all">
+            🤖 Automaticky (Pouze Míšův iPad na ostré doméně)
+            <div class="text-[10px] font-bold opacity-80 mt-0.5">Na iPadu synchronizuje s cloudem. Na PC a mobilu chrání cloud (Testovací mód).</div>
+          </button>
+          <button type="button" id="cloud-mode-btn-test" onclick="setDeviceCloudMode('test')" class="text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all">
+            🧪 Vždy TESTOVACÍ MÓD (Nikdy nezapisovat do cloudu)
+            <div class="text-[10px] font-bold opacity-80 mt-0.5">Ideální pro PC, mobil nebo prezentaci – Míšova data v cloudu nikdy nepřepíše.</div>
+          </button>
+          <button type="button" id="cloud-mode-btn-prod" onclick="setDeviceCloudMode('prod')" class="text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all">
+            🟢 Vynutit PRODUKCI (Autorizovat toto zařízení pro zápis)
+            <div class="text-[10px] font-bold opacity-80 mt-0.5">Zapni jen tehdy, pokud je toto Míšův hlavní tablet.</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-sky-50 border-2 border-sky-200 rounded-2xl p-3 flex flex-col gap-2">
+        <div class="text-[11px] font-bold text-sky-900 leading-snug">
+          Chceš na PC nebo mobilu při prezentaci ukázat Míšův aktuální stav z cloudu, aniž by tvé klikání cokoliv přepsalo?
+        </div>
+        <button type="button" onclick="loadCloudPreviewReadOnly()" class="game-button w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-black text-xs shadow-sm flex items-center justify-center gap-1.5">
+          <span>📥</span> <span>Načíst z cloudu jen na ukázku (bez zápisu zpět)</span>
+        </button>
+      </div>
+
+      <button type="button" onclick="closeCloudEnvModal()" class="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-black text-xs">
+        Zavřít
+      </button>
+    </div>
+  </div>
+
   <!-- Načtení všech modulů v přesném pořadí závislostí (s cache-busting verzí pro GitHub Pages) -->
-  <script src="data.js?v=6.7"></script>
-  <script src="audio.js?v=6.7"></script>
-  <script src="wardrobe.js?v=6.7"></script>
-  <script src="clocks.js?v=6.7"></script>
-  <script src="petSystem.js?v=6.7"></script>
-  <script src="app.js?v=6.7"></script>
+  <script src="data.js?v=6.8"></script>
+  <script src="audio.js?v=6.8"></script>
+  <script src="wardrobe.js?v=6.8"></script>
+  <script src="clocks.js?v=6.8"></script>
+  <script src="petSystem.js?v=6.8"></script>
+  <script src="app.js?v=6.8"></script>
 </body>
 </html>

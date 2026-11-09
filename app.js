@@ -9,6 +9,66 @@
 
 const APP_VERSION = '5.2';
 const STORAGE_KEY = 'ctenarska_mise_v20_modular';
+const TEST_STORAGE_KEY = 'ctenarska_mise_v20_modular_test_sandbox';
+const DEVICE_CLOUD_MODE_KEY = 'ctenarska_mise_device_cloud_mode';
+const JSONBIN_BIN_ID = '6af21391ffd5d16053b4659f';
+const JSONBIN_MASTER_KEY = '$2a$10$MHfc4gF.YN5Kiy3bL9tEeeS4.K/1KeaYfyY2DA8//pFtLwINyNN32';
+const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+function isIPadDevice() {
+  const ua = navigator.userAgent || '';
+  const platform = navigator.platform || '';
+  const maxTouch = Number(navigator.maxTouchPoints) || 0;
+  if (/iPad/i.test(ua)) return true;
+  if ((platform === 'MacIntel' || /Macintosh/i.test(ua)) && maxTouch > 1) return true;
+  return false;
+}
+
+function isDevelopmentDomain() {
+  const host = (window.location.hostname || '').toLowerCase();
+  const protocol = (window.location.protocol || '').toLowerCase();
+  if (protocol === 'file:' || !host) return true;
+  if (
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '0.0.0.0' ||
+    host === '::1' ||
+    host.endsWith('.local') ||
+    host.includes('.run.app') ||
+    host.includes('aistudio') ||
+    host.includes('googleusercontent.com') ||
+    host.includes('webcontainer') ||
+    host.includes('stackblitz')
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function getDeviceCloudModePreference() {
+  try {
+    const mode = localStorage.getItem(DEVICE_CLOUD_MODE_KEY);
+    if (mode === 'test' || mode === 'prod' || mode === 'auto') return mode;
+  } catch (e) {}
+  return 'auto';
+}
+
+function isTestEnvironment() {
+  // Na vývojové doméně (localhost / AI Studio) jsme vždy v TESTOVACÍM MÓDU
+  if (isDevelopmentDomain()) return true;
+
+  const pref = getDeviceCloudModePreference();
+  if (pref === 'test') return true;
+  if (pref === 'prod') return false;
+
+  // Výchozí 'auto' na ostré doméně (GitHub Pages):
+  // PRODUKCE je aktivní POUZE na iPadu! Na PC a na mobilu (iPhone/Android) zůstává aktivní TESTOVACÍ MÓD, aby se Míšův cloud nikdy nepřepsal.
+  return !isIPadDevice();
+}
+
+function getActiveStorageKey() {
+  return isTestEnvironment() ? TEST_STORAGE_KEY : STORAGE_KEY;
+}
 
 function triggerConfetti() {
   const canvas = document.getElementById('confetti-canvas');
@@ -72,26 +132,15 @@ function getYesterdayDateString() {
 function createDefaultDailyQuests() {
   return [
     {
-      id: 'q_reading_all',
-      title: 'Čtenářská Výzva (16× cvičení)',
-      desc: 'Splň dohromady 16 jakýchkoliv cvičení z nabídky Čtení (písmenka, slabiky, slova, věty nebo hláskování).',
-      icon: '📖',
+      id: 'q_daily_all',
+      title: 'Denní Výzva: Čtení & Matematika (16× cvičení)',
+      desc: 'Splň dohromady 16 jakýchkoliv cvičení ze Čtení nebo Matematiky (písmenka, slabiky, slova, věty, hláskování, mince, porovnávání, řada, počítadlo, rozklad nebo slovní úlohy – bez omalovánky) a získej alespoň 15 min odměn za hraní.',
+      icon: '🎯',
       target: 16,
       progress: 0,
       claimed: false,
       isTrackerOnly: false,
-      matches: (s, l) => s === 'reading' && l >= 1 && l <= 8
-    },
-    {
-      id: 'q_math_all',
-      title: 'Matematická Výzva (16× cvičení)',
-      desc: 'Splň dohromady 16 jakýchkoliv cvičení z nabídky Matematiky (počty, porovnávání, řada, počítadlo, rozklad nebo slovní úlohy).',
-      icon: '🔢',
-      target: 16,
-      progress: 0,
-      claimed: false,
-      isTrackerOnly: false,
-      matches: (s, l) => s === 'math' && l >= 1 && l <= 6
+      matches: (s, l) => (s === 'reading' && l >= 1 && l <= 8) || (s === 'math' && l >= 1 && l <= 6)
     },
     {
       id: 'q_test',
@@ -640,81 +689,364 @@ function revealAllSpellingLetters() {
   playTone(580, 0.1, 'sine', 0.2);
 }
 
-function saveState() {
+let cloudAutoSaveTimer = null;
+let isCloudSyncInFlight = false;
+let pendingCloudSync = false;
+let cloudToastHideTimer = null;
+
+function updateEnvironmentBadgeUI() {
+  const badge = document.getElementById('top-env-mode-badge');
+  if (!badge) return;
+  if (isTestEnvironment()) {
+    badge.textContent = 'TESTOVACÍ MÓD';
+    badge.className = 'text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300';
+    badge.title = 'Testovací prostředí (PC / AI Studio) – Míšův cloud (JSONbin.io) je chráněn a nepřepisuje se.';
+  } else {
+    badge.textContent = 'PRODUKCE';
+    badge.className = 'text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-emerald-100 text-emerald-900 border-emerald-400';
+    badge.title = 'Ostrý mód (Produkce) – Zálohování do cloudu JSONbin.io je aktivní.';
+  }
+}
+
+function showCloudSaveToast(message, icon = '💾', borderClass = 'border-emerald-400') {
+  const toast = document.getElementById('cloud-save-toast');
+  const iconEl = document.getElementById('cloud-save-toast-icon');
+  const textEl = document.getElementById('cloud-save-toast-text');
+  if (!toast || !textEl) return;
+
+  if (iconEl) iconEl.textContent = icon;
+  textEl.textContent = message;
+  toast.className = `fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-100 translate-y-0 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
+
+  if (cloudToastHideTimer) clearTimeout(cloudToastHideTimer);
+  cloudToastHideTimer = setTimeout(() => {
+    toast.className = `fixed top-3 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 flex items-center gap-2 bg-slate-900/95 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
+  }, 2800);
+}
+
+function isValidGameStateObject(obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false;
+  return (
+    typeof obj.minutesBalance === 'number' ||
+    typeof obj.goldDiamonds === 'number' ||
+    Array.isArray(obj.history) ||
+    Array.isArray(obj.activeLetters) ||
+    typeof obj.appVersion === 'string'
+  );
+}
+
+function computeStateProgressScore(s) {
+  if (!isValidGameStateObject(s)) return -1;
+  let score = 0;
+  score += (Array.isArray(s.history) ? s.history.length : 0) * 10;
+  score += (Array.isArray(s.traceabilityHistory) ? s.traceabilityHistory.length : 0) * 25;
+  score += Math.round((Number(s.minutesBalance) || 0) * 4);
+  score += Math.round((Number(s.vaultBalance) || 0) * 4);
+  score += (Number(s.goldDiamonds) || 0) * 2;
+  score += (Number(s.streakDays) || 0) * 15;
+  if (s.petState && Array.isArray(s.petState.ownedPets)) {
+    score += s.petState.ownedPets.length * 20;
+  }
+  if (s.customizations && typeof s.customizations === 'object') {
+    Object.values(s.customizations).forEach(arr => {
+      if (Array.isArray(arr)) score += arr.length * 5;
+    });
+  }
+  return score;
+}
+
+function mergeLocalAndCloudStates(localObj, cloudObj) {
+  if (!isValidGameStateObject(cloudObj)) return localObj;
+  if (!isValidGameStateObject(localObj)) return cloudObj;
+
+  const localScore = computeStateProgressScore(localObj);
+  const cloudScore = computeStateProgressScore(cloudObj);
+  const localTime = Number(localObj.lastSavedAt) || 0;
+  const cloudTime = Number(cloudObj.lastSavedAt) || 0;
+
+  // Pokud je cloud prázdný (výchozí stav s nulovým progresem) a lokálně má Míša nahraný progres, vždy zachováme lokální data!
+  if (cloudScore <= 30 && localScore > cloudScore) {
+    return localObj;
+  }
+  // Pokud je lokální úložiště čerstvé/prázdné (např. po reinstalaci PWA nebo smazání tabletu) a v cloudu jsou data, obnovíme cloud!
+  if (localScore <= 30 && cloudScore > localScore) {
+    return cloudObj;
+  }
+
+  // Pokud mají data obě úložiště, vezmeme jako základ to novější (nebo s vyšším progresem, pokud chybí časové razítko)
+  let primary = localObj;
+  let secondary = cloudObj;
+  if (cloudTime > localTime && cloudScore >= localScore * 0.7) {
+    primary = cloudObj;
+    secondary = localObj;
+  } else if (!localTime && cloudScore > localScore) {
+    primary = cloudObj;
+    secondary = localObj;
+  }
+
+  const merged = JSON.parse(JSON.stringify(primary));
+
+  // Sloučení historie (bez duplicit podle id)
+  if (Array.isArray(primary.history) || Array.isArray(secondary.history)) {
+    const map = new Map();
+    (secondary.history || []).forEach(item => {
+      if (item && item.id !== undefined) map.set(String(item.id), item);
+    });
+    (primary.history || []).forEach(item => {
+      if (item && item.id !== undefined) map.set(String(item.id), item);
+    });
+    merged.history = Array.from(map.values()).sort((a, b) => (Number(b.id) || 0) - (Number(a.id) || 0)).slice(0, 150);
+  }
+
+  // Sloučení traceabilityHistory podle data
+  if (Array.isArray(primary.traceabilityHistory) || Array.isArray(secondary.traceabilityHistory)) {
+    const tMap = new Map();
+    (secondary.traceabilityHistory || []).forEach(day => {
+      if (day && day.date) tMap.set(day.date, day);
+    });
+    (primary.traceabilityHistory || []).forEach(day => {
+      if (day && day.date) {
+        const existing = tMap.get(day.date);
+        if (!existing || (day.totalSeconds || 0) >= (existing.totalSeconds || 0)) {
+          tMap.set(day.date, day);
+        }
+      }
+    });
+    merged.traceabilityHistory = Array.from(tMap.values());
+  }
+
+  // Sloučení odemčených skinů/customizací
+  if (primary.customizations && secondary.customizations) {
+    merged.customizations = { ...secondary.customizations, ...primary.customizations };
+    ['avatars', 'frames', 'themes', 'titles'].forEach(cat => {
+      const a = Array.isArray(primary.customizations[cat]) ? primary.customizations[cat] : [];
+      const b = Array.isArray(secondary.customizations[cat]) ? secondary.customizations[cat] : [];
+      merged.customizations[cat] = Array.from(new Set([...a, ...b]));
+    });
+  }
+
+  // Sloučení vlastněných mazlíčků
+  if (primary.petState && secondary.petState) {
+    const pOwned = Array.isArray(primary.petState.ownedPets) ? primary.petState.ownedPets : [];
+    const sOwned = Array.isArray(secondary.petState.ownedPets) ? secondary.petState.ownedPets : [];
+    merged.petState.ownedPets = Array.from(new Set([...pOwned, ...sOwned]));
+  }
+
+  merged.lastSavedAt = Math.max(localTime, cloudTime, Date.now());
+  return merged;
+}
+
+function saveStateToLocalStorageOnly() {
   try {
     state.appVersion = APP_VERSION;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    state.lastSavedAt = Date.now();
+    const serialized = JSON.stringify(state);
+    if (isTestEnvironment()) {
+      localStorage.setItem(TEST_STORAGE_KEY, serialized);
+      localStorage.setItem(STORAGE_KEY, serialized);
+    } else {
+      localStorage.setItem(STORAGE_KEY, serialized);
+    }
   } catch (e) {
-    console.error('Chyba při ukládání stavu:', e);
+    console.error('Chyba při lokálním ukládání stavu:', e);
+  }
+}
+
+async function pushStateToJsonBin(isManual = false) {
+  // V TESTOVACÍM MÓDU se nikdy nedotýkáme ostrého JSONbin.io!
+  if (isTestEnvironment()) {
+    if (isManual) {
+      showCloudSaveToast('Uloženo lokálně! (TESTOVACÍ MÓD – Míšův cloud chráněn)', '🧪', 'border-amber-400');
+    }
+    return false;
+  }
+
+  if (!navigator.onLine) {
+    pendingCloudSync = true;
+    if (isManual) {
+      showCloudSaveToast('Uloženo v tabletu (offline – do cloudu se nahraje po připojení)', '📦', 'border-amber-400');
+    }
+    return false;
+  }
+
+  if (isCloudSyncInFlight) {
+    pendingCloudSync = true;
+    return false;
+  }
+
+  isCloudSyncInFlight = true;
+  const saveIcon = document.getElementById('top-cloud-save-icon');
+  if (saveIcon && isManual) saveIcon.classList.add('animate-bounce');
+
+  try {
+    const response = await fetch(JSONBIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Master-Key': JSONBIN_MASTER_KEY
+      },
+      body: JSON.stringify(state)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    pendingCloudSync = false;
+    if (isManual) {
+      showCloudSaveToast('Progres uložen do cloudu!', '💾', 'border-emerald-400');
+    }
+    return true;
+  } catch (err) {
+    console.warn('Uložení na JSONbin.io se nezdařilo (data jsou v bezpečí v localStorage):', err);
+    pendingCloudSync = true;
+    if (isManual) {
+      showCloudSaveToast('Uloženo v tabletu (cloud momentálně nedostupný)', '⚠️', 'border-amber-400');
+    }
+    return false;
+  } finally {
+    isCloudSyncInFlight = false;
+    if (saveIcon) saveIcon.classList.remove('animate-bounce');
+    if (pendingCloudSync && navigator.onLine && !isTestEnvironment()) {
+      pendingCloudSync = false;
+      scheduleAutoCloudSave();
+    }
+  }
+}
+
+function scheduleAutoCloudSave() {
+  if (isTestEnvironment() || !navigator.onLine) {
+    if (!isTestEnvironment()) pendingCloudSync = true;
+    return;
+  }
+  if (cloudAutoSaveTimer) clearTimeout(cloudAutoSaveTimer);
+  cloudAutoSaveTimer = setTimeout(() => {
+    pushStateToJsonBin(false);
+  }, 1500);
+}
+
+function saveState() {
+  saveStateToLocalStorageOnly();
+  scheduleAutoCloudSave();
+}
+
+async function manualSaveProgress() {
+  if (typeof playTone === 'function') playTone(660, 0.08, 'sine', 0.15);
+  if (cloudAutoSaveTimer) {
+    clearTimeout(cloudAutoSaveTimer);
+    cloudAutoSaveTimer = null;
+  }
+  saveStateToLocalStorageOnly();
+  await pushStateToJsonBin(true);
+}
+
+function applyParsedStateToRuntime(parsed) {
+  if (!parsed || typeof parsed !== 'object') return;
+  const defaultQuests = createDefaultDailyQuests();
+
+  if (parsed.quests && Array.isArray(parsed.quests)) {
+    const oldR = parsed.quests.find(q => q.id === 'q_reading_all');
+    const oldM = parsed.quests.find(q => q.id === 'q_math_all');
+    parsed.quests = defaultQuests.map(dq => {
+      const saved = parsed.quests.find(q => q.id === dq.id);
+      if (saved) {
+        return {
+          ...dq,
+          ...saved,
+          title: dq.title,
+          desc: dq.desc,
+          icon: dq.icon,
+          isTrackerOnly: dq.isTrackerOnly,
+          target: dq.target,
+          matches: dq.matches
+        };
+      }
+      if (dq.id === 'q_daily_all' && (oldR || oldM)) {
+        const combinedProg = Math.min(dq.target, (oldR ? oldR.progress || 0 : 0) + (oldM ? oldM.progress || 0 : 0));
+        const wasClaimed = Boolean((oldR && oldR.claimed) || (oldM && oldM.claimed));
+        return {
+          ...dq,
+          progress: combinedProg,
+          claimed: wasClaimed
+        };
+      }
+      return dq;
+    });
+  }
+  state = { ...state, ...parsed };
+  const sumSubjEarned = Math.round(((state.dailyReadingEarnedToday || 0) + (state.dailyMathEarnedToday || 0)) * 100) / 100;
+  if (sumSubjEarned > (state.dailyEarnedToday || 0)) {
+    state.dailyEarnedToday = sumSubjEarned;
+  }
+  if (!state.rewards) {
+    state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
+  } else {
+    if (state.rewards.questRate === undefined || state.rewards.questRate === 1) {
+      state.rewards.questRate = 3.0;
+    }
+    if (state.rewards.readingQuestRate === undefined) {
+      state.rewards.readingQuestRate = state.rewards.questRate || 3.0;
+    }
+    if (state.rewards.mathQuestRate === undefined) {
+      state.rewards.mathQuestRate = state.rewards.questRate || 3.0;
+    }
+  }
+  window.state = state;
+
+  if (!state.customizations) {
+    state.customizations = JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS));
+  }
+  if (!state.itemPrices) {
+    state.itemPrices = {};
+  }
+  if (!state.dailyChestConfig) {
+    state.dailyChestConfig = {
+      minutesChance: 40,
+      minutesMin: 0.5,
+      minutesMax: 1.0,
+      foodChance: 20,
+      foodAmount: 1,
+      reviveChance: 15,
+      reviveAmount: 1,
+      ticketChance: 10,
+      ticketAmount: 1,
+      diaSmallChance: 5,
+      diaSmallAmount: 2,
+      diaMedChance: 0.9,
+      diaMedAmount: 10,
+      diaJackpotChance: 0.1,
+      diaJackpotAmount: 20
+    };
+  } else {
+    if (state.dailyChestConfig.ticketChance === undefined) state.dailyChestConfig.ticketChance = 10;
+    if (state.dailyChestConfig.ticketAmount === undefined) state.dailyChestConfig.ticketAmount = 1;
+  }
+}
+
+function readLocalParsedState() {
+  try {
+    if (isTestEnvironment()) {
+      const rawTest = localStorage.getItem(TEST_STORAGE_KEY);
+      if (rawTest) return JSON.parse(rawTest);
+      const rawFallback = localStorage.getItem(STORAGE_KEY);
+      if (rawFallback) return JSON.parse(rawFallback);
+      return null;
+    } else {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+      return null;
+    }
+  } catch (e) {
+    console.error('Chyba při čtení lokálního stavu:', e);
+    return null;
   }
 }
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const defaultQuests = createDefaultDailyQuests();
-
-      if (parsed.quests && Array.isArray(parsed.quests)) {
-        parsed.quests = defaultQuests.map(dq => {
-          const saved = parsed.quests.find(q => q.id === dq.id);
-          if (saved) {
-            return { 
-              ...dq, 
-              ...saved, 
-              isTrackerOnly: dq.isTrackerOnly,
-              target: dq.target,
-              matches: dq.matches 
-            };
-          }
-          return dq;
-        });
-      }
-      state = { ...state, ...parsed };
-      if (!state.rewards) {
-        state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
-      } else {
-        if (state.rewards.questRate === undefined || state.rewards.questRate === 1) {
-          state.rewards.questRate = 4.0;
-        }
-        if (state.rewards.readingQuestRate === undefined) {
-          state.rewards.readingQuestRate = state.rewards.questRate || 4.0;
-        }
-        if (state.rewards.mathQuestRate === undefined) {
-          state.rewards.mathQuestRate = state.rewards.questRate || 4.0;
-        }
-      }
-      window.state = state;
-
-      if (!state.customizations) {
-        state.customizations = JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS));
-      }
-      if (!state.itemPrices) {
-        state.itemPrices = {};
-      }
-      if (!state.dailyChestConfig) {
-        state.dailyChestConfig = {
-          minutesChance: 40,
-          minutesMin: 0.5,
-          minutesMax: 1.0,
-          foodChance: 20,
-          foodAmount: 1,
-          reviveChance: 15,
-          reviveAmount: 1,
-          ticketChance: 10,
-          ticketAmount: 1,
-          diaSmallChance: 5,
-          diaSmallAmount: 2,
-          diaMedChance: 0.9,
-          diaMedAmount: 10,
-          diaJackpotChance: 0.1,
-          diaJackpotAmount: 20
-        };
-      } else {
-        if (state.dailyChestConfig.ticketChance === undefined) state.dailyChestConfig.ticketChance = 10;
-        if (state.dailyChestConfig.ticketAmount === undefined) state.dailyChestConfig.ticketAmount = 1;
-      }
+    const parsed = readLocalParsedState();
+    if (parsed) {
+      applyParsedStateToRuntime(parsed);
     }
   } catch (e) {
     console.error('Chyba při načítání stavu:', e);
@@ -724,6 +1056,193 @@ function loadState() {
   updateTopAvatarDisplay();
   if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+}
+
+function refreshAllUIAfterCloudSync() {
+  checkAndHandleDailyResets();
+  applyCurrentTheme();
+  updateTopAvatarDisplay();
+  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+  updateStopwatchUI();
+  updateBalanceUI();
+  updateTopBadges();
+  updateDiamondMarketUI();
+  renderStoreSkinsUI();
+  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+  updateImageToggleUI();
+  updateSpeechToggleUI();
+  updateSyllableArcsToggleUI();
+  setLetterCase(state.letterCase || 'upper');
+  setSubject(state.subject || 'reading');
+  setGridCount(state.gridCardCount || 8);
+}
+
+async function syncWithCloudOnStartup() {
+  updateEnvironmentBadgeUI();
+
+  // V TESTOVACÍM MÓDU (localhost / AI Studio) se cloudu vůbec nedotýkáme
+  if (isTestEnvironment()) {
+    return;
+  }
+
+  if (!navigator.onLine) {
+    return;
+  }
+
+  const localParsed = readLocalParsedState();
+
+  try {
+    const response = await fetch(`${JSONBIN_URL}/latest`, {
+      method: 'GET',
+      headers: {
+        'X-Master-Key': JSONBIN_MASTER_KEY,
+        'X-Bin-Meta': 'false'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const rawCloud = await response.json();
+    const cloudRecord = rawCloud && rawCloud.record && typeof rawCloud.record === 'object' ? rawCloud.record : rawCloud;
+
+    if (isValidGameStateObject(cloudRecord)) {
+      const merged = mergeLocalAndCloudStates(localParsed, cloudRecord);
+      applyParsedStateToRuntime(merged);
+      saveStateToLocalStorageOnly();
+      refreshAllUIAfterCloudSync();
+
+      // Pokud byla lokální data bohatší nebo novější než v cloudu (např. první migrace Míšova progresu z iPadu do cloudu), ihned je zazálohujeme do cloudu
+      const localScore = computeStateProgressScore(localParsed);
+      const cloudScore = computeStateProgressScore(cloudRecord);
+      const localTime = localParsed ? (Number(localParsed.lastSavedAt) || 0) : 0;
+      const cloudTime = Number(cloudRecord.lastSavedAt) || 0;
+
+      if (localScore > cloudScore || localTime > cloudTime) {
+        await pushStateToJsonBin(false);
+      }
+    } else if (isValidGameStateObject(localParsed)) {
+      // Cloud bin ještě neobsahuje platný herní stav, ale v iPadu jsou Míšova lokální data -> zachováme je a nahrajeme do cloudu
+      saveStateToLocalStorageOnly();
+      await pushStateToJsonBin(false);
+    }
+  } catch (err) {
+    console.warn('Startovní synchronizace s JSONbin.io selhala, pokračujeme z localStorage:', err);
+  }
+}
+
+window.addEventListener('online', () => {
+  if (!isTestEnvironment() && pendingCloudSync) {
+    pushStateToJsonBin(false);
+  }
+});
+
+function renderCloudEnvModalUI() {
+  const statusBox = document.getElementById('cloud-env-status-box');
+  const btnAuto = document.getElementById('cloud-mode-btn-auto');
+  const btnTest = document.getElementById('cloud-mode-btn-test');
+  const btnProd = document.getElementById('cloud-mode-btn-prod');
+  if (!statusBox) return;
+
+  const devDomain = isDevelopmentDomain();
+  const ipad = isIPadDevice();
+  const pref = getDeviceCloudModePreference();
+  const testActive = isTestEnvironment();
+
+  if (testActive) {
+    let reason = 'Ručně nastaven Testovací mód.';
+    if (devDomain) {
+      reason = 'Běží na vývojové doméně (localhost / AI Studio).';
+    } else if (pref === 'auto' && !ipad) {
+      reason = 'Zařízení není iPad (detekováno PC nebo mobil) – ochrana Míšova cloudu je aktivní.';
+    }
+    statusBox.className = 'p-3 rounded-2xl border-2 bg-amber-50 border-amber-300 text-xs font-bold text-amber-950 leading-relaxed';
+    statusBox.innerHTML = `
+      <div class="font-black text-sm text-amber-900 mb-1">🧪 Aktivní: TESTOVACÍ MÓD (Cloud chráněn)</div>
+      <div>${reason}</div>
+      <div class="mt-1 text-[11px] text-amber-800">Zdejší hraní ani kliknutí na disketu <b>nikdy nepřepíše</b> Míšova data v cloudu.</div>
+    `;
+  } else {
+    statusBox.className = 'p-3 rounded-2xl border-2 bg-emerald-50 border-emerald-400 text-xs font-bold text-emerald-950 leading-relaxed';
+    statusBox.innerHTML = `
+      <div class="font-black text-sm text-emerald-900 mb-1">🟢 Aktivní: PRODUKCE (Míšův iPad)</div>
+      <div>Toto zařízení je spárované s Míšovou cloudovou schránkou JSONbin.io.</div>
+      <div class="mt-1 text-[11px] text-emerald-800">Veškerý progres se ukládá lokálně i do cloudu.</div>
+    `;
+  }
+
+  const activeCls = 'text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all bg-indigo-600 text-white border-indigo-800 shadow-sm';
+  const inactiveCls = 'text-left px-3 py-2 rounded-xl border-2 text-xs font-black transition-all bg-white text-slate-700 border-slate-200 hover:bg-slate-50';
+
+  if (btnAuto) btnAuto.className = pref === 'auto' ? activeCls : inactiveCls;
+  if (btnTest) btnTest.className = pref === 'test' ? activeCls : inactiveCls;
+  if (btnProd) btnProd.className = pref === 'prod' ? activeCls : inactiveCls;
+}
+
+function openCloudEnvModal() {
+  const modal = document.getElementById('cloud-env-modal');
+  if (!modal) return;
+  renderCloudEnvModalUI();
+  modal.classList.remove('hidden');
+}
+
+function closeCloudEnvModal() {
+  const modal = document.getElementById('cloud-env-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function setDeviceCloudMode(mode) {
+  if (mode !== 'auto' && mode !== 'test' && mode !== 'prod') return;
+  try {
+    localStorage.setItem(DEVICE_CLOUD_MODE_KEY, mode);
+  } catch (e) {}
+  updateEnvironmentBadgeUI();
+  renderCloudEnvModalUI();
+  if (!isTestEnvironment()) {
+    syncWithCloudOnStartup();
+    showCloudSaveToast('Režim přepnut na PRODUKCI (synchronizuji s cloudem)', '🟢', 'border-emerald-400');
+  } else {
+    showCloudSaveToast('Režim přepnut na TESTOVACÍ MÓD (Míšův cloud chráněn)', '🧪', 'border-amber-400');
+  }
+}
+
+async function loadCloudPreviewReadOnly() {
+  if (!navigator.onLine) {
+    showCloudSaveToast('Jste offline – náhled z cloudu nelze stáhnout.', '⚠️', 'border-amber-400');
+    return;
+  }
+  try {
+    localStorage.setItem(DEVICE_CLOUD_MODE_KEY, 'test');
+  } catch (e) {}
+  updateEnvironmentBadgeUI();
+  renderCloudEnvModalUI();
+
+  try {
+    const response = await fetch(`${JSONBIN_URL}/latest`, {
+      method: 'GET',
+      headers: {
+        'X-Master-Key': JSONBIN_MASTER_KEY,
+        'X-Bin-Meta': 'false'
+      }
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const rawCloud = await response.json();
+    const cloudRecord = rawCloud && rawCloud.record && typeof rawCloud.record === 'object' ? rawCloud.record : rawCloud;
+    if (isValidGameStateObject(cloudRecord)) {
+      applyParsedStateToRuntime(cloudRecord);
+      saveStateToLocalStorageOnly();
+      refreshAllUIAfterCloudSync();
+      closeCloudEnvModal();
+      showCloudSaveToast('Stav z cloudu načten na ukázku (zápis do cloudu vypnutý!)', '📥', 'border-sky-400');
+    } else {
+      showCloudSaveToast('V cloudu zatím nejsou žádná uložená data.', 'ℹ️', 'border-amber-400');
+    }
+  } catch (err) {
+    console.warn('Chyba při stahování náhledu z cloudu:', err);
+    showCloudSaveToast('Nepodařilo se stáhnout náhled z cloudu.', '⚠️', 'border-rose-400');
+  }
 }
 
 function checkAndHandleDailyResets() {
@@ -3125,7 +3644,7 @@ function selectCompareOption(index, sign) {
   playTone(520, 0.08, 'sine', 0.15);
 }
 
-const SUBJECT_DAILY_MAX_MINUTES = 15.0;
+const DAILY_TOTAL_MAX_MINUTES = 30.0;
 
 function detectRewardSubject(note, subjectHint) {
   if (subjectHint === 'reading' || subjectHint === 'math') return subjectHint;
@@ -3150,67 +3669,16 @@ function creditRewardMinutes(amount, note, subjectHint = '') {
   recordTraceabilityMinutes(numAmount);
 
   const subj = detectRewardSubject(note, subjectHint);
+  const currentEarnedToday = Math.max(0, Number(state.dailyEarnedToday) || 0);
+  const remainingDirect = Math.max(0, Math.round((DAILY_TOTAL_MAX_MINUTES - currentEarnedToday) * 100) / 100);
 
-  if (subj === 'reading' || subj === 'math') {
-    const isReading = subj === 'reading';
-    const currentSubjEarned = isReading ? (state.dailyReadingEarnedToday || 0) : (state.dailyMathEarnedToday || 0);
-    const subjLabel = isReading ? 'Čtení' : 'Matematika';
-    const remainingDirect = Math.max(0, Math.round((SUBJECT_DAILY_MAX_MINUTES - currentSubjEarned) * 100) / 100);
-
-    if (numAmount <= remainingDirect) {
-      if (isReading) {
-        state.dailyReadingEarnedToday = Math.round((currentSubjEarned + numAmount) * 100) / 100;
-      } else {
-        state.dailyMathEarnedToday = Math.round((currentSubjEarned + numAmount) * 100) / 100;
-      }
-      state.dailyEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + (state.dailyMathEarnedToday || 0)) * 100) / 100;
-      state.minutesBalance = Math.round((state.minutesBalance + numAmount) * 100) / 100;
-      state.history.unshift({
-        id: Date.now(),
-        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-        date: new Date().toLocaleDateString('cs-CZ'),
-        type: 'earned',
-        minutes: numAmount,
-        note: `${note} (+${formatMinutes(numAmount)})`
-      });
-    } else {
-      const directPart = remainingDirect;
-      const vaultPart = Math.round((numAmount - directPart) * 100) / 100;
-
-      if (isReading) {
-        state.dailyReadingEarnedToday = SUBJECT_DAILY_MAX_MINUTES;
-      } else {
-        state.dailyMathEarnedToday = SUBJECT_DAILY_MAX_MINUTES;
-      }
-      state.dailyEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + (state.dailyMathEarnedToday || 0)) * 100) / 100;
-
-      if (directPart > 0) {
-        state.minutesBalance = Math.round((state.minutesBalance + directPart) * 100) / 100;
-        state.history.unshift({
-          id: Date.now(),
-          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-          date: new Date().toLocaleDateString('cs-CZ'),
-          type: 'earned',
-          minutes: directPart,
-          note: `${note} (+${formatMinutes(directPart)})`
-        });
-      }
-
-      if (vaultPart > 0) {
-        state.vaultBalance = Math.round(((state.vaultBalance || 0) + vaultPart) * 100) / 100;
-        state.history.unshift({
-          id: Date.now() + 1,
-          time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-          date: new Date().toLocaleDateString('cs-CZ'),
-          type: 'vault_saved',
-          minutes: vaultPart,
-          note: `Dnešní limit ${SUBJECT_DAILY_MAX_MINUTES} min (${subjLabel}) dosažen. Uloženo do Trezoru (+${formatMinutes(vaultPart)})`
-        });
-        alertUserFeedback(`Dnešní limit ${SUBJECT_DAILY_MAX_MINUTES} min v kategorii ${subjLabel} dosažen! +${formatMinutes(vaultPart)} uloženo do Nočního trezoru! 🏦`);
-      }
+  if (numAmount <= remainingDirect) {
+    state.dailyEarnedToday = Math.round((currentEarnedToday + numAmount) * 100) / 100;
+    if (subj === 'reading') {
+      state.dailyReadingEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + numAmount) * 100) / 100;
+    } else if (subj === 'math') {
+      state.dailyMathEarnedToday = Math.round(((state.dailyMathEarnedToday || 0) + numAmount) * 100) / 100;
     }
-  } else {
-    // Ostatní zdroje (např. Denní truhla)
     state.minutesBalance = Math.round((state.minutesBalance + numAmount) * 100) / 100;
     state.history.unshift({
       id: Date.now(),
@@ -3220,6 +3688,41 @@ function creditRewardMinutes(amount, note, subjectHint = '') {
       minutes: numAmount,
       note: `${note} (+${formatMinutes(numAmount)})`
     });
+  } else {
+    const directPart = remainingDirect;
+    const vaultPart = Math.round((numAmount - directPart) * 100) / 100;
+
+    state.dailyEarnedToday = DAILY_TOTAL_MAX_MINUTES;
+    if (subj === 'reading') {
+      state.dailyReadingEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + directPart) * 100) / 100;
+    } else if (subj === 'math') {
+      state.dailyMathEarnedToday = Math.round(((state.dailyMathEarnedToday || 0) + directPart) * 100) / 100;
+    }
+
+    if (directPart > 0) {
+      state.minutesBalance = Math.round((state.minutesBalance + directPart) * 100) / 100;
+      state.history.unshift({
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'earned',
+        minutes: directPart,
+        note: `${note} (+${formatMinutes(directPart)})`
+      });
+    }
+
+    if (vaultPart > 0) {
+      state.vaultBalance = Math.round(((state.vaultBalance || 0) + vaultPart) * 100) / 100;
+      state.history.unshift({
+        id: Date.now() + 1,
+        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+        date: new Date().toLocaleDateString('cs-CZ'),
+        type: 'vault_saved',
+        minutes: vaultPart,
+        note: `Dnešní limit ${DAILY_TOTAL_MAX_MINUTES} min dosažen. Uloženo do Trezoru (+${formatMinutes(vaultPart)})`
+      });
+      alertUserFeedback(`Dnešní limit ${DAILY_TOTAL_MAX_MINUTES} min dosažen! +${formatMinutes(vaultPart)} uloženo do Nočního trezoru! 🏦`);
+    }
   }
   updateBalanceUI();
 }
@@ -3407,13 +3910,11 @@ function syncTrackerQuestsWithState() {
 
 function checkStreakStatus() {
   syncTrackerQuestsWithState();
-  const readingQuest = state.quests.find(q => q.id === 'q_reading_all');
-  const mathQuest = state.quests.find(q => q.id === 'q_math_all');
-  const isReadingDone = readingQuest && (readingQuest.claimed || readingQuest.progress >= readingQuest.target);
-  const isMathDone = mathQuest && (mathQuest.claimed || mathQuest.progress >= mathQuest.target);
+  const mainQuest = state.quests.find(q => q.id === 'q_daily_all' || !q.isTrackerOnly);
+  const isMainDone = mainQuest && mainQuest.claimed;
   const today = getTodayDateString();
 
-  if ((isReadingDone || isMathDone) && !state.streakTodayCompleted) {
+  if (isMainDone && !state.streakTodayCompleted) {
     state.streakTodayCompleted = true;
     state.streakLastActiveDate = today;
     state.streakDays = (state.streakDays || 0) + 1;
@@ -3507,17 +4008,15 @@ function renderStreakView() {
 
   if (heroDays) heroDays.textContent = `${days} ${czechNounForm(days, 'DEN', 'DNY', 'DNÍ')}`;
 
-  const readingQuest = state.quests.find(q => q.id === 'q_reading_all');
-  const mathQuest = state.quests.find(q => q.id === 'q_math_all');
-  const rProg = readingQuest ? readingQuest.progress : 0;
-  const mProg = mathQuest ? mathQuest.progress : 0;
+  const mainQuest = state.quests.find(q => q.id === 'q_daily_all' || !q.isTrackerOnly);
+  const mainProg = mainQuest ? mainQuest.progress : 0;
 
   if (heroDesc) {
     if (state.streakTodayCompleted) {
       heroDesc.innerHTML = '🎉 <strong class="text-yellow-200">Dnešní den je splněn!</strong> Řada je v bezpečí.';
       largeFlame.className = 'text-6xl sm:text-7xl select-none flame-active scale-110';
     } else {
-      heroDesc.innerHTML = `Splň dnes <strong class="text-white underline">16× Čtení</strong> (${rProg}/16) NEBO <strong class="text-white underline">16× Matematiku</strong> (${mProg}/16) k započtení dneška!`;
+      heroDesc.innerHTML = `Splň dnes <strong class="text-white underline">16× cvičení (Čtení nebo Matematika)</strong> (${mainProg}/16) a získej alespoň 15 min odměn k započtení dneška!`;
       largeFlame.className = 'text-6xl sm:text-7xl select-none opacity-80';
     }
   }
@@ -3578,17 +4077,27 @@ function updateDailyQuestsProgress(subj, completedLvl) {
   let questCompletedNow = false;
 
   state.quests.forEach(q => {
-    if (!q.claimed && q.progress < q.target) {
-      if (q.matches && q.matches(subj, completedLvl)) {
+    if (!q.claimed) {
+      const matchedThisStep = Boolean(q.matches && q.matches(subj, completedLvl));
+      if (matchedThisStep && q.progress < q.target) {
         q.progress++;
-        if (q.progress >= q.target) {
+      }
+
+      if (q.progress >= q.target) {
+        if (q.isTrackerOnly) {
           questCompletedNow = true;
           q.claimed = true;
-          if (!q.isTrackerOnly) {
-            const qRate = getQuestRewardRate(q.id);
-            const qSubj = q.id === 'q_math_all' ? 'math' : 'reading';
-            creditRewardMinutes(qRate, `Denní úkol: ${q.title}`, qSubj);
+        } else if (matchedThisStep) {
+          const qRate = getQuestRewardRate(q.id);
+          const totalWithQuest = Math.round(((state.dailyEarnedToday || 0) + qRate) * 100) / 100;
+          if (totalWithQuest >= 15) {
+            questCompletedNow = true;
+            q.claimed = true;
+            creditRewardMinutes(qRate, `Denní úkol: ${q.title}`);
             alertUserFeedback(`🎯 Splněn denní úkol "${q.title}"! Získáváš +${formatMinutes(qRate)} ⭐`);
+          } else {
+            const missingMin = Math.max(0, Math.round((15 - totalWithQuest) * 100) / 100);
+            alertUserFeedback(`Máš 16/16 cvičení! Pro splnění denního úkolu získej ještě ${formatMinutes(missingMin)} odměn za hraní (podmínka alespoň 15 min).`);
           }
         }
       }
@@ -3600,6 +4109,7 @@ function updateDailyQuestsProgress(subj, completedLvl) {
 
   if (questCompletedNow) playTone(900, 0.25, 'triangle', 0.3);
   saveState();
+  updateBalanceUI();
   checkStreakStatus();
   updateTopBadges();
 }
@@ -4353,17 +4863,23 @@ function updateBalanceUI() {
   if (vaultStore) vaultStore.textContent = formatMinutes(state.vaultBalance || 0);
   if (vaultAdmin) vaultAdmin.textContent = formatMinutes(state.vaultBalance || 0);
 
-  const rEarned = state.dailyReadingEarnedToday || 0;
-  const mEarned = state.dailyMathEarnedToday || 0;
+  const mainQuest = Array.isArray(state.quests)
+    ? state.quests.find(q => q.id === 'q_daily_all' || !q.isTrackerOnly)
+    : null;
+  const qProg = mainQuest ? Math.min(16, mainQuest.progress || 0) : 0;
+  const qTarget = mainQuest ? (mainQuest.target || 16) : 16;
+  const qDone = Boolean(mainQuest && (mainQuest.claimed || qProg >= qTarget));
+  const totalEarnedToday = Math.min(30, Math.round((state.dailyEarnedToday || 0) * 100) / 100);
+
   const topReadingCapEl = document.getElementById('top-reading-cap-display');
   const topMathCapEl = document.getElementById('top-math-cap-display');
   if (topReadingCapEl) {
-    topReadingCapEl.textContent = `${formatCapNum(rEarned)}/15`;
-    topReadingCapEl.className = rEarned >= 15 ? 'text-emerald-700 font-black' : 'text-slate-900 font-black';
+    topReadingCapEl.textContent = `${qProg}/${qTarget}`;
+    topReadingCapEl.className = qDone ? 'text-emerald-700 font-black' : 'text-slate-900 font-black';
   }
   if (topMathCapEl) {
-    topMathCapEl.textContent = `${formatCapNum(mEarned)}/15`;
-    topMathCapEl.className = mEarned >= 15 ? 'text-emerald-700 font-black' : 'text-slate-900 font-black';
+    topMathCapEl.textContent = `${formatCapNum(totalEarnedToday)}/30`;
+    topMathCapEl.className = totalEarnedToday >= 30 ? 'text-emerald-700 font-black' : 'text-slate-900 font-black';
   }
 
   const diamondsTop = document.getElementById('top-diamonds-display');
@@ -5912,9 +6428,7 @@ function submitManualSyncCode() {
 }
 
 function goToQuestLevel(questId) {
-  if (questId === 'q_reading_all') {
-    setSubject('reading');
-    switchLevel(state.currentLevel || 1);
+  if (questId === 'q_daily_all' || questId === 'q_reading_all') {
     showView('learn');
   } else if (questId === 'q_math_all') {
     setSubject('math');
@@ -5936,18 +6450,17 @@ function goToQuestLevel(questId) {
 }
 
 function getQuestRewardRate(questId) {
-  if (!state.rewards) return 4.0;
-  if (questId === 'q_reading_all') {
-    return state.rewards.readingQuestRate !== undefined
-      ? state.rewards.readingQuestRate
-      : (state.rewards.questRate !== undefined ? state.rewards.questRate : 4.0);
+  if (!state.rewards) return 3.0;
+  if (state.rewards.questRate !== undefined) {
+    return state.rewards.questRate;
   }
-  if (questId === 'q_math_all') {
-    return state.rewards.mathQuestRate !== undefined
-      ? state.rewards.mathQuestRate
-      : (state.rewards.questRate !== undefined ? state.rewards.questRate : 4.0);
+  if (questId === 'q_reading_all' && state.rewards.readingQuestRate !== undefined) {
+    return state.rewards.readingQuestRate;
   }
-  return state.rewards.questRate !== undefined ? state.rewards.questRate : 4.0;
+  if (questId === 'q_math_all' && state.rewards.mathQuestRate !== undefined) {
+    return state.rewards.mathQuestRate;
+  }
+  return 3.0;
 }
 
 function renderDailyQuests() {
@@ -5963,9 +6476,11 @@ function renderDailyQuests() {
 
   state.quests.forEach(quest => {
     const qRate = getQuestRewardRate(quest.id);
-    const isDone = quest.progress >= quest.target || quest.claimed;
-    const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
     const isTracker = !!quest.isTrackerOnly;
+    const totalWithQuest = Math.round(((state.dailyEarnedToday || 0) + (quest.claimed ? 0 : qRate)) * 100) / 100;
+    const meetsMinPlayReward = isTracker || quest.claimed || totalWithQuest >= 15;
+    const isDone = quest.claimed || (quest.progress >= quest.target && meetsMinPlayReward);
+    const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
 
     const card = document.createElement('div');
     card.className = `p-2 sm:p-2.5 rounded-2xl border-2 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${
@@ -6015,14 +6530,22 @@ function renderDailyQuests() {
         </button>
       `;
     } else {
+      const missingMin = Math.max(0, Math.round((15 - totalWithQuest) * 100) / 100);
       actionHtml = `
-        <div class="flex items-center gap-2 self-start sm:self-auto">
-          <span class="text-[10px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2 py-0.5 rounded-lg">
-            +${formatMinutes(qRate)} ⭐ + 🔥
-          </span>
-          <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
-            Trénovat ➡️
-          </button>
+        <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2 py-0.5 rounded-lg">
+              +${formatMinutes(qRate)} ⭐ + 🔥
+            </span>
+            <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
+              Trénovat ➡️
+            </button>
+          </div>
+          ${quest.progress >= quest.target && missingMin > 0 ? `
+            <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-lg">
+              ⚠️ Chybí získat ještě ${formatMinutes(missingMin)} do podmínky 15 min
+            </span>
+          ` : ''}
         </div>
       `;
     }
@@ -6056,15 +6579,24 @@ function claimQuestReward(questId) {
   const quest = state.quests.find(q => q.id === questId);
   if (!quest || quest.claimed || quest.progress < quest.target) return;
 
-  quest.claimed = true;
   if (!quest.isTrackerOnly) {
     const qRate = getQuestRewardRate(questId);
-    const qSubj = questId === 'q_math_all' ? 'math' : 'reading';
-    creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`, qSubj);
+    const totalWithQuest = Math.round(((state.dailyEarnedToday || 0) + qRate) * 100) / 100;
+    if (totalWithQuest < 15) {
+      const missingMin = Math.max(0, Math.round((15 - totalWithQuest) * 100) / 100);
+      soundError();
+      alertUserFeedback(`Pro splnění 16 úkolů je nutné získat alespoň 15 min odměn za hraní (chybí ještě ${formatMinutes(missingMin)})!`);
+      return;
+    }
+    quest.claimed = true;
+    creditRewardMinutes(qRate, `Denní úkol: ${quest.title}`);
+  } else {
+    quest.claimed = true;
   }
 
   syncTraceabilityQuestsIfActive();
   saveState();
+  updateBalanceUI();
   playCustomSuccessSound();
   triggerConfetti();
   checkStreakStatus();
@@ -6156,6 +6688,7 @@ function adminResetQuests() {
   saveState();
   playTone(700, 0.15, 'sine', 0.2);
   renderDailyQuests();
+  updateBalanceUI();
   updateTopBadges();
   alertUserFeedback('Denní úkoly resetovány!');
 }
@@ -6185,7 +6718,7 @@ function adminResetDailyDirectLimit() {
   updateBalanceUI();
   updateVoucherStoreUI();
   playTone(700, 0.15, 'sine', 0.2);
-  alertUserFeedback('Dnešní limity (Čtení 15m, Matematika 15m i poukazy v obchodě) byly vynulovány!');
+  alertUserFeedback('Dnešní limity (30 min i poukazy v obchodě) byly vynulovány!');
 }
 
 function adminTransferCustomVault() {
@@ -6761,91 +7294,82 @@ function closeAdminPanel() {
 
 function updateOptimizerSummariesUI() {
   if (!state.rewards) return;
-  const rQuest = getQuestRewardRate('q_reading_all');
-  const mQuest = getQuestRewardRate('q_math_all');
+  const qBonus = getQuestRewardRate('q_daily_all');
 
-  const rVals = [1, 2, 3, 4, 5, 6, 7, 8].map(i => Number(state.rewards.reading?.[i] ?? 0.25));
-  const mVals = [1, 2, 3, 4, 5, 6].map(i => Number(state.rewards.math?.[i] ?? 0.25));
+  const rVals = [1, 2, 3, 4, 5, 6, 7, 8].map(i => Number(state.rewards.reading?.[i] ?? 0.75));
+  const mVals = [1, 2, 3, 4, 5, 6].map(i => Number(state.rewards.math?.[i] ?? 0.75));
+  const allVals = [...rVals, ...mVals];
 
-  const rMaxTask = Math.max(...rVals);
-  const mMaxTask = Math.max(...mVals);
+  const minTask = Math.min(...allVals);
+  const maxTask = Math.max(...allVals);
 
-  const rTotalMax = Math.round(((16 * rMaxTask) + rQuest) * 100) / 100;
-  const mTotalMax = Math.round(((16 * mMaxTask) + mQuest) * 100) / 100;
+  const totalMin = Math.round(((16 * minTask) + qBonus) * 100) / 100;
+  const totalMax = Math.round(((16 * maxTask) + qBonus) * 100) / 100;
 
-  const rSummaryEl = document.getElementById('optimize-reading-summary');
-  if (rSummaryEl) {
-    rSummaryEl.innerHTML = `Aktuálně: 16× až <strong>${rMaxTask} min</strong> + mise <strong>${rQuest} min</strong> = max <strong class="text-sky-800">${rTotalMax} min</strong>`;
+  const summaryEl = document.getElementById('optimize-all-summary');
+  if (summaryEl) {
+    const rangeStr = minTask === maxTask ? `${maxTask} min` : `${minTask}–${maxTask} min`;
+    const totalStr = totalMin === totalMax ? `${totalMax} min` : `${totalMin}–${totalMax} min`;
+    summaryEl.innerHTML = `Aktuálně: 16× cvičení (<strong>${rangeStr}</strong>) + denní úkol <strong>${qBonus} min</strong> = celkem <strong class="text-indigo-800">${totalStr}</strong> (podmínka min. 15 min)`;
   }
 
-  const mSummaryEl = document.getElementById('optimize-math-summary');
-  if (mSummaryEl) {
-    mSummaryEl.innerHTML = `Aktuálně: 16× až <strong>${mMaxTask} min</strong> + mise <strong>${mQuest} min</strong> = max <strong class="text-amber-800">${mTotalMax} min</strong>`;
-  }
-
-  const rTargetInput = document.getElementById('optimize-reading-target-input');
-  if (rTargetInput && state.optimizeReadingTarget) {
-    rTargetInput.value = state.optimizeReadingTarget;
-  }
-  const mTargetInput = document.getElementById('optimize-math-target-input');
-  if (mTargetInput && state.optimizeMathTarget) {
-    mTargetInput.value = state.optimizeMathTarget;
+  const targetInput = document.getElementById('optimize-all-target-input');
+  if (targetInput) {
+    targetInput.value = Math.max(15, state.optimizeAllTarget || state.optimizeReadingTarget || 15);
   }
 }
 
-function optimizeSubjectRewards(subject) {
+function optimizeAllRewards() {
   if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
-  const isReading = subject === 'reading';
-  const inputId = isReading ? 'optimize-reading-target-input' : 'optimize-math-target-input';
-  const inputEl = document.getElementById(inputId);
+  const inputEl = document.getElementById('optimize-all-target-input');
   const rawVal = inputEl ? parseFloat(inputEl.value.replace(',', '.')) : 15;
 
-  if (isNaN(rawVal) || rawVal < 1) {
-    alertUserFeedback('Zadej platný strop minut (alespoň 1 min)!');
-    return;
+  if (isNaN(rawVal) || rawVal < 15) {
+    if (inputEl) inputEl.value = '15';
+    alertUserFeedback('Podmínka: 16 úkolů je vždy podmíněno získáním alespoň 15 min odměn za hraní! Nastavuji minimum 15 min.');
   }
 
-  const targetTotal = Math.round(rawVal * 100) / 100;
-  // Distribute targetTotal between 16 exercises (80% = 16/20) and 1 Daily Quest bonus (20% = 4/20)
-  // so 16 * perTask + questBonus === targetTotal (never exceeding targetTotal)
-  const perTask = Math.max(0.05, Math.floor((targetTotal / 20) * 100) / 100);
+  const targetTotal = Math.max(15, Math.round((isNaN(rawVal) ? 15 : rawVal) * 100) / 100);
+  if (inputEl) inputEl.value = String(targetTotal);
+
+  // Rozdělíme targetTotal mezi 16 cvičení (80 % = 16/20) a bonus za denní úkol (20 % = 4/20)
+  // tak, aby 16 * perTask + questBonus === targetTotal (a vždy >= 15 min)
+  const perTask = Math.max(0.75, Math.floor((targetTotal / 20) * 100) / 100);
   const questBonus = Math.max(0, Math.round((targetTotal - (16 * perTask)) * 100) / 100);
 
-  if (isReading) {
-    state.optimizeReadingTarget = targetTotal;
-    for (let i = 1; i <= 8; i++) {
-      state.rewards.reading[i] = perTask;
-    }
-    state.rewards.readingQuestRate = questBonus;
-  } else {
-    state.optimizeMathTarget = targetTotal;
-    for (let i = 1; i <= 6; i++) {
-      state.rewards.math[i] = perTask;
-    }
-    state.rewards.mathQuestRate = questBonus;
+  state.optimizeAllTarget = targetTotal;
+  state.optimizeReadingTarget = targetTotal;
+  state.optimizeMathTarget = targetTotal;
+
+  for (let i = 1; i <= 8; i++) {
+    state.rewards.reading[i] = perTask;
   }
+  for (let i = 1; i <= 6; i++) {
+    state.rewards.math[i] = perTask;
+  }
+  state.rewards.questRate = questBonus;
+  state.rewards.readingQuestRate = questBonus;
+  state.rewards.mathQuestRate = questBonus;
 
   saveState();
   renderRewardInputs();
   updateNavTabRewardLabels();
   updateReviewButtonLabel();
   renderDailyQuests();
+  updateBalanceUI();
   playTone(660, 0.12, 'triangle', 0.22);
 
-  const subjName = isReading ? 'Čtení' : 'Matematika';
-  alertUserFeedback(`${subjName} optimalizováno na max ${targetTotal} min (16× ${perTask} min + denní mise ${questBonus} min)!`);
+  alertUserFeedback(`Čtení, Matematika i Denní úkol optimalizovány na ${targetTotal} min (16× ${perTask} min + denní úkol ${questBonus} min)!`);
+}
+
+function optimizeSubjectRewards() {
+  optimizeAllRewards();
 }
 
 function renderRewardInputs() {
   if (!state.rewards) state.rewards = JSON.parse(JSON.stringify(DEFAULT_REWARDS));
   const qRateInput = document.getElementById('reward-quest-rate');
-  if (qRateInput) qRateInput.value = state.rewards.questRate || 4.0;
-
-  const rQuestInput = document.getElementById('reward-reading-quest-rate');
-  if (rQuestInput) rQuestInput.value = getQuestRewardRate('q_reading_all');
-
-  const mQuestInput = document.getElementById('reward-math-quest-rate');
-  if (mQuestInput) mQuestInput.value = getQuestRewardRate('q_math_all');
+  if (qRateInput) qRateInput.value = getQuestRewardRate('q_daily_all');
 
   const readingBox = document.getElementById('rewards-reading-inputs');
   readingBox.innerHTML = '';
@@ -7349,7 +7873,9 @@ function toggleTestSyllableArcs() {
 }
 
 function initSkolackaMiseApp() {
+  updateEnvironmentBadgeUI();
   loadState();
+  syncWithCloudOnStartup();
   if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
   attachStopwatchStopHoldListeners();

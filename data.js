@@ -36,11 +36,11 @@ const NATURAL_CONSONANTS = [
 const MATH_EMOJIS = ['🍎', '🍐', '🚗', '⭐', '🎈', '🐶', '🐱', '⚽', '🍬', '🦊', '🚀', '⛏️', '⚡', '💍'];
 
 const DEFAULT_REWARDS = {
-  questRate: 4.0,
-  readingQuestRate: 4.0,
-  mathQuestRate: 4.0,
-  reading: { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 0.50, 7: 1.00, 8: 0.25 },
-  math:    { 1: 0.25, 2: 0.25, 3: 0.25, 4: 0.50, 5: 0.50, 6: 1.00, 7: 0.00 }
+  questRate: 3.0,
+  readingQuestRate: 3.0,
+  mathQuestRate: 3.0,
+  reading: { 1: 0.75, 2: 0.75, 3: 0.75, 4: 0.75, 5: 0.75, 6: 0.75, 7: 1.00, 8: 0.75 },
+  math:    { 1: 0.75, 2: 0.75, 3: 0.75, 4: 0.75, 5: 0.75, 6: 1.00, 7: 0.00 }
 };
 
 const DEFAULT_LEGENDARY_CHEST = {
