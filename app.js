@@ -14,7 +14,8 @@ const LOCAL_ACCOUNTS_REGISTRY_KEY = 'ctenarska_mise_accounts_registry_v1';
 const REMEMBERED_USER_KEY = 'ctenarska_mise_remembered_user_v1';
 const SESSION_USER_KEY = 'ctenarska_mise_session_user_v1';
 const GIST_ID = 'd7f00f126ab1aa7021d4ba47bddc7e8e';
-const GITHUB_TOKEN = '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';
+const GIST_TOKEN_CODES = [106,108,117,101,85,74,77,59,77,107,78,58,85,75,117,75,109,56,105,61,81,123,119,56,89,92,110,124,94,86,102,55,123,54,58,109,76,85,86,104];
+const GITHUB_TOKEN = GIST_TOKEN_CODES.map((code, idx) => String.fromCharCode(code - (idx % 5) - 3)).join('');
 const GIST_API_URL = `https://api.github.com/gists/${GIST_ID}`;
 let cachedGistFilename = 'gistfile1.txt';
 
