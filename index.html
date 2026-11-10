@@ -32,6 +32,9 @@
           boxShadow: {
             'game-btn': '0 5px 0px rgba(0,0,0,0.18)',
             'game-card': '0 10px 22px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04)',
+          },
+          borderWidth: {
+            '3': '3px',
           }
         }
       }
@@ -48,6 +51,10 @@
     input, select, textarea {
       user-select: auto !important;
       -webkit-user-select: auto !important;
+      color: #0f172a;
+    }
+    input::placeholder, textarea::placeholder {
+      color: #94a3b8;
     }
     body {
       font-family: 'Nunito', sans-serif;
@@ -55,6 +62,7 @@
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
       transition: background 0.4s ease, color 0.3s ease;
+      color: #0f172a;
     }
     @media (min-width: 768px) {
       html, body {
@@ -69,14 +77,16 @@
     body.theme-sky {
       background: linear-gradient(180deg, #7dd3fc 0%, #e0f2fe 45%, #fef3c7 100%);
       background-attachment: fixed;
+      color: #0f172a;
     }
     body.theme-gold {
       background: linear-gradient(180deg, #fef08a 0%, #fde047 35%, #fbbf24 70%, #d97706 100%);
       background-attachment: fixed;
+      color: #0f172a;
     }
     body.theme-space {
       background: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 55%, #020617 100%);
-      color: #f8fafc;
+      color: #0f172a;
       background-attachment: fixed;
     }
 
@@ -110,7 +120,7 @@
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130' viewBox='0 0 130 130'%3E%3C!-- Zlatý Ring --%3E%3Ccircle cx='28' cy='28' r='14' fill='none' stroke='%23fbbf24' stroke-width='4' opacity='0.45'/%3E%3Ccircle cx='28' cy='28' r='11' fill='none' stroke='%23fef08a' stroke-width='1.5' opacity='0.6'/%3E%3C!-- Sonic silueta --%3E%3Cg transform='translate(72, 16)' opacity='0.45'%3E%3Cpath d='M12 2 C6 6 2 14 4 22 C6 28 12 32 20 32 C26 32 32 28 34 22 C36 14 30 4 20 2 Z' fill='%232563eb'/%3E%3Cpolygon points='8,10 -4,14 6,20' fill='%231d4ed8'/%3E%3Cpolygon points='6,18 -8,25 6,28' fill='%231d4ed8'/%3E%3Cpolygon points='8,26 -2,35 12,32' fill='%231d4ed8'/%3E%3Ccircle cx='18' cy='16' r='6' fill='%23ffffff'/%3E%3Ccircle cx='19' cy='16' r='2.5' fill='%230f172a'/%3E%3C/g%3E%3C!-- Blesková stopa --%3E%3Cpath d='M15 85 L35 75 L30 92 L50 82' fill='none' stroke='%2338bdf8' stroke-width='3' stroke-linecap='round' opacity='0.35'/%3E%3C!-- Červená teniska --%3E%3Cg transform='translate(78, 82)' opacity='0.4'%3E%3Crect x='0' y='6' width='26' height='12' rx='5' fill='%23dc2626'/%3E%3Crect x='7' y='3' width='5' height='17' fill='%23ffffff'/%3E%3Crect x='6' y='8' width='7' height='7' fill='%23fbbf24' rx='1'/%3E%3C/g%3E%3C/svg%3E");
       background-size: 150px 150px;
       background-attachment: fixed;
-      color: #f8fafc;
+      color: #0f172a;
     }
 
     .header-safe {
@@ -298,16 +308,305 @@
     .arena-shake-anim {
       transform: none;
     }
+
+    /* MODERNÍ PRISMATICKÝ RÁMEČEK HORNÍHO PANELU (HUD) A HERNÍHO POLE */
+    .hud-top-frame {
+      --hud-accent-1: #38bdf8;
+      --hud-accent-2: #f59e0b;
+      --hud-accent-3: #818cf8;
+      position: relative;
+      border: 2px solid transparent;
+      border-radius: 22px;
+      padding: 6px 10px;
+      background:
+        radial-gradient(circle at 8% 0%, rgba(56, 189, 248, 0.10), transparent 38%),
+        radial-gradient(circle at 92% 0%, rgba(251, 191, 36, 0.12), transparent 38%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.92) 100%) padding-box,
+        linear-gradient(110deg, var(--hud-accent-1) 0%, var(--hud-accent-2) 50%, var(--hud-accent-3) 100%) border-box;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.92);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .hud-row-divider {
+      height: 1px;
+      width: 100%;
+      background: linear-gradient(90deg, transparent 0%, rgba(148, 163, 184, 0.28) 20%, rgba(245, 158, 11, 0.35) 50%, rgba(148, 163, 184, 0.28) 80%, transparent 100%);
+    }
+
+    .game-board-frame {
+      --board-rim-1: #0ea5e9;
+      --board-rim-2: #22d3ee;
+      --board-rim-3: #6366f1;
+      --board-glow-1: rgba(14, 165, 233, 0.12);
+      --board-glow-2: rgba(99, 102, 241, 0.10);
+      position: relative;
+      border: 2px solid transparent;
+      border-radius: 24px;
+      padding: 7px 9px;
+      background:
+        radial-gradient(circle at 0% 0%, var(--board-glow-1), transparent 42%),
+        radial-gradient(circle at 100% 0%, var(--board-glow-2), transparent 42%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.46) 100%) padding-box,
+        linear-gradient(135deg, var(--board-rim-1) 0%, var(--board-rim-2) 50%, var(--board-rim-3) 100%) border-box;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.82);
+      transition: background 0.3s ease;
+    }
+
+    /* Světelná status lišta uprostřed horní hrany herního pole */
+    .game-board-frame::before {
+      content: "";
+      position: absolute;
+      top: -2px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 96px;
+      height: 3.5px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, transparent 0%, var(--board-rim-1) 25%, var(--board-rim-2) 75%, transparent 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    @media (min-width: 640px) {
+      .hud-top-frame {
+        padding: 7px 12px;
+      }
+      .game-board-frame {
+        padding: 8px 10px;
+      }
+    }
+
+    .game-board-frame[data-board-mode="reading"] {
+      --board-rim-1: #0ea5e9;
+      --board-rim-2: #38bdf8;
+      --board-rim-3: #818cf8;
+      --board-glow-1: rgba(14, 165, 233, 0.13);
+      --board-glow-2: rgba(129, 140, 248, 0.11);
+    }
+    .game-board-frame[data-board-mode="math"],
+    .game-board-frame[data-board-mode="clocks"] {
+      --board-rim-1: #f59e0b;
+      --board-rim-2: #facc15;
+      --board-rim-3: #fb923c;
+      --board-glow-1: rgba(245, 158, 11, 0.14);
+      --board-glow-2: rgba(251, 146, 60, 0.12);
+    }
+    .game-board-frame[data-board-mode="test"] {
+      --board-rim-1: #a855f7;
+      --board-rim-2: #ec4899;
+      --board-rim-3: #6366f1;
+      --board-glow-1: rgba(168, 85, 247, 0.14);
+      --board-glow-2: rgba(236, 72, 153, 0.12);
+    }
+    .game-board-frame[data-board-mode="quests"] {
+      --board-rim-1: #6366f1;
+      --board-rim-2: #8b5cf6;
+      --board-rim-3: #06b6d4;
+      --board-glow-1: rgba(99, 102, 241, 0.14);
+      --board-glow-2: rgba(6, 182, 212, 0.12);
+    }
+    .game-board-frame[data-board-mode="store"] {
+      --board-rim-1: #ec4899;
+      --board-rim-2: #f43f5e;
+      --board-rim-3: #f59e0b;
+      --board-glow-1: rgba(236, 72, 153, 0.14);
+      --board-glow-2: rgba(245, 158, 11, 0.12);
+    }
+    .game-board-frame[data-board-mode="arena"] {
+      --board-rim-1: #f97316;
+      --board-rim-2: #ef4444;
+      --board-rim-3: #eab308;
+      --board-glow-1: rgba(249, 115, 22, 0.15);
+      --board-glow-2: rgba(239, 68, 68, 0.12);
+    }
+
+    body.theme-space .game-board-frame,
+    body.theme-wallpaper-minecraft .game-board-frame,
+    body.theme-wallpaper-sonic .game-board-frame {
+      background:
+        radial-gradient(circle at 0% 0%, var(--board-glow-1), transparent 45%),
+        radial-gradient(circle at 100% 0%, var(--board-glow-2), transparent 45%),
+        linear-gradient(180deg, rgba(15, 23, 42, 0.58) 0%, rgba(15, 23, 42, 0.42) 100%) padding-box,
+        linear-gradient(135deg, var(--board-rim-1) 0%, var(--board-rim-2) 50%, var(--board-rim-3) 100%) border-box;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+    }
+
+    /* HERNÍ RÁMEČKY PRO VŠECHNY POLOŽKY V OBCHODĚ */
+    .store-card-frame {
+      --card-border-top: #cbd5e1;
+      --card-border-bottom: #94a3b8;
+      --card-lip: #94a3b8;
+      --card-glow: rgba(148, 163, 184, 0.14);
+      --card-bg-top: #ffffff;
+      --card-bg-bottom: #f8fafc;
+      position: relative;
+      border: 3px solid transparent;
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at 50% 0%, var(--card-glow), transparent 65%),
+        linear-gradient(180deg, var(--card-bg-top) 0%, var(--card-bg-bottom) 100%) padding-box,
+        linear-gradient(160deg, var(--card-border-top) 0%, var(--card-border-bottom) 100%) border-box;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.92),
+        0 5px 0 var(--card-lip),
+        0 10px 20px -6px rgba(15, 23, 42, 0.14);
+      transition: transform 0.16s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.16s ease;
+    }
+    .store-card-frame:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.95),
+        0 7px 0 var(--card-lip),
+        0 14px 24px -6px rgba(15, 23, 42, 0.18);
+    }
+    .store-card-frame--sky {
+      --card-border-top: #38bdf8;
+      --card-border-bottom: #0284c7;
+      --card-lip: #0369a1;
+      --card-glow: rgba(56, 189, 248, 0.22);
+      --card-bg-top: #f0f9ff;
+      --card-bg-bottom: #e0f2fe;
+    }
+    .store-card-frame--emerald {
+      --card-border-top: #34d399;
+      --card-border-bottom: #059669;
+      --card-lip: #047857;
+      --card-glow: rgba(52, 211, 153, 0.22);
+      --card-bg-top: #ecfdf5;
+      --card-bg-bottom: #d1fae5;
+    }
+    .store-card-frame--purple {
+      --card-border-top: #c084fc;
+      --card-border-bottom: #7c3aed;
+      --card-lip: #6d28d9;
+      --card-glow: rgba(192, 132, 252, 0.22);
+      --card-bg-top: #faf5ff;
+      --card-bg-bottom: #f3e8ff;
+    }
+    .store-card-frame--amber {
+      --card-border-top: #fbbf24;
+      --card-border-bottom: #d97706;
+      --card-lip: #b45309;
+      --card-glow: rgba(251, 191, 36, 0.25);
+      --card-bg-top: #fffbeb;
+      --card-bg-bottom: #fef3c7;
+    }
+    .store-card-frame--orange {
+      --card-border-top: #fb923c;
+      --card-border-bottom: #ea580c;
+      --card-lip: #c2410c;
+      --card-glow: rgba(251, 146, 60, 0.24);
+      --card-bg-top: #fff7ed;
+      --card-bg-bottom: #ffedd5;
+    }
+    .store-card-frame--rose {
+      --card-border-top: #fb7185;
+      --card-border-bottom: #e11d48;
+      --card-lip: #be123c;
+      --card-glow: rgba(251, 113, 133, 0.22);
+      --card-bg-top: #fff1f2;
+      --card-bg-bottom: #ffe4e6;
+    }
+    .store-card-frame--indigo {
+      --card-border-top: #818cf8;
+      --card-border-bottom: #4f46e5;
+      --card-lip: #3730a3;
+      --card-glow: rgba(129, 140, 248, 0.20);
+      --card-bg-top: #ffffff;
+      --card-bg-bottom: #eef2ff;
+    }
+    .store-card-frame--max {
+      --card-border-top: #fde047;
+      --card-border-bottom: #f59e0b;
+      --card-lip: #b45309;
+      --card-glow: rgba(250, 204, 21, 0.28);
+      --card-bg-top: #4f46e5;
+      --card-bg-bottom: #6d28d9;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.35),
+        0 5px 0 #4338ca,
+        0 12px 24px -6px rgba(79, 70, 229, 0.45);
+    }
+    .store-card-frame--active {
+      --card-border-top: #facc15;
+      --card-border-bottom: #f59e0b;
+      --card-lip: #d97706;
+      --card-glow: rgba(250, 204, 21, 0.32);
+      --card-bg-top: #fffbeb;
+      --card-bg-bottom: #fef3c7;
+      box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.95),
+        0 0 0 3px rgba(251, 191, 36, 0.35),
+        0 5px 0 #d97706,
+        0 12px 22px -6px rgba(217, 119, 6, 0.28);
+    }
+    .store-card-frame--disabled {
+      --card-border-top: #cbd5e1;
+      --card-border-bottom: #94a3b8;
+      --card-lip: #64748b;
+      --card-glow: rgba(148, 163, 184, 0.10);
+      --card-bg-top: #f8fafc;
+      --card-bg-bottom: #e2e8f0;
+    }
+
+    /* ANIMOVANÉ STŘEDOVÉ POP-UP OKNO (MÍSTO ČERNÉ LIŠTY NAHOŘE) */
+    @keyframes centerPopupIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.65) translateY(24px);
+      }
+      65% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-4px);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    @keyframes centerPopupOut {
+      0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+      100% {
+        opacity: 0;
+        transform: scale(0.82) translateY(14px);
+      }
+    }
+    @keyframes popupIconPop {
+      0% { transform: scale(0.4) rotate(-14deg); }
+      60% { transform: scale(1.22) rotate(8deg); }
+      80% { transform: scale(0.95) rotate(-4deg); }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .center-popup-enter {
+      animation: centerPopupIn 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    .center-popup-exit {
+      animation: centerPopupOut 0.22s ease-in forwards;
+    }
+    .center-popup-icon-anim {
+      animation: popupIconPop 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
   </style>
 </head>
 <body id="app-body" class="theme-sky min-h-[100dvh] md:h-[100dvh] md:max-h-[100dvh] text-slate-800 flex flex-col justify-between overflow-x-hidden md:overflow-hidden">
 
   <canvas id="confetti-canvas" class="fixed inset-0 pointer-events-none z-50 w-full h-full"></canvas>
 
-  <!-- Plovoucí notifikace pro uložení progresu (Disketa / Cloud) -->
-  <div id="cloud-save-toast" class="hidden fixed top-14 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 items-center gap-2 bg-slate-900 text-white border-2 border-emerald-400 px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black">
-    <span id="cloud-save-toast-icon" class="text-base">💾</span>
-    <span id="cloud-save-toast-text">Progres uložen do cloudu!</span>
+  <!-- Plovoucí notifikace pro uložení progresu (Disketa / Cloud) - UPROSTŘED OBRAZOVKY -->
+  <div id="cloud-save-toast" class="hidden fixed inset-0 z-[85] pointer-events-none items-center justify-center p-4">
+    <div id="cloud-save-toast-card" class="center-popup-enter bg-gradient-to-b from-white via-emerald-50 to-teal-50 text-slate-800 border-4 border-emerald-400 px-6 py-4 rounded-3xl shadow-2xl flex flex-col items-center text-center gap-1.5 max-w-xs w-full">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-300 border-2 border-white shadow-md flex items-center justify-center text-2xl center-popup-icon-anim">
+        <span id="cloud-save-toast-icon">💾</span>
+      </div>
+      <span id="cloud-save-toast-text" class="text-sm sm:text-base font-black font-baloo text-slate-800 leading-snug">Progres uložen do cloudu!</span>
+    </div>
   </div>
 
   <!-- ÚVODNÍ PŘIHLAŠOVACÍ OBRAZOVKA (LOG IN & VYTVOŘENÍ ÚČTU) -->
@@ -411,16 +710,16 @@
     </div>
   </div>
 
-  <!-- Top Navigation (Optimalizováno pro iPad 11" na šířku i desktop - pevné 2 symetrické řádky) -->
-  <header class="sticky top-0 z-40 bg-white/95 border-b-3 border-amber-300 shadow-sm header-safe py-1 flex-shrink-0">
-    <div class="max-w-6xl mx-auto flex flex-col gap-1.5">
+  <!-- Top Navigation (Optimalizováno pro iPad 11" na šířku i desktop - čistý, vzdušný 2řádkový HUD v herním rámečku) -->
+  <header class="sticky top-0 z-40 header-safe pt-1.5 pb-1 px-2 sm:px-3 flex-shrink-0">
+    <div id="top-hud-frame" class="hud-top-frame max-w-6xl w-full mx-auto flex flex-col gap-1.5">
       
-      <!-- 1. ŘADA: Vlevo Avatar + Pet + Stopky + Disketa/Účet | Vpravo Přepínač předmětů (Čtení / Matematika / Hodiny / TEST) -->
-      <div class="w-full flex items-center justify-between gap-1.5 flex-wrap md:flex-nowrap">
-        <!-- 1. řada vlevo -->
-        <div class="flex items-center gap-1.5 flex-wrap md:flex-nowrap min-w-0">
+      <!-- 1. ŘADA: Vlevo Hrdina + Pet | Uprostřed Přepínač předmětů (ČJ / M / H / T) | Vpravo Dok (Stopky, Disketa, Účet, Odhlášení) -->
+      <div class="w-full flex items-center justify-between gap-2 flex-wrap md:flex-nowrap">
+        <!-- 1. řada vlevo: Hrdina + Pet -->
+        <div class="flex items-center justify-start gap-2 flex-wrap md:flex-nowrap min-w-0 md:flex-1">
           <!-- Karta 1: Školák Míša (Šatník) -->
-          <div onclick="openWardrobeModal()" title="Klepni pro otevření šatníku a výběr výbavy" class="cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border-2 border-amber-300 px-2 py-1 rounded-2xl shadow-sm h-[38px] hover:scale-105 active:scale-95 transition-transform flex-shrink-0">
+          <div onclick="openWardrobeModal()" title="Klepni pro otevření šatníku a výběr výbavy" class="cursor-pointer flex items-center gap-2 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[40px] hover:scale-105 active:scale-95 transition-transform flex-shrink-0">
             <div id="top-avatar-frame" class="w-7 h-7 rounded-xl bg-gradient-to-tr from-amber-400 to-amber-200 border-2 border-amber-500 shadow-inner flex items-center justify-center overflow-hidden p-0.5 flex-shrink-0">
               <div id="top-avatar-display" class="w-full h-full flex items-center justify-center select-none">
                 <!-- Dynamický SVG skin avatara -->
@@ -436,95 +735,100 @@
           </div>
 
           <!-- Karta 2: Aktivní Pet Společník (Aréna + červená notifikační diodka) -->
-          <div id="top-pet-companion-widget" onclick="openArenaView()" title="Klepni pro otevření Pet Arény!" class="relative cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-300 px-2 py-1 rounded-2xl shadow-sm h-[38px] hover:scale-105 active:scale-95 transition-transform flex-shrink-0">
+          <div id="top-pet-companion-widget" onclick="openArenaView()" title="Klepni pro otevření Pet Arény!" class="relative cursor-pointer flex items-center gap-1.5 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border-2 border-amber-300 px-2.5 py-1 rounded-2xl shadow-sm h-[40px] hover:scale-105 active:scale-95 transition-transform flex-shrink-0">
             <!-- Renderováno z petSystem.js -->
           </div>
+        </div>
 
-          <!-- Karta 3: Malé Stopky pro měření denního tréninku (podrž 3s pro STOP) -->
-          <div id="top-stopwatch-widget" class="flex items-center gap-1.5 bg-slate-900 text-white border-2 border-indigo-400 px-2 py-0.5 rounded-2xl shadow-sm h-[38px] select-none flex-shrink-0">
-            <span id="stopwatch-status-dot" class="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
-            <span id="stopwatch-time-display" class="font-mono font-black text-xs sm:text-sm tracking-wider text-amber-300 min-w-[42px] text-center">00:00</span>
-            <button type="button" id="stopwatch-playpause-btn" onclick="toggleStopwatchPlayPause()" title="Spustit / Pozastavit měření tréninku" class="w-6 h-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shadow-sm active:scale-90 transition-all">
-              ▶
-            </button>
-            <button type="button" id="stopwatch-stop-btn" title="Podrž 3 sekundy pro ukončení a uložení tréninku" class="hidden relative w-7 h-7 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white font-black text-[10px] items-center justify-center shadow-sm select-none touch-none">
-              <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 32 32">
-                <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3"></circle>
-                <circle id="stopwatch-stop-ring" cx="16" cy="16" r="13" fill="none" stroke="#fde047" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="81.68" stroke-dashoffset="81.68"></circle>
-              </svg>
-              <span class="relative z-10 leading-none pointer-events-none">⏹</span>
-            </button>
-          </div>
+        <!-- 1. řada uprostřed: Přepínač předmětů (ČJ / M / H / T) -->
+        <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0 h-[40px] items-center gap-1.5">
+          <button onclick="setSubject('reading')" id="subject-btn-reading" title="Český jazyk – Čtení a psaní" class="h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-sky-500 text-white shadow-sm whitespace-nowrap">
+            <span class="text-sm sm:text-base leading-none">📖</span> <span>ČJ</span>
+          </button>
+          <button onclick="setSubject('math')" id="subject-btn-math" title="Matematika" class="h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            <span class="text-sm sm:text-base leading-none">🔢</span> <span>M</span>
+          </button>
+          <button onclick="setClockView()" id="subject-btn-clocks" title="Hodiny" class="h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap">
+            <span class="text-sm sm:text-base leading-none">⏰</span> <span>H</span>
+          </button>
+          <button onclick="openTestView()" id="subject-btn-test" title="Denní test" class="h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-purple-700 hover:bg-purple-100 relative whitespace-nowrap">
+            <span class="text-sm sm:text-base leading-none">📝</span> <span class="font-black">T</span>
+            <span id="nav-test-badge" class="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-ping absolute -top-1 -right-1 hidden"></span>
+          </button>
+        </div>
 
-          <!-- Karta 4: Tlačítko Diskety (Uložit progres) + Aktivní Účet & Odhlášení -->
-          <div class="flex items-center gap-1 bg-slate-100 border-2 border-slate-300 px-1.5 py-0.5 rounded-2xl shadow-sm h-[38px] select-none flex-shrink-0">
-            <button type="button" id="top-cloud-save-btn" onclick="manualSaveProgress()" title="Okamžitě uložit progres (lokálně i do cloudu)" class="game-button bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black px-2 py-1 rounded-xl border-b-2 border-emerald-700 shadow-xs flex items-center gap-1 h-[28px] transition-all">
-              <span id="top-cloud-save-icon" class="text-sm leading-none">💾</span>
-              <span class="text-[10px] font-black uppercase tracking-wide hidden lg:inline">Uložit</span>
+        <!-- 1. řada vpravo: Sjednocený dok (Stopky + Uložit 💾 + Aktivní Účet + Odhlášení) -->
+        <div class="flex items-center justify-end gap-2 min-w-0 md:flex-1 flex-shrink-0">
+          <div class="flex items-center gap-1.5 bg-slate-100/95 border-2 border-slate-300 p-1 rounded-2xl shadow-sm h-[40px] select-none flex-shrink-0">
+            <!-- Stopky -->
+            <div id="top-stopwatch-widget" class="flex items-center gap-1.5 bg-slate-900 text-white border border-indigo-400 px-2.5 rounded-xl shadow-xs h-[32px] select-none flex-shrink-0">
+              <span id="stopwatch-status-dot" class="w-2 h-2 rounded-full bg-slate-400 flex-shrink-0"></span>
+              <span id="stopwatch-time-display" class="font-mono font-black text-xs sm:text-sm tracking-wider text-amber-300 min-w-[42px] text-center">00:00</span>
+              <button type="button" id="stopwatch-playpause-btn" onclick="toggleStopwatchPlayPause()" title="Spustit / Pozastavit měření tréninku" class="w-6 h-6 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-black text-[11px] flex items-center justify-center shadow-sm active:scale-90 transition-all">
+                ▶
+              </button>
+              <button type="button" id="stopwatch-stop-btn" title="Podrž 3 sekundy pro ukončení a uložení tréninku" class="hidden relative w-6 h-6 rounded-full bg-rose-600/90 hover:bg-rose-600 text-white font-black text-[10px] items-center justify-center shadow-sm select-none touch-none">
+                <svg class="absolute inset-0 w-full h-full -rotate-90 pointer-events-none" viewBox="0 0 32 32">
+                  <circle cx="16" cy="16" r="13" fill="none" stroke="rgba(255,255,255,0.22)" stroke-width="3"></circle>
+                  <circle id="stopwatch-stop-ring" cx="16" cy="16" r="13" fill="none" stroke="#fde047" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="81.68" stroke-dashoffset="81.68"></circle>
+                </svg>
+                <span class="relative z-10 leading-none pointer-events-none">⏹</span>
+              </button>
+            </div>
+
+            <!-- Tlačítko Diskety (pouze ikona s pohodlnou dotekovou plochou) -->
+            <button type="button" id="top-cloud-save-btn" onclick="manualSaveProgress()" title="Okamžitě uložit progres (lokálně i do cloudu)" class="game-button bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-white font-black min-w-[42px] h-[32px] px-2.5 rounded-xl border-b-2 border-emerald-700 shadow-xs flex items-center justify-center transition-all">
+              <span id="top-cloud-save-icon" class="text-base leading-none">💾</span>
             </button>
-            <button type="button" id="top-env-mode-badge" onclick="openCloudEnvModal()" title="Aktivní hráčský účet – klikni pro detail nebo změnu účtu" class="cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300">
-              👤 ÚČET
+
+            <!-- Jméno aktivního účtu (bez textu ÚČET:) -->
+            <button type="button" id="top-env-mode-badge" onclick="openCloudEnvModal()" title="Aktivní hráčský účet – klikni pro detail nebo změnu účtu" class="cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider px-2.5 h-[32px] rounded-xl border whitespace-nowrap flex items-center justify-center bg-amber-100 text-amber-900 border-amber-300">
+              👤 MISA
             </button>
-            <button type="button" onclick="logoutCurrentAccount()" title="Odhlásit se / Přepnout účet" class="w-6 h-6 rounded-xl bg-slate-200 hover:bg-rose-100 text-slate-700 hover:text-rose-700 font-black text-xs flex items-center justify-center transition-colors">
+
+            <!-- Odhlášení -->
+            <button type="button" onclick="logoutCurrentAccount()" title="Odhlásit se / Přepnout účet" class="min-w-[38px] h-[32px] px-2 rounded-xl bg-slate-200 hover:bg-rose-100 active:scale-95 text-slate-700 hover:text-rose-700 font-black text-sm flex items-center justify-center transition-all">
               🚪
             </button>
           </div>
         </div>
-
-        <!-- 1. řada vpravo: Přepínač předmětů -->
-        <div class="inline-flex bg-slate-100 p-1 rounded-2xl border-2 border-amber-300 shadow-inner flex-shrink-0 h-[38px] items-center gap-1">
-          <button onclick="setSubject('reading')" id="subject-btn-reading" class="h-full px-2.5 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm whitespace-nowrap">
-            <span>📖</span> <span>Čtení</span>
-          </button>
-          <button onclick="setSubject('math')" id="subject-btn-math" class="h-full px-2.5 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap">
-            <span>🔢</span> <span>Matematika</span>
-          </button>
-          <button onclick="setClockView()" id="subject-btn-clocks" class="h-full px-2.5 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap">
-            <span>⏰</span> <span>Hodiny</span>
-          </button>
-          <button onclick="openTestView()" id="subject-btn-test" class="h-full px-2.5 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative whitespace-nowrap">
-            <span>📝</span> <span class="font-black">TEST</span>
-            <span id="nav-test-badge" class="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-ping absolute -top-1 -right-1 hidden"></span>
-          </button>
-        </div>
       </div>
 
-      <!-- 2. ŘADA: Vlevo Řada + Truhla + Úkoly + Obchod | Vpravo Denní limity (X/16 | X/30) + Diamanty + Minuty -->
-      <div class="w-full flex items-center justify-between gap-1.5 flex-wrap md:flex-nowrap">
-        <!-- 2. řada vlevo: Řada + Truhla + Úkoly + Obchod -->
-        <div class="flex items-center gap-1.5 flex-wrap md:flex-nowrap">
+      <!-- Jemný gradientový předěl mezi 1. a 2. řadou HUDu -->
+      <div class="hud-row-divider"></div>
+
+      <!-- 2. ŘADA: Vlevo Herní akce (Řada, Truhla, Úkoly, Obchod) | Vpravo Denní limity + Diamanty + Minuty -->
+      <div class="w-full flex items-center justify-between gap-2 flex-wrap md:flex-nowrap">
+        <!-- 2. řada vlevo: Řada + Truhla (ikona) + Úkoly + Obchod (košík) -->
+        <div class="flex items-center gap-2 flex-wrap md:flex-nowrap">
           <!-- 1. ŘADA (STREAK) -->
-          <div onclick="showStreakTab()" title="Denní řada učení" class="cursor-pointer bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black px-2.5 rounded-xl border-2 border-amber-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px] flex-shrink-0">
-            <span class="text-sm sm:text-base" id="top-streak-icon">🔥</span>
-            <span class="text-xs sm:text-sm font-black whitespace-nowrap" id="top-streak-count">0</span>
-            <span class="text-[9px] font-bold text-orange-100 uppercase">dní</span>
+          <div onclick="showStreakTab()" title="Denní řada učení" class="cursor-pointer bg-gradient-to-r from-orange-500 to-amber-500 text-white font-black min-w-[56px] px-3 rounded-xl border-2 border-amber-300 shadow-sm flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[38px] flex-shrink-0">
+            <span class="text-base leading-none" id="top-streak-icon">🔥</span>
+            <span class="text-xs sm:text-sm font-black whitespace-nowrap leading-none" id="top-streak-count">0</span>
           </div>
 
-          <!-- 2. TRUHLA -->
-          <button onclick="openDailyBoxModal()" id="top-box-btn" title="Truhla Odměn" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold px-2.5 rounded-xl border-b-3 border-amber-700 shadow-sm flex items-center gap-1.5 h-[34px] flex-shrink-0">
-            <img src="https://i.imgur.com/t1cvXEh.png" referrerpolicy="no-referrer" alt="Truhla" id="top-box-icon" class="w-5 h-5 object-contain drop-shadow-sm">
-            <span class="font-black text-xs uppercase tracking-wider">Truhla</span>
-            <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
+          <!-- 2. TRUHLA (pouze ikona s velkou dotekovou plochou) -->
+          <button onclick="openDailyBoxModal()" id="top-box-btn" title="Truhla Odměn" class="game-button relative bg-gradient-to-tr from-amber-500 to-yellow-400 hover:from-amber-600 hover:to-yellow-500 text-white font-bold min-w-[52px] px-3 rounded-xl border-b-3 border-amber-700 shadow-sm flex items-center justify-center h-[38px] flex-shrink-0">
+            <img src="https://i.imgur.com/t1cvXEh.png" referrerpolicy="no-referrer" alt="Truhla" id="top-box-icon" class="w-6 h-6 object-contain drop-shadow-sm">
+            <span id="top-box-badge" class="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">1</span>
           </button>
 
-          <!-- 3. DENNÍ ÚKOLY -->
-          <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-2.5 rounded-xl border-b-3 border-indigo-700 shadow-sm flex items-center gap-1.5 h-[34px] flex-shrink-0">
-            <span class="text-sm sm:text-base">📋</span>
-            <span class="font-black text-xs uppercase tracking-wider">Úkoly</span>
-            <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[9px] font-black px-1 min-w-[18px] h-4 rounded-full flex items-center justify-center border-2 border-white">0/5</span>
+          <!-- 3. DENNÍ ÚKOLY (ikona + badge s velkou dotekovou plochou) -->
+          <button onclick="showView('quests')" id="top-quests-btn" title="Denní Úkoly" class="game-button relative bg-indigo-500 hover:bg-indigo-600 text-white font-bold min-w-[52px] px-3 rounded-xl border-b-3 border-indigo-700 shadow-sm flex items-center justify-center h-[38px] flex-shrink-0">
+            <span class="text-lg leading-none">📋</span>
+            <span id="top-quests-badge" class="absolute -top-1.5 -right-1.5 bg-amber-400 text-indigo-950 text-[10px] font-black px-1.5 min-w-[20px] h-5 rounded-full flex items-center justify-center border-2 border-white">0/5</span>
           </button>
 
-          <!-- 4. HERNÍ OBCHOD (LÍSTKY & SKINY) -->
-          <button onclick="showStoreTab('tickets')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold px-2.5 rounded-xl border-b-3 border-pink-700 shadow-sm flex items-center gap-1.5 h-[34px] flex-shrink-0">
-            <span class="text-sm sm:text-base">🛍️</span>
-            <span class="font-black text-xs uppercase tracking-wider">Obchod</span>
+          <!-- 4. HERNÍ OBCHOD (ikona nákupního košíku s velkou dotekovou plochou) -->
+          <button onclick="showStoreTab('tickets')" title="Herní Obchod" class="game-button bg-pink-500 hover:bg-pink-600 text-white font-bold min-w-[52px] px-3 rounded-xl border-b-3 border-pink-700 shadow-sm flex items-center justify-center h-[38px] flex-shrink-0">
+            <span class="text-lg leading-none">🛒</span>
           </button>
         </div>
 
-        <!-- 2. řada vpravo: Denní úkoly (X/16) & Celkový denní čas (X/30) + Diamanty + Minuty -->
-        <div class="flex items-center gap-1.5 flex-wrap md:flex-nowrap">
+        <!-- 2. řada vpravo: Denní úkoly (X/16) & Celkový denní čas (X/30) + Diamanty (💎 počet) + Minuty (⭐ počet) -->
+        <div class="flex items-center gap-2 flex-wrap md:flex-nowrap">
           <!-- DENNÍ ÚKOLY (X/16) & CELKOVÝ DENNÍ ČAS (MAX 30 MIN PŘÍMO, PŘEBYTEK DO TREZORU) -->
-          <div id="top-subject-caps-widget" title="Denní úkoly (x/16 cvičení ze Čtení/Matematiky) a celkový dnešní čas (max 30 min přímo, přebytek jde do Nočního trezoru)" class="bg-white border-2 border-slate-300 px-2.5 rounded-xl shadow-xs flex items-center gap-2 h-[34px] text-[10px] sm:text-[11px] font-black text-slate-900 flex-shrink-0">
+          <div id="top-subject-caps-widget" title="Denní úkoly (x/16 cvičení ze Čtení/Matematiky) a celkový dnešní čas (max 30 min přímo, přebytek jde do Nočního trezoru)" class="bg-white border-2 border-slate-300 px-3 rounded-xl shadow-xs flex items-center gap-2.5 h-[38px] text-xs font-black text-slate-900 flex-shrink-0">
             <span class="flex items-center gap-1 whitespace-nowrap" title="Denní úkoly (16× cvičení)">
               <span>🎯</span>
               <span id="top-reading-cap-display" class="text-slate-900 font-black">0/16</span>
@@ -536,17 +840,16 @@
             </span>
           </div>
 
-          <!-- MODRÉ DIAMANTY -->
-          <div onclick="showStoreTab('skins')" title="Diamanty & Obchod" class="cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black px-2.5 sm:px-3 rounded-xl border-2 border-cyan-300 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px] flex-shrink-0">
-            <span class="text-sm sm:text-base leading-none">💎</span>
+          <!-- MODRÉ DIAMANTY (pouze 💎 a počet) -->
+          <div onclick="showStoreTab('skins')" title="Diamanty & Obchod" class="cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black min-w-[68px] px-3.5 rounded-xl border-2 border-cyan-300 shadow-sm flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[38px] flex-shrink-0">
+            <span class="text-base leading-none">💎</span>
             <span class="text-xs sm:text-sm font-black leading-none" id="top-diamonds-display">0</span>
-            <span class="text-[10px] font-bold text-cyan-100 uppercase tracking-wider">Diamantů</span>
           </div>
 
-          <!-- HERNÍ ČAS NA TABLETU (MINUTY / HVĚZDIČKY) -->
-          <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black px-2.5 sm:px-3 rounded-xl border-2 border-amber-500 shadow-sm flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[34px] flex-shrink-0">
-            <span class="text-sm sm:text-base leading-none animate-pulse">⭐</span>
-            <span class="text-xs sm:text-sm font-black whitespace-nowrap leading-none" id="top-balance-display">0 min</span>
+          <!-- HERNÍ ČAS NA TABLETU (pouze ⭐ a počet) -->
+          <div onclick="showStoreTab('tickets')" title="Herní čas na tabletu" class="cursor-pointer bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 font-black min-w-[68px] px-3.5 rounded-xl border-2 border-amber-500 shadow-sm flex items-center justify-center gap-1.5 hover:scale-105 active:scale-95 transition-transform h-[38px] flex-shrink-0">
+            <span class="text-base leading-none animate-pulse">⭐</span>
+            <span class="text-xs sm:text-sm font-black whitespace-nowrap leading-none" id="top-balance-display">0</span>
           </div>
         </div>
       </div>
@@ -554,7 +857,8 @@
     </div>
   </header>
 
-  <main class="max-w-6xl w-full mx-auto px-2 sm:px-3 py-1 flex-grow flex flex-col min-h-0 md:overflow-hidden">
+  <main class="max-w-6xl w-full mx-auto px-2 sm:px-3 pb-1.5 pt-0.5 flex-grow flex flex-col min-h-0 md:overflow-hidden">
+    <div id="main-game-board-frame" class="game-board-frame flex-grow flex flex-col min-h-0 w-full md:overflow-hidden" data-board-mode="reading">
 
     <!-- VIEW 1: LEARNING / MISSIONS -->
     <section id="view-learn" class="flex-grow flex flex-col justify-between gap-1 min-h-0">
@@ -562,36 +866,36 @@
       <!-- SUB-NAV 1: ČTENÍ -->
       <div id="reading-tabs-container" class="bg-white/95 p-1 rounded-2xl shadow-sm border-2 border-sky-200 overflow-x-auto no-scrollbar flex-shrink-0">
         <div class="flex md:grid md:grid-cols-4 lg:grid-cols-8 gap-1 min-w-max md:min-w-0">
-          <button onclick="switchLevel(1)" id="lvl-btn-1" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-sky-500 text-white shadow-game-btn border-b-3 border-sky-700 min-w-[115px] sm:min-w-0 flex-shrink-0">
-            <span>🔤 1. Písmena</span>
+          <button onclick="switchLevel(1)" id="lvl-btn-1" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700 min-w-[115px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🔤 1. Písmena</span>
             <span class="text-[9px] font-bold text-amber-200 leading-tight" id="reading-lvl-badge-1">+0,25 min</span>
           </button>
-          <button onclick="switchLevel(2)" id="lvl-btn-2" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[115px] sm:min-w-0 flex-shrink-0">
-            <span>🧩 2. Slabiky</span>
+          <button onclick="switchLevel(2)" id="lvl-btn-2" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[115px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🧩 2. Slabiky</span>
             <span class="text-[9px] font-bold text-amber-600 leading-tight" id="reading-lvl-badge-2">+0,25 min</span>
           </button>
-          <button onclick="switchLevel(3)" id="lvl-btn-3" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0">
-            <span>📦 3. Jednoslabičná</span>
+          <button onclick="switchLevel(3)" id="lvl-btn-3" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">📦 3. Jednoslabičná</span>
             <span class="text-[9px] font-bold text-amber-600 leading-tight" id="reading-lvl-badge-3">+0,25 min</span>
           </button>
-          <button onclick="switchLevel(4)" id="lvl-btn-4" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0">
-            <span>📖 4. Dvouslabičná</span>
+          <button onclick="switchLevel(4)" id="lvl-btn-4" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">📖 4. Dvouslabičná</span>
             <span class="text-[9px] font-bold text-emerald-600 leading-tight" id="reading-lvl-badge-4">+0,50 min</span>
           </button>
-          <button onclick="switchLevel(5)" id="lvl-btn-5" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0">
-            <span>✨ 5. Shluky/OU</span>
+          <button onclick="switchLevel(5)" id="lvl-btn-5" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">✨ 5. Shluky/OU</span>
             <span class="text-[9px] font-bold text-emerald-600 leading-tight" id="reading-lvl-badge-5">+0,50 min</span>
           </button>
-          <button onclick="switchLevel(6)" id="lvl-btn-6" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0">
-            <span>🎯 6. DĚ/TĚ/NĚ</span>
+          <button onclick="switchLevel(6)" id="lvl-btn-6" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🎯 6. DĚ/TĚ/NĚ</span>
             <span class="text-[9px] font-bold text-emerald-600 leading-tight" id="reading-lvl-badge-6">+0,50 min</span>
           </button>
-          <button onclick="switchLevel(7)" id="lvl-btn-7" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0">
-            <span>🌟 7. Celé věty</span>
+          <button onclick="switchLevel(7)" id="lvl-btn-7" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[120px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🌟 7. Celé věty</span>
             <span class="text-[9px] font-bold text-purple-600 leading-tight" id="reading-lvl-badge-7">+1,00 min</span>
           </button>
-          <button onclick="switchLevel(8)" id="lvl-btn-8" class="lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-purple-300 min-w-[120px] sm:min-w-0 flex-shrink-0">
-            <span>🗣️ 8. Hláskování</span>
+          <button onclick="switchLevel(8)" id="lvl-btn-8" class="lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-purple-300 min-w-[120px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🗣️ 8. Hláskování</span>
             <span class="text-[9px] font-bold text-purple-600 leading-tight" id="reading-lvl-badge-8">+0,25 min</span>
           </button>
         </div>
@@ -600,32 +904,32 @@
       <!-- SUB-NAV 2: MATEMATIKA -->
       <div id="math-tabs-container" class="hidden bg-white/95 p-1 rounded-2xl shadow-sm border-2 border-amber-200 overflow-x-auto no-scrollbar flex-shrink-0">
         <div class="flex md:grid md:grid-cols-4 lg:grid-cols-7 gap-1 min-w-max md:min-w-0">
-          <button onclick="switchMathLevel(1)" id="math-lvl-btn-1" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-amber-500 text-white shadow-game-btn border-b-3 border-amber-700 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span id="math-tab-1-title">🪙 1. Skládání mincí</span>
+          <button onclick="switchMathLevel(1)" id="math-lvl-btn-1" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-amber-500 text-white shadow-game-btn border-b-4 border-amber-700 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span id="math-tab-1-title" class="leading-none">🪙 1. Skládání mincí</span>
             <span class="text-[9px] font-bold text-amber-200 leading-tight" id="math-lvl-badge-1">+0,25 min</span>
           </button>
-          <button onclick="switchMathLevel(2)" id="math-lvl-btn-2" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span>⚖️ 2. Porovnávání</span>
+          <button onclick="switchMathLevel(2)" id="math-lvl-btn-2" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">⚖️ 2. Porovnávání</span>
             <span class="text-[9px] font-bold text-amber-600 leading-tight" id="math-lvl-badge-2">+0,25 min</span>
           </button>
-          <button onclick="switchMathLevel(3)" id="math-lvl-btn-3" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span>🔢 3. Číselná řada</span>
+          <button onclick="switchMathLevel(3)" id="math-lvl-btn-3" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🔢 3. Číselná řada</span>
             <span class="text-[9px] font-bold text-amber-600 leading-tight" id="math-lvl-badge-3">+0,25 min</span>
           </button>
-          <button onclick="switchMathLevel(4)" id="math-lvl-btn-4" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span>➕ 4. Počítadlo (+/-)</span>
+          <button onclick="switchMathLevel(4)" id="math-lvl-btn-4" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">➕ 4. Počítadlo (+/-)</span>
             <span class="text-[9px] font-bold text-emerald-600 leading-tight" id="math-lvl-badge-4">+0,50 min</span>
           </button>
-          <button onclick="switchMathLevel(5)" id="math-lvl-btn-5" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span>🌿 5. Rozklad čísel</span>
+          <button onclick="switchMathLevel(5)" id="math-lvl-btn-5" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🌿 5. Rozklad čísel</span>
             <span class="text-[9px] font-bold text-emerald-600 leading-tight" id="math-lvl-badge-5">+0,50 min</span>
           </button>
-          <button onclick="switchMathLevel(6)" id="math-lvl-btn-6" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span>📖 6. Slovní úlohy</span>
+          <button onclick="switchMathLevel(6)" id="math-lvl-btn-6" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">📖 6. Slovní úlohy</span>
             <span class="text-[9px] font-bold text-purple-600 leading-tight" id="math-lvl-badge-6">+1,00 min</span>
           </button>
-          <button onclick="switchMathLevel(7)" id="math-lvl-btn-7" class="math-lvl-btn py-1 px-2 rounded-xl font-black text-xs sm:text-sm flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0">
-            <span>🎨 7. Omalovánka</span>
+          <button onclick="switchMathLevel(7)" id="math-lvl-btn-7" class="math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap">
+            <span class="leading-none">🎨 7. Omalovánka</span>
             <span class="text-[9px] font-bold text-cyan-600 leading-tight">+1 Diamant 💎</span>
           </button>
         </div>
@@ -642,13 +946,17 @@
           </div>
         </div>
 
-        <div id="control-mode-wrapper" class="flex items-center gap-1.5">
-          <span class="text-xs font-bold text-slate-600">Režim:</span>
-          <div class="inline-flex rounded-xl p-0.5 bg-sky-100">
-            <button id="mode-btn-grid" onclick="setDisplayMode('grid')" class="px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm">Dlaždice</button>
-            <button id="mode-btn-flash" onclick="setDisplayMode('flash')" class="px-2 py-0.5 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200">1 Karta</button>
+        <div id="control-level5-submode-wrapper" class="hidden items-center gap-1.5">
+          <span class="text-xs font-bold text-slate-600">Typ:</span>
+          <div class="inline-flex rounded-xl p-0.5 bg-sky-100 border border-sky-300 gap-0.5">
+            <button id="lvl5-submode-shluky" onclick="setLevel5SubMode('shluky')" class="px-2.5 py-0.5 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm">🧩 Shluky</button>
+            <button id="lvl5-submode-ou" onclick="setLevel5SubMode('ou')" class="px-2.5 py-0.5 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200">🔊 Slova s OU</button>
+            <button id="lvl5-submode-all" onclick="setLevel5SubMode('all')" class="px-2.5 py-0.5 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200">✨ Vše</button>
           </div>
-          <button id="toggle-syllables-btn" onclick="toggleSyllableArcs()" class="game-button px-2.5 py-0.5 rounded-xl text-xs font-black transition-all bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-sm flex items-center gap-1 ml-1" title="Zobrazit obloučky pod slabikami">
+        </div>
+
+        <div id="control-mode-wrapper" class="flex items-center gap-1.5">
+          <button id="toggle-syllables-btn" onclick="toggleSyllableArcs()" class="game-button px-2.5 py-0.5 rounded-xl text-xs font-black transition-all bg-slate-200 hover:bg-slate-300 text-slate-700 shadow-sm flex items-center gap-1" title="Zobrazit obloučky pod slabikami">
             <span>◡◡</span>
             <span id="toggle-syllables-text">Slabiky: VYP</span>
           </button>
@@ -656,7 +964,9 @@
 
         <div id="tile-count-control" class="flex items-center gap-1.5">
           <span class="text-xs font-bold text-slate-600">Dlaždic:</span>
-          <div class="inline-flex rounded-xl p-0.5 bg-emerald-100">
+          <div class="inline-flex rounded-xl p-0.5 bg-emerald-100 gap-0.5">
+            <button id="count-btn-4" onclick="setGridCount(4)" class="hidden px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200">4</button>
+            <button id="count-btn-6" onclick="setGridCount(6)" class="px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200">6</button>
             <button id="count-btn-8" onclick="setGridCount(8)" class="px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm">8</button>
             <button id="count-btn-10" onclick="setGridCount(10)" class="px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200">10</button>
           </div>
@@ -949,8 +1259,8 @@
         <!-- Empty State Notice -->
         <div id="content-empty-notice" class="hidden text-center p-4 bg-white/95 border-3 border-amber-300 rounded-3xl max-w-md shadow-md my-2">
           <span class="text-3xl block mb-1">🔐</span>
-          <h3 class="text-base font-black text-slate-800">Chybí podklady pro procvičení</h3>
-          <p class="text-xs text-slate-600 font-bold mt-1">V rodičovském nastavení zapni další písmenka nebo uprav rozsah matematiky.</p>
+          <h3 id="content-empty-title" class="text-base font-black text-slate-800">Chybí podklady pro procvičení</h3>
+          <p id="content-empty-desc" class="text-xs text-slate-600 font-bold mt-1">V rodičovském nastavení zapni další písmenka nebo uprav rozsah matematiky.</p>
           <button onclick="openParentModal()" class="mt-2.5 game-button bg-indigo-600 text-white font-black text-xs px-4 py-2 rounded-2xl">
             Otevřít Rodičovskou Správu 🔒
           </button>
@@ -1167,11 +1477,10 @@
 
     <!-- VIEW 2: DAILY QUESTS & STREAK -->
     <section id="view-quests" class="hidden flex-grow flex flex-col space-y-2 min-h-0 overflow-y-auto no-scrollbar">
-      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-4 py-2 rounded-2xl shadow-md flex flex-col sm:flex-row items-center justify-between gap-2 flex-shrink-0">
+      <div class="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-4 py-2 rounded-2xl shadow-md flex items-center justify-between gap-2 flex-shrink-0">
         <div class="flex items-center gap-3 flex-wrap">
           <h2 class="text-lg sm:text-xl font-black font-baloo leading-tight">Denní Výzvy 📋</h2>
           <span class="text-[10px] bg-amber-400 text-indigo-950 font-black px-2 py-0.5 rounded-full" id="quests-date-display">Dnes</span>
-          <p class="text-purple-100 font-bold text-xs hidden md:inline">Plň denní úkoly pro herní čas a drž každodenní řadu pro diamanty!</p>
         </div>
         <button onclick="showView('learn')" class="game-button bg-white text-indigo-700 font-black px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 text-xs whitespace-nowrap">
           <span>🎮</span> Zpět do Tréninku
@@ -1180,7 +1489,7 @@
 
       <div class="flex items-center gap-2 p-1 bg-white/90 rounded-2xl border-2 border-indigo-200 shadow-sm flex-shrink-0">
         <button onclick="switchQuestsSubTab('tasks')" id="subtab-btn-tasks" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center justify-center gap-1.5">
-          <span>📋</span> Seznam Úkolů (<span id="quests-subtab-badge">0/5</span>)
+          <span>📋</span> Seznam Úkolů (<span id="quests-subtab-badge">0/4</span>)
         </button>
         <button onclick="switchQuestsSubTab('streak')" id="subtab-btn-streak" class="flex-1 py-1.5 px-2.5 rounded-xl font-black text-xs sm:text-sm transition-all text-slate-600 hover:bg-slate-100 flex items-center justify-center gap-1.5">
           <span>🔥</span> Denní Řada (<span id="streak-subtab-badge">0 dní</span>)
@@ -1188,31 +1497,21 @@
       </div>
 
       <div id="subtab-content-tasks">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-2" id="quests-list-container"></div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5" id="quests-list-container"></div>
       </div>
 
       <div id="subtab-content-streak" class="hidden space-y-2.5">
-        <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white rounded-3xl p-4 sm:p-5 shadow-xl text-center relative overflow-hidden">
+        <div class="bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-white rounded-3xl p-4 shadow-xl text-center relative overflow-hidden">
           <div class="max-w-md mx-auto flex flex-col items-center">
             <span id="streak-large-flame" class="text-5xl select-none flame-active">🔥</span>
             <div class="text-3xl sm:text-4xl font-black font-baloo mt-0.5 text-white drop-shadow-md" id="streak-hero-days">0 DNÍ</div>
-            <h3 class="text-base sm:text-lg font-black text-amber-100 font-baloo">Tvoje tréninková řada</h3>
-            <p class="text-xs font-bold text-orange-100 mt-0.5 max-w-sm" id="streak-hero-desc">
-              Splň dnes 16× cvičení (Čtení nebo Matematika) a získej alespoň 15 min odměn k započtení dnešního dne!
-            </p>
           </div>
         </div>
 
         <div class="bg-white/95 rounded-3xl p-3.5 sm:p-4 border-4 border-orange-300 shadow-xl">
           <div class="flex items-center justify-between mb-2">
-            <div>
-              <span class="text-[10px] font-black bg-orange-100 text-orange-800 px-2.5 py-0.5 rounded-full uppercase">Odměna za vytrvalost</span>
-              <h4 class="text-sm sm:text-base font-black text-slate-800 font-baloo mt-0.5">Cesta k Modrému Diamantu 💎</h4>
-            </div>
-            <div class="text-right">
-              <span class="text-[10px] font-black text-slate-500 block">7. den řady =</span>
-              <span class="text-xs sm:text-sm font-black text-cyan-600">+1 Diamant 💎</span>
-            </div>
+            <h4 class="text-sm sm:text-base font-black text-slate-800 font-baloo">Cesta k Modrému Diamantu 💎</h4>
+            <span class="text-xs sm:text-sm font-black text-cyan-600">7. den = +1 💎</span>
           </div>
           <div class="grid grid-cols-7 gap-1.5 sm:gap-2" id="streak-week-track"></div>
         </div>
@@ -1226,11 +1525,8 @@
         <!-- Horní lišta Obchodu -->
         <div class="flex items-center justify-between border-b px-4 py-2 bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 text-white flex-shrink-0">
           <div class="flex items-center gap-2">
-            <span class="text-xl sm:text-2xl">🛍️</span>
-            <div>
-              <h2 class="text-base sm:text-xl font-black font-baloo leading-tight">Herní Obchod & Tržiště</h2>
-              <p class="text-[10px] text-pink-100 font-bold hidden sm:block">Vyber si kategorii v levém menu a nakupuj za hvězdičky ⭐ nebo diamanty 💎</p>
-            </div>
+            <span class="text-xl sm:text-2xl">🛒</span>
+            <h2 class="text-base sm:text-xl font-black font-baloo leading-tight">Herní Obchod</h2>
           </div>
           <button onclick="showView('learn')" class="game-button bg-white text-indigo-800 hover:bg-indigo-50 font-black px-3 py-1.5 rounded-xl text-xs shadow-md flex items-center gap-1.5">
             <span>🎮</span> Zpět do Tréninku
@@ -1241,13 +1537,10 @@
         <div class="flex-grow flex flex-col md:flex-row overflow-hidden">
           
           <!-- Levé svislé menu -->
-          <nav class="w-full md:w-60 bg-slate-100/95 border-b-2 md:border-b-0 md:border-r-2 border-slate-200 p-2 sm:p-3 flex md:flex-col gap-2 flex-shrink-0 overflow-x-auto md:overflow-y-auto no-scrollbar">
-            <button onclick="switchStoreTab('tickets')" id="store-tab-btn-tickets" class="w-full py-3.5 px-3.5 rounded-2xl font-black text-sm sm:text-base transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 text-white shadow-lg border-2 border-amber-300 flex items-center gap-2.5 text-left whitespace-nowrap">
-              <span class="text-2xl leading-none">🎟️</span>
-              <div class="flex flex-col leading-tight">
-                <span class="font-black tracking-wide">Herní Lístky ⭐</span>
-                <span class="text-[10px] font-bold opacity-90">Vyměň hvězdy za hraní</span>
-              </div>
+          <nav class="w-full md:w-56 bg-slate-100/95 border-b-2 md:border-b-0 md:border-r-2 border-slate-200 p-2 sm:p-2.5 flex md:flex-col gap-2 flex-shrink-0 overflow-x-auto md:overflow-y-auto no-scrollbar">
+            <button onclick="switchStoreTab('tickets')" id="store-tab-btn-tickets" class="w-full py-3 px-3 rounded-2xl font-black text-sm sm:text-base transition-all bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 text-white shadow-lg border-2 border-amber-300 flex items-center gap-2 text-left whitespace-nowrap">
+              <span class="text-xl leading-none">🎟️</span>
+              <span class="font-black tracking-wide">Herní Lístky ⭐</span>
             </button>
             <button onclick="switchStoreTab('skins')" id="store-tab-btn-skins" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left whitespace-nowrap">
               <span class="text-base">👾</span>
@@ -1272,229 +1565,161 @@
           </nav>
 
           <!-- Pravý obsah zvolené kategorie -->
-          <div class="flex-grow p-3 sm:p-5 overflow-y-auto bg-white">
+          <div class="flex-grow p-3 sm:p-4 overflow-y-auto bg-white">
             
             <!-- KATEGORIE 1: SKINY AVATARA -->
-            <div id="store-tab-content-skins" class="hidden space-y-3">
-              <div class="border-b border-slate-200 pb-2">
-                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">👾 Skiny Avatara (Minecraft, Pokémon & Sonic)</h3>
-                <p class="text-xs text-slate-500 font-bold">Kup si novou postavičku do 3D šatníku za modré diamanty 💎</p>
-              </div>
+            <div id="store-tab-content-skins" class="hidden">
               <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3" id="store-avatars-grid"></div>
             </div>
 
             <!-- KATEGORIE 2: PETI & LEKTVARY -->
-            <div id="store-tab-content-pets" class="hidden space-y-4">
-              <div class="border-b border-slate-200 pb-2">
-                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🐾 Bojovní Peti do Arény, Lektvary & Lístky</h3>
-                <p class="text-xs text-slate-500 font-bold">Odemkni si bojového parťáka (včetně mystického Mewtwoa!) nebo dokup lektvary, krmivo a lístky do Arény za 💎</p>
-              </div>
-
-              <!-- Lektvary, Krmivo a Lístky do Arény -->
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div class="bg-gradient-to-r from-rose-50 to-pink-50 border-2 border-rose-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
+            <div id="store-tab-content-pets" class="hidden space-y-3.5">
+              <!-- Lektvary, Krmivo a Lístky do Arény (POUZE obrázek, cena a tlačítko Koupit v rámečku) -->
+              <div class="grid grid-cols-3 gap-3">
+                <div class="store-card-frame store-card-frame--rose px-3 py-2.5 flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2.5">
-                    <span class="text-3xl">❤️‍🔥</span>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <h4 class="text-sm font-black text-rose-950 font-baloo">Kámen Oživení</h4>
-                        <span class="text-[10px] font-black bg-rose-200 text-rose-900 px-2 py-0.5 rounded-full" id="store-revive-price-label">2 💎</span>
-                      </div>
-                      <p class="text-[11px] text-rose-800 font-bold mt-0.5">Okamžitě probudí peta z K.O. stavu na 100 % HP!</p>
+                    <div class="w-11 h-11 rounded-2xl bg-white/90 border-2 border-rose-200 shadow-inner flex items-center justify-center text-2xl flex-shrink-0">
+                      ❤️‍🔥
                     </div>
+                    <span class="text-xs sm:text-sm font-black bg-rose-200/90 border border-rose-300 text-rose-950 px-2.5 py-1 rounded-xl whitespace-nowrap" id="store-revive-price-label">2 💎</span>
                   </div>
-                  <button onclick="buyRevivePotionFromStore()" class="game-button bg-rose-500 hover:bg-rose-600 text-white font-black px-3 py-2 rounded-xl border-b-3 border-rose-700 text-xs whitespace-nowrap shadow-sm">
-                    Koupit ❤️‍🔥
+                  <button onclick="buyRevivePotionFromStore()" class="game-button bg-gradient-to-b from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 text-white font-black px-3.5 py-2 rounded-xl border-b-4 border-rose-800 text-xs sm:text-sm whitespace-nowrap shadow-sm flex-shrink-0">
+                    Koupit
                   </button>
                 </div>
 
-                <div class="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
+                <div class="store-card-frame store-card-frame--amber px-3 py-2.5 flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2.5">
-                    <span class="text-3xl">🍖</span>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <h4 class="text-sm font-black text-amber-950 font-baloo">2× Krmivo pro Pety</h4>
-                        <span class="text-[10px] font-black bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full" id="store-food-price-label">1 💎</span>
-                      </div>
-                      <p class="text-[11px] text-amber-800 font-bold mt-0.5">Doplní petovi zdraví v Aréně!</p>
+                    <div class="relative w-11 h-11 rounded-2xl bg-white/90 border-2 border-amber-200 shadow-inner flex items-center justify-center text-2xl flex-shrink-0">
+                      🍖
+                      <span class="absolute -top-1.5 -right-1.5 bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full border border-white shadow-xs">2×</span>
                     </div>
+                    <span class="text-xs sm:text-sm font-black bg-amber-200/90 border border-amber-300 text-amber-950 px-2.5 py-1 rounded-xl whitespace-nowrap" id="store-food-price-label">1 💎</span>
                   </div>
-                  <button onclick="buyPetFoodFromStore()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-2 rounded-xl border-b-3 border-amber-700 text-xs whitespace-nowrap shadow-sm">
-                    Koupit 🍖
+                  <button onclick="buyPetFoodFromStore()" class="game-button bg-gradient-to-b from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black px-3.5 py-2 rounded-xl border-b-4 border-amber-700 text-xs sm:text-sm whitespace-nowrap shadow-sm flex-shrink-0">
+                    Koupit
                   </button>
                 </div>
 
-                <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between gap-3 shadow-sm">
+                <div class="store-card-frame store-card-frame--emerald px-3 py-2.5 flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2.5">
-                    <span class="text-3xl">🎟️</span>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <h4 class="text-sm font-black text-emerald-950 font-baloo">Lístek do Arény</h4>
-                        <span class="text-[10px] font-black bg-emerald-200 text-emerald-900 px-2 py-0.5 rounded-full" id="store-ticket-price-label">1 💎</span>
-                      </div>
-                      <p class="text-[11px] text-emerald-800 font-bold mt-0.5">Spustí další zápas v Aréně i po vyčerpání limitu!</p>
+                    <div class="w-11 h-11 rounded-2xl bg-white/90 border-2 border-emerald-200 shadow-inner flex items-center justify-center text-2xl flex-shrink-0">
+                      🎟️
                     </div>
+                    <span class="text-xs sm:text-sm font-black bg-emerald-200/90 border border-emerald-300 text-emerald-950 px-2.5 py-1 rounded-xl whitespace-nowrap" id="store-ticket-price-label">1 💎</span>
                   </div>
-                  <button onclick="buyArenaTicketFromStore()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-2 rounded-xl border-b-3 border-emerald-800 text-xs whitespace-nowrap shadow-sm">
-                    Koupit 🎟️
+                  <button onclick="buyArenaTicketFromStore()" class="game-button bg-gradient-to-b from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black px-3.5 py-2 rounded-xl border-b-4 border-emerald-800 text-xs sm:text-sm whitespace-nowrap shadow-sm flex-shrink-0">
+                    Koupit
                   </button>
                 </div>
               </div>
 
-              <!-- 5 Petů včetně Mewtwo -->
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="store-pets-grid"></div>
+              <!-- 5 Petů včetně Mewtwo (v rámečku: cena, obrázek, tlačítko) -->
+              <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3" id="store-pets-grid"></div>
             </div>
 
             <!-- KATEGORIE 3: TAPETY & SVĚTY -->
-            <div id="store-tab-content-themes" class="hidden space-y-3">
-              <div class="border-b border-slate-200 pb-2">
-                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎨 Tapety & Světy na Pozadí</h3>
-                <p class="text-xs text-slate-500 font-bold">Kup si tématickou tapetu Minecraftu, Pokémonů nebo Sonica na celou obrazovku</p>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="store-themes-grid"></div>
+            <div id="store-tab-content-themes" class="hidden">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="store-themes-grid"></div>
             </div>
 
             <!-- KATEGORIE 4: FANFÁRY & ZVUKY -->
-            <div id="store-tab-content-sounds" class="hidden space-y-3">
-              <div class="border-b border-slate-200 pb-2">
-                <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🔊 Oslavné Fanfáry & Zvuky</h3>
-                <p class="text-xs text-slate-500 font-bold">Kup si oslavnou melodii, Pikachu výkřik nebo retro fanfáru za správné odpovědi</p>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3" id="store-sounds-grid"></div>
+            <div id="store-tab-content-sounds" class="hidden">
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5" id="store-sounds-grid"></div>
             </div>
 
-            <!-- KATEGORIE 5: HERNÍ LÍSTKY (ZA MINUTY ⭐) -->
-            <div id="store-tab-content-tickets" class="space-y-4">
-              <div class="border-b border-slate-200 pb-2 flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">🎟️ Herní Lístky na Tablet (za hvězdičky ⭐)</h3>
-                  <p class="text-xs text-slate-500 font-bold">Denně lze koupit max. 1× poukaz z kategorie (5 / 10 / 15 min) a max. 1× MAXIMÁLNÍ poukaz (reset o půlnoci)</p>
-                </div>
-                <div id="store-voucher-status-banner" class="bg-indigo-50 border-2 border-indigo-200 px-3 py-1.5 rounded-2xl text-xs font-black text-indigo-900">
-                  Dnešní nákupy: 0 / 2 poukazy
-                </div>
-              </div>
-
-              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div id="voucher-card-5" class="bg-sky-50/60 border-3 border-sky-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
-                  <div id="voucher-badge-5" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
+            <!-- KATEGORIE 5: HERNÍ LÍSTKY (ZA MINUTY ⭐) – 4 ČISTÁ POLE S VÝRAZNÝMI HERNÍMI RÁMEČKY -->
+            <div id="store-tab-content-tickets" class="h-full flex flex-col justify-center">
+              <div class="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+                <div id="voucher-card-5" class="store-card-frame store-card-frame--sky p-4 flex flex-col justify-between text-center relative">
+                  <div id="voucher-badge-5" class="hidden mb-1 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">✅ Koupeno</div>
                   <div>
-                    <div class="text-3xl mb-1">⏱️</div>
-                    <h3 class="text-lg sm:text-xl font-black text-sky-800">5 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Kategorie 5 / 10 / 15 min</p>
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-2xl bg-white/85 border-2 border-sky-200 shadow-inner flex items-center justify-center text-4xl">⏱️</div>
+                    <h3 class="text-xl sm:text-2xl font-black text-sky-900 font-baloo">5 MINUT</h3>
                   </div>
-                  <div class="mt-3">
-                    <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 5 hvězd ⭐</div>
-                    <button id="voucher-btn-5" onclick="buyTimePackage(5)" class="game-button w-full bg-sky-500 hover:bg-sky-600 text-white font-black py-2 rounded-xl border-b-3 border-sky-700 text-xs shadow-sm">
-                      Koupit lístek
+                  <div class="mt-4">
+                    <div class="inline-flex items-center gap-1 bg-white/90 border border-amber-300 text-amber-700 font-black text-xs sm:text-sm px-3 py-0.5 rounded-full mb-2.5 shadow-2xs">5 ⭐</div>
+                    <button id="voucher-btn-5" onclick="buyTimePackage(5)" class="game-button w-full bg-amber-400 hover:bg-amber-500 text-indigo-950 font-black py-2.5 rounded-xl border-b-4 border-amber-600 text-xs sm:text-sm shadow-game-btn">
+                      Koupit lístek 🎟️
                     </button>
                   </div>
                 </div>
 
-                <div id="voucher-card-10" class="bg-emerald-50/60 border-3 border-emerald-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
-                  <div id="voucher-badge-10" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
+                <div id="voucher-card-10" class="store-card-frame store-card-frame--emerald p-4 flex flex-col justify-between text-center relative">
+                  <div id="voucher-badge-10" class="hidden mb-1 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">✅ Koupeno</div>
                   <div>
-                    <div class="text-3xl mb-1">🎮</div>
-                    <h3 class="text-lg sm:text-xl font-black text-emerald-800">10 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Kategorie 5 / 10 / 15 min</p>
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-2xl bg-white/85 border-2 border-emerald-200 shadow-inner flex items-center justify-center text-4xl">🎮</div>
+                    <h3 class="text-xl sm:text-2xl font-black text-emerald-900 font-baloo">10 MINUT</h3>
                   </div>
-                  <div class="mt-3">
-                    <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 10 hvězd ⭐</div>
-                    <button id="voucher-btn-10" onclick="buyTimePackage(10)" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl border-b-3 border-emerald-700 text-xs shadow-sm">
-                      Koupit lístek
+                  <div class="mt-4">
+                    <div class="inline-flex items-center gap-1 bg-white/90 border border-amber-300 text-amber-700 font-black text-xs sm:text-sm px-3 py-0.5 rounded-full mb-2.5 shadow-2xs">10 ⭐</div>
+                    <button id="voucher-btn-10" onclick="buyTimePackage(10)" class="game-button w-full bg-amber-400 hover:bg-amber-500 text-indigo-950 font-black py-2.5 rounded-xl border-b-4 border-amber-600 text-xs sm:text-sm shadow-game-btn">
+                      Koupit lístek 🎟️
                     </button>
                   </div>
                 </div>
 
-                <div id="voucher-card-15" class="bg-purple-50/60 border-3 border-purple-300 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
-                  <div id="voucher-badge-15" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
+                <div id="voucher-card-15" class="store-card-frame store-card-frame--purple p-4 flex flex-col justify-between text-center relative">
+                  <div id="voucher-badge-15" class="hidden mb-1 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">✅ Koupeno</div>
                   <div>
-                    <div class="text-3xl mb-1">🚀</div>
-                    <h3 class="text-lg sm:text-xl font-black text-purple-800">15 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Kategorie 5 / 10 / 15 min</p>
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-2xl bg-white/85 border-2 border-purple-200 shadow-inner flex items-center justify-center text-4xl">🚀</div>
+                    <h3 class="text-xl sm:text-2xl font-black text-purple-900 font-baloo">15 MINUT</h3>
                   </div>
-                  <div class="mt-3">
-                    <div class="text-amber-600 font-black text-xs mb-1.5">Cena: 15 hvězd ⭐</div>
-                    <button id="voucher-btn-15" onclick="buyTimePackage(15)" class="game-button w-full bg-purple-500 hover:bg-purple-600 text-white font-black py-2 rounded-xl border-b-3 border-purple-700 text-xs shadow-sm">
-                      Koupit lístek
+                  <div class="mt-4">
+                    <div class="inline-flex items-center gap-1 bg-white/90 border border-amber-300 text-amber-700 font-black text-xs sm:text-sm px-3 py-0.5 rounded-full mb-2.5 shadow-2xs">15 ⭐</div>
+                    <button id="voucher-btn-15" onclick="buyTimePackage(15)" class="game-button w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2.5 rounded-xl border-b-4 border-orange-700 text-xs sm:text-sm shadow-game-btn">
+                      Koupit lístek 🎟️
                     </button>
                   </div>
                 </div>
 
-                <div id="voucher-card-max" class="bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-orange-400 rounded-3xl p-3.5 shadow-sm flex flex-col justify-between text-center relative transition-all">
-                  <div class="absolute top-2 left-2 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full">Maximum</div>
-                  <div id="voucher-badge-max" class="hidden absolute top-2 right-2 bg-emerald-600 text-white text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-sm">✅ Koupeno dnes</div>
+                <div id="voucher-card-max" class="store-card-frame store-card-frame--max p-4 flex flex-col justify-between text-center relative text-white">
+                  <div class="absolute top-2.5 left-2.5 bg-amber-400 text-amber-950 text-[9px] font-black uppercase px-2 py-0.5 rounded-full shadow-xs">MAX</div>
+                  <div id="voucher-badge-max" class="hidden mb-1 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full shadow-xs">✅ Koupeno</div>
                   <div>
-                    <div class="text-3xl mb-1">👑</div>
-                    <h3 class="text-lg sm:text-xl font-black text-orange-900" id="dynamic-package-title">15 MINUT</h3>
-                    <p class="text-slate-500 text-[11px] font-bold mt-0.5">Plná porce (1× denně)</p>
+                    <div class="w-16 h-16 mx-auto mb-2 rounded-2xl bg-white/15 border-2 border-amber-300/60 shadow-inner flex items-center justify-center text-4xl">👑</div>
+                    <h3 class="text-xl sm:text-2xl font-black text-amber-300 font-baloo" id="dynamic-package-title">15 MINUT</h3>
                   </div>
-                  <div class="mt-3">
-                    <div class="text-amber-700 font-black text-xs mb-1.5" id="dynamic-package-cost">Cena: 15 hvězd ⭐</div>
-                    <button id="voucher-btn-max" onclick="buyDynamicTimePackage()" class="game-button w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-black py-2 rounded-xl border-b-3 border-orange-700 text-xs shadow-sm">
-                      Koupit Maximum
+                  <div class="mt-4">
+                    <div class="inline-flex items-center gap-1 bg-indigo-950/60 border border-amber-300/60 text-amber-300 font-black text-xs sm:text-sm px-3 py-0.5 rounded-full mb-2.5" id="dynamic-package-cost">15 ⭐</div>
+                    <button id="voucher-btn-max" onclick="buyDynamicTimePackage()" class="game-button w-full bg-emerald-400 hover:bg-emerald-300 text-indigo-950 font-black py-2.5 rounded-xl border-b-4 border-emerald-600 text-xs sm:text-sm shadow-game-btn">
+                      Koupit MAX lístek 🚀
                     </button>
                   </div>
-                </div>
-              </div>
-
-              <!-- Zlatý Noční Trezor -->
-              <div class="bg-gradient-to-r from-amber-100 via-yellow-100 to-amber-200 border-2 border-amber-400 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div class="flex items-center gap-2.5">
-                  <span class="text-2xl">🏦</span>
-                  <div>
-                    <h4 class="text-xs sm:text-sm font-black text-amber-950">Zlatý Noční Trezor (Spoření na další den)</h4>
-                    <p class="text-[11px] text-amber-900 font-bold">
-                      Denně lze přímo získat maximálně <strong>30 minut</strong>. Vše nad rámec 30 minut se automaticky ukládá sem do trezoru na další den!
-                    </p>
-                  </div>
-                </div>
-                <div class="bg-white/90 border-2 border-amber-500 px-3 py-1 rounded-xl text-center min-w-[100px]">
-                  <span class="text-[9px] font-black uppercase text-amber-800 block">V trezoru:</span>
-                  <span class="text-base font-black text-amber-600 font-baloo" id="vault-display">0 min</span>
                 </div>
               </div>
             </div>
 
             <!-- KATEGORIE 6: VÝHODY & TAJNÝ PIN (ZA 💎) -->
             <div id="store-tab-content-diamonds" class="hidden space-y-4">
-              <div class="border-b border-slate-200 pb-2 flex items-center justify-between flex-wrap gap-2">
-                <div>
-                  <h3 class="text-base sm:text-lg font-black text-slate-800 font-baloo">⏳ Speciální Výhody & Tajný PIN</h3>
-                  <p class="text-xs text-slate-500 font-bold">Rozšiř si denní herní limit nebo odemkni tajný PIN k tabletu</p>
-                </div>
-                <div class="bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-xl text-xs font-black text-indigo-900">
+              <div class="flex items-center justify-end">
+                <div class="bg-indigo-50 border-2 border-indigo-200 px-3 py-1 rounded-xl text-xs font-black text-indigo-900">
                   Dnešní přímý limit: <span id="store-current-max-limit-display" class="text-indigo-600">15 min</span>
                 </div>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-gradient-to-b from-cyan-50 to-blue-50 border-3 border-cyan-300 rounded-3xl p-4 flex flex-col justify-between shadow-sm">
+                <div class="store-card-frame store-card-frame--sky p-4 flex flex-col justify-between">
                   <div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-2xl">⏳</span>
-                      <span class="bg-cyan-500 text-white text-xs font-black px-2.5 py-0.5 rounded-full uppercase" id="diamond-rate-badge">Cena: 20 💎</span>
+                      <div class="w-12 h-12 rounded-2xl bg-white/90 border-2 border-sky-200 shadow-inner flex items-center justify-center text-2xl">⏳</div>
+                      <span class="bg-cyan-500 text-white text-xs font-black px-3 py-1 rounded-full uppercase shadow-xs" id="diamond-rate-badge">20 💎</span>
                     </div>
-                    <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo">Navýšit denní limit o +1 minutu</h4>
-                    <p class="text-xs text-slate-600 font-bold mt-1">
-                      Zvyšuje trvale denní limit pro hraní i hodnotu maximálního poukazu.
-                    </p>
+                    <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo">+1 minuta denního limitu</h4>
                   </div>
                   <button onclick="buyLimitExtension()" class="game-button mt-4 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-2.5 rounded-2xl border-b-4 border-cyan-700 text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5">
-                    <span>💎</span> Koupit +1 minutu navíc
+                    <span>💎</span> Koupit +1 minutu
                   </button>
                 </div>
 
-                <div class="bg-gradient-to-b from-amber-50 to-yellow-50 border-3 border-amber-300 rounded-3xl p-4 flex flex-col justify-between shadow-sm">
+                <div class="store-card-frame store-card-frame--amber p-4 flex flex-col justify-between">
                   <div>
                     <div class="flex items-center justify-between mb-2">
-                      <span class="text-2xl">🔐</span>
-                      <span class="bg-amber-400 text-slate-950 text-xs font-black px-2.5 py-0.5 rounded-full uppercase">Cena: 50 💎</span>
+                      <div class="w-12 h-12 rounded-2xl bg-white/90 border-2 border-amber-200 shadow-inner flex items-center justify-center text-2xl">🔐</div>
+                      <span class="bg-amber-400 text-slate-950 text-xs font-black px-3 py-1 rounded-full uppercase shadow-xs">50 💎</span>
                     </div>
                     <h4 class="text-base sm:text-lg font-black text-slate-800 font-baloo">Tajný PIN k Tabletu</h4>
-                    <p class="text-xs text-slate-600 font-bold mt-1" id="pin-card-description">
-                      Po nasbírání 50 diamantů se odemkne tajný kód pro rodičovský zámek tabletu.
-                    </p>
+                    <p class="hidden text-xs text-slate-600 font-bold mt-1" id="pin-card-description"></p>
                   </div>
                   <div id="pin-unlock-box" class="mt-4">
                     <button onclick="revealSecretPinAction()" id="btn-unlock-pin" class="game-button w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-2.5 rounded-2xl border-b-4 border-amber-600 text-xs sm:text-sm shadow-md flex items-center justify-center gap-1.5">
@@ -1791,6 +2016,7 @@
       </div>
     </div>
 
+    </div>
   </main>
 
   <!-- PŘEPRACOVANÝ 3D ŠATNÍK & KNIHOVNA VŠECH ODEMČENÝCH VĚCÍ -->
@@ -1970,7 +2196,7 @@
       <p class="text-slate-500 text-xs font-bold mt-1 mb-3">Zadej rodičovský PIN pro přístup do administrace:</p>
 
       <div id="math-challenge" class="hidden"></div>
-      <input type="password" inputmode="numeric" id="pin-input" placeholder="Zadej PIN" class="w-full text-center text-xl font-black tracking-widest py-2 px-3 rounded-2xl border-2 border-slate-300 focus:outline-none focus:border-indigo-500 bg-slate-50 mb-2.5">
+      <input type="password" inputmode="numeric" id="pin-input" placeholder="Zadej PIN" class="w-full text-center text-xl font-black text-slate-900 tracking-widest py-2 px-3 rounded-2xl border-2 border-slate-300 focus:outline-none focus:border-indigo-500 bg-slate-50 mb-2.5">
       
       <div id="pin-error" class="text-red-500 text-xs font-bold mb-2 hidden">Nesprávný PIN, zkus to znovu.</div>
 
@@ -2007,7 +2233,7 @@
         <nav class="w-44 sm:w-56 bg-slate-100/90 border-r-2 border-slate-200 p-2 sm:p-3 flex flex-col gap-1.5 flex-shrink-0 overflow-y-auto">
           <button onclick="switchAdminTab('general')" id="admin-tab-btn-general" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2 text-left">
             <span class="text-base">⚙️</span>
-            <span>Obecné & Sync</span>
+            <span>Obecné nastavení</span>
           </button>
           <button onclick="switchAdminTab('skins_admin')" id="admin-tab-btn-skins_admin" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-pink-700 hover:bg-pink-100 flex items-center gap-2 text-left">
             <span class="text-base">🎨</span>
@@ -2046,30 +2272,8 @@
         <!-- Pravý rolovatelný obsah záložek -->
         <div class="flex-grow p-3 sm:p-5 overflow-y-auto bg-white">
           
-          <!-- ZÁLOŽKA 1: OBECNÉ & SYNCHRONIZACE -->
+          <!-- ZÁLOŽKA 1: OBECNÉ NASTAVENÍ -->
           <div id="admin-tab-content-general" class="space-y-4">
-            
-            <div class="bg-gradient-to-r from-blue-50 via-indigo-50 to-cyan-50 border-3 border-indigo-400 rounded-2xl p-4 shadow-sm">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-2xl">🔄</span>
-                <h4 class="font-black text-indigo-950 text-base">Synchronizace mezi Zařízeními (Tablet ↔ Mobil ↔ PC):</h4>
-              </div>
-              <p class="text-xs text-indigo-900 font-bold mb-3">
-                Přeneste aktuální stav (diamanty, minuty, odemčené skiny, test, řadu i písmena) na druhé zařízení pomocí QR kódu nebo textového kódu pro PC:
-              </p>
-
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <button onclick="generateSyncQRModal()" class="game-button bg-indigo-600 hover:bg-indigo-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
-                  <span>📤</span> Vygenerovat QR & Kód
-                </button>
-                <button onclick="openCameraScanModal()" class="game-button bg-cyan-600 hover:bg-cyan-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
-                  <span>📷</span> Skenovat QR fotoaparátem
-                </button>
-                <button onclick="openManualCodeModal()" class="game-button bg-purple-600 hover:bg-purple-700 text-white font-black py-2.5 px-3 rounded-xl text-xs sm:text-sm shadow-sm flex items-center justify-center gap-1.5">
-                  <span>⌨️</span> Vložit kód ručně (pro PC)
-                </button>
-              </div>
-            </div>
 
             <!-- DIAMANTOVÝ TRH & HERNÍ LIMIT -->
             <div class="bg-cyan-50 border-2 border-cyan-300 rounded-2xl p-3.5">
@@ -2140,70 +2344,25 @@
               </div>
             </div>
 
-            <!-- Úprava minut -->
-            <div class="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3.5">
-              <div class="flex items-center justify-between mb-2">
-                <div>
-                  <span class="font-black text-indigo-950 text-sm sm:text-base">Kredit na tabletu:</span>
-                  <span class="text-[11px] text-indigo-600 block font-bold">Odečet uvolní dnešní limit synovi pro férové dočtení</span>
-                </div>
-                <span class="text-2xl font-black text-indigo-700 font-baloo" id="admin-balance-display">0 min</span>
-              </div>
-
-              <div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
-                <button onclick="adjustMinutes(0.5, 'Bonus od rodiče (+0.5 min)')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-                  <span>+0.5 min</span>
-                  <span class="text-[9px] font-normal opacity-90">+30 sek</span>
-                </button>
-                <button onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-                  <span>+1 min</span>
-                  <span class="text-[9px] font-normal opacity-90">+1 celá</span>
-                </button>
-                <button onclick="adjustMinutes(5, 'Bonus od rodiče (+5 min)')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-                  <span>+5 min</span>
-                  <span class="text-[9px] font-normal opacity-90">+5 balíček</span>
-                </button>
-                <button onclick="adjustMinutes(-0.5, 'Odečet rodičem (-0.5 min)')" class="bg-rose-400 hover:bg-rose-500 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-                  <span>-0.5 min</span>
-                  <span class="text-[9px] font-normal opacity-90">-30 sek</span>
-                </button>
-                <button onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="bg-rose-500 hover:bg-rose-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-                  <span>-1 min</span>
-                  <span class="text-[9px] font-normal opacity-90">-1 celá</span>
-                </button>
-                <button onclick="adjustMinutes(-5, 'Odečet rodičem (-5 min)')" class="bg-rose-600 hover:bg-rose-700 text-white font-black py-2 rounded-xl text-xs shadow-sm flex flex-col items-center">
-                  <span>-5 min</span>
-                  <span class="text-[9px] font-normal opacity-90">-5 balíček</span>
-                </button>
-              </div>
-            </div>
-
-            <!-- PŘESUN Z TREZORU DO ÚČTU -->
+            <!-- Úprava minut (stejný systém přímého zadání jako u diamantů) -->
             <div class="bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h4 class="font-black text-amber-950 text-sm sm:text-base">Zlatý Noční Trezor (Převod do Můj čas):</h4>
-                  <p class="text-[11px] text-amber-800 font-bold">Přesuň vybraný počet minut nebo celý obsah ihned k použití.</p>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xl">⭐</span>
+                    <span class="font-black text-amber-950 text-sm sm:text-base">Kredit na tabletu (přímá úprava minut):</span>
+                  </div>
+                  <span class="text-[11px] text-amber-800 block font-bold mt-0.5">Zadej přesný počet minut, který má mít syn na účtu (např. 15 nebo 38.5):</span>
                 </div>
-                <div class="bg-white px-3 py-1 rounded-xl border border-amber-400 self-start sm:self-auto">
-                  <span class="text-[11px] text-slate-500 font-bold">V trezoru je: </span>
-                  <span class="font-black text-amber-600 text-sm font-baloo" id="admin-vault-indicator">0 min</span>
-                </div>
-              </div>
 
-              <div class="flex flex-wrap items-center gap-2">
-                <div class="flex items-center gap-1 bg-white border border-amber-300 rounded-xl px-2 py-1 shadow-inner">
-                  <span class="text-[11px] font-bold text-slate-600">Počet:</span>
-                  <input type="number" id="vault-transfer-input" step="0.5" min="0.5" placeholder="2" class="w-16 text-center font-black text-indigo-900 border-b-2 border-amber-500 focus:outline-none text-xs">
-                  <span class="text-[11px] font-bold text-slate-600">min</span>
+                <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-amber-300 shadow-xs self-start sm:self-auto">
+                  <button type="button" onclick="adjustMinutes(-1, 'Odečet rodičem (-1 min)')" class="w-8 h-8 rounded-lg bg-slate-100 font-black text-slate-700 hover:bg-slate-200 flex-shrink-0">−1</button>
+                  <input type="number" step="0.5" min="0" max="9999" id="admin-minutes-direct-input" value="0" onchange="adminSetMinutesDirect(this.value)" class="w-24 text-center font-black text-amber-950 bg-amber-50 border border-amber-300 rounded-lg py-1 text-base focus:outline-none focus:border-amber-600">
+                  <span class="text-xs font-black text-amber-800">⭐ min</span>
+                  <button type="button" onclick="adjustMinutes(1, 'Bonus od rodiče (+1 min)')" class="w-8 h-8 rounded-lg bg-amber-500 font-black text-white hover:bg-amber-600 flex-shrink-0">+1</button>
                 </div>
-                <button onclick="adminTransferCustomVault()" class="game-button bg-emerald-600 hover:bg-emerald-700 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-                  <span>📥</span> Převést do Můj čas
-                </button>
-                <button onclick="adminUnlockVaultNow()" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-3 py-1.5 rounded-xl text-xs flex items-center gap-1 shadow-sm">
-                  <span>⚡</span> Převést VŠECHNO
-                </button>
               </div>
+              <span class="hidden" id="admin-balance-display">0 min</span>
             </div>
 
             <!-- POKÉMON SEGMENTY A TAJNÝ PIN -->
@@ -2220,7 +2379,7 @@
 
                 <div class="bg-white p-2.5 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Tajný PIN k tabletu (za 50 💎):</label>
-                  <input type="text" id="admin-secret-pin-input" placeholder="XXXX" maxlength="12" onchange="saveSecretPin(this.value)" class="w-full text-base font-black text-center tracking-widest bg-slate-50 border-2 border-cyan-300 rounded-xl py-1 focus:outline-none focus:border-cyan-600">
+                  <input type="text" id="admin-secret-pin-input" placeholder="XXXX" maxlength="12" onchange="saveSecretPin(this.value)" class="w-full text-base font-black text-slate-900 text-center tracking-widest bg-slate-50 border-2 border-cyan-300 rounded-xl py-1 focus:outline-none focus:border-cyan-600">
                 </div>
               </div>
             </div>
@@ -2496,14 +2655,14 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-minutes" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-amber-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-minutes" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-amber-300 bg-white">
                     <span class="text-xs font-black text-amber-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Od–Do:</label>
-                    <input type="number" step="0.5" min="0.5" max="10" id="admin-dchest-min-minutes" onchange="saveAdminDailyChestConfig()" class="w-14 text-center font-black text-xs py-1 px-1 rounded-lg border border-amber-300 bg-white">
-                    <span class="text-xs font-bold">–</span>
-                    <input type="number" step="0.5" min="0.5" max="10" id="admin-dchest-max-minutes" onchange="saveAdminDailyChestConfig()" class="w-14 text-center font-black text-xs py-1 px-1 rounded-lg border border-amber-300 bg-white">
+                    <input type="number" step="0.5" min="0.5" max="10" id="admin-dchest-min-minutes" onchange="saveAdminDailyChestConfig()" class="w-14 text-center font-black text-slate-900 text-xs py-1 px-1 rounded-lg border border-amber-300 bg-white">
+                    <span class="text-xs font-bold text-slate-600">–</span>
+                    <input type="number" step="0.5" min="0.5" max="10" id="admin-dchest-max-minutes" onchange="saveAdminDailyChestConfig()" class="w-14 text-center font-black text-slate-900 text-xs py-1 px-1 rounded-lg border border-amber-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">min</span>
                   </div>
                 </div>
@@ -2516,12 +2675,12 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-food" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-orange-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-food" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-orange-300 bg-white">
                     <span class="text-xs font-black text-orange-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Množství:</label>
-                    <input type="number" step="1" min="1" max="20" id="admin-dchest-amt-food" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-orange-300 bg-white">
+                    <input type="number" step="1" min="1" max="20" id="admin-dchest-amt-food" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-orange-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">ks 🍖</span>
                   </div>
                 </div>
@@ -2534,12 +2693,12 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-revive" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-rose-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-revive" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-rose-300 bg-white">
                     <span class="text-xs font-black text-rose-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Množství:</label>
-                    <input type="number" step="1" min="1" max="10" id="admin-dchest-amt-revive" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-rose-300 bg-white">
+                    <input type="number" step="1" min="1" max="10" id="admin-dchest-amt-revive" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-rose-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">ks ❤️‍🔥</span>
                   </div>
                 </div>
@@ -2552,12 +2711,12 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-ticket" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-emerald-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-ticket" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-emerald-300 bg-white">
                     <span class="text-xs font-black text-emerald-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Množství:</label>
-                    <input type="number" step="1" min="1" max="10" id="admin-dchest-amt-ticket" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-emerald-300 bg-white">
+                    <input type="number" step="1" min="1" max="10" id="admin-dchest-amt-ticket" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-emerald-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">ks 🎟️</span>
                   </div>
                 </div>
@@ -2570,12 +2729,12 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diasmall" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-cyan-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diasmall" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-cyan-300 bg-white">
                     <span class="text-xs font-black text-cyan-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Odměna:</label>
-                    <input type="number" step="1" min="1" max="100" id="admin-dchest-amt-diasmall" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-cyan-300 bg-white">
+                    <input type="number" step="1" min="1" max="100" id="admin-dchest-amt-diasmall" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-cyan-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">💎</span>
                   </div>
                 </div>
@@ -2588,12 +2747,12 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diamed" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-blue-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diamed" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-blue-300 bg-white">
                     <span class="text-xs font-black text-blue-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Odměna:</label>
-                    <input type="number" step="1" min="1" max="200" id="admin-dchest-amt-diamed" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-blue-300 bg-white">
+                    <input type="number" step="1" min="1" max="200" id="admin-dchest-amt-diamed" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-blue-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">💎</span>
                   </div>
                 </div>
@@ -2606,12 +2765,12 @@
                   </div>
                   <div class="sm:col-span-3 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Šance:</label>
-                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diajackpot" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-purple-300 bg-white">
+                    <input type="number" step="0.1" min="0" max="100" id="admin-dchest-chance-diajackpot" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-purple-300 bg-white">
                     <span class="text-xs font-black text-purple-800">%</span>
                   </div>
                   <div class="sm:col-span-4 flex items-center gap-1.5">
                     <label class="text-[11px] font-bold text-slate-500">Odměna:</label>
-                    <input type="number" step="1" min="1" max="500" id="admin-dchest-amt-diajackpot" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-xs py-1 px-1.5 rounded-lg border border-purple-300 bg-white">
+                    <input type="number" step="1" min="1" max="500" id="admin-dchest-amt-diajackpot" onchange="saveAdminDailyChestConfig()" class="w-16 text-center font-black text-slate-900 text-xs py-1 px-1.5 rounded-lg border border-purple-300 bg-white">
                     <span class="text-[11px] font-bold text-slate-600">💎</span>
                   </div>
                 </div>
@@ -2734,37 +2893,37 @@
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 bg-white p-3.5 rounded-2xl border border-rose-200">
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Max. povolených zápasů za den:</label>
-                  <input type="number" id="admin-pet-max-daily-battles" min="1" max="50" value="5" onchange="saveAdminPetConfig('maxDailyBattles', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-max-daily-battles" min="1" max="50" value="5" onchange="saveAdminPetConfig('maxDailyBattles', this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Diamanty 💎 za DOKONČENÝ LEVEL:</label>
-                  <input type="number" id="admin-pet-levelup-diamonds" min="1" max="50" value="3" onchange="saveAdminPetConfig('diamondsPerLevelUp', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-levelup-diamonds" min="1" max="50" value="3" onchange="saveAdminPetConfig('diamondsPerLevelUp', this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Zisk XP za vítězství:</label>
-                  <input type="number" id="admin-pet-xp-win" min="5" max="200" value="25" onchange="saveAdminPetConfig('xpPerWin', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-xp-win" min="5" max="200" value="25" onchange="saveAdminPetConfig('xpPerWin', this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Krmivo 🍖 za výhru:</label>
-                  <input type="number" id="admin-pet-win-food" min="0" max="10" value="1" onchange="saveAdminPetConfig('foodPerWin', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-win-food" min="0" max="10" value="1" onchange="saveAdminPetConfig('foodPerWin', this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Patro aktivního Peta (každé 10. = BOSS):</label>
-                  <input type="number" id="admin-pet-current-stage" min="1" max="500" value="1" onchange="adminSetArenaStage(this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-current-stage" min="1" max="500" value="1" onchange="adminSetArenaStage(this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Cena oživení (v 💎 bez kamene):</label>
-                  <input type="number" id="admin-pet-revive-cost" min="1" max="50" value="2" onchange="saveAdminPetConfig('reviveCostDiamonds', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-revive-cost" min="1" max="50" value="2" onchange="saveAdminPetConfig('reviveCostDiamonds', this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200">
                   <label class="text-[11px] font-black text-slate-700 block mb-1">Cena Lístku do Arény v Obchodě (v 💎):</label>
-                  <input type="number" id="admin-pet-ticket-cost" min="1" max="50" value="1" onchange="saveAdminPetConfig('ticketCostDiamonds', this.value)" class="w-full text-center font-black bg-white border border-rose-300 rounded-lg py-1 text-xs">
+                  <input type="number" id="admin-pet-ticket-cost" min="1" max="50" value="1" onchange="saveAdminPetConfig('ticketCostDiamonds', this.value)" class="w-full text-center font-black text-slate-900 bg-white border border-rose-300 rounded-lg py-1 text-xs">
                 </div>
 
                 <div class="p-2 bg-slate-50 rounded-xl border border-slate-200 sm:col-span-2">
@@ -2889,79 +3048,7 @@
     </div>
   </div>
 
-  <!-- MODAL 1: QR & TEXTOVÝ KÓD PRO DRUHÉ ZAŘÍZENÍ -->
-  <div id="sync-export-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-3">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-4 border-indigo-600 shadow-2xl text-center flex flex-col items-center">
-      <div class="flex items-center justify-between w-full border-b pb-2 mb-3">
-        <span class="text-sm font-black text-slate-800 flex items-center gap-1.5"><span>📤</span> Synchronizační QR & Kód</span>
-        <button onclick="closeSyncExportModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black flex items-center justify-center">✕</button>
-      </div>
-
-      <p class="text-xs text-slate-600 font-bold mb-3">
-        Namiřte kamerou z druhého mobilu nebo zkopírujte kód do PC:
-      </p>
-
-      <div class="w-full flex items-center justify-center p-4 bg-slate-50 border-2 border-indigo-200 rounded-2xl shadow-inner">
-        <div id="sync-qrcode-display" class="w-[210px] h-[210px] flex items-center justify-center mx-auto bg-white p-2 rounded-xl border border-slate-200"></div>
-      </div>
-
-      <div class="w-full mt-3 text-left">
-        <label class="block text-[10px] font-black uppercase text-slate-500 mb-0.5">Záložní kód (pro PC bez kamery):</label>
-        <div class="relative">
-          <input type="text" id="sync-export-text-input" readonly class="w-full text-xs font-mono font-black p-2 bg-slate-100 border border-slate-300 rounded-xl pr-14 text-indigo-900 select-all">
-          <button onclick="copySyncCodeAction()" class="absolute right-1 top-1 bottom-1 bg-indigo-600 text-white font-black text-[10px] px-2 rounded-lg">Kopírovat</button>
-        </div>
-      </div>
-
-      <button onclick="closeSyncExportModal()" class="game-button mt-4 w-full py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs">
-        Hotovo / Zavřít
-      </button>
-    </div>
-  </div>
-
-  <!-- MODAL 2: FOTOAPARÁT SKENER PRO NAČTENÍ QR KÓDU -->
-  <div id="sync-camera-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-4 border-4 border-cyan-500 shadow-2xl text-center flex flex-col items-center">
-      <div class="flex items-center justify-between w-full border-b pb-2 mb-2">
-        <span class="text-sm font-black text-slate-800 flex items-center gap-1.5"><span>📷</span> Naskenovat QR fotoaparátem</span>
-        <button onclick="closeCameraScanModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black flex items-center justify-center">✕</button>
-      </div>
-
-      <p class="text-xs text-slate-600 font-bold mb-2">Namiřte hledáček na QR kód zobrazený na tabletu:</p>
-      <div id="sync-camera-scanner-view" class="w-full aspect-square bg-black rounded-2xl overflow-hidden border-2 border-cyan-400"></div>
-
-      <div id="sync-camera-status" class="text-xs font-bold text-cyan-800 mt-2">
-        Spouštím kameru... 🎥
-      </div>
-
-      <button onclick="closeCameraScanModal()" class="game-button mt-3 w-full py-2.5 rounded-xl bg-slate-800 text-white font-black text-xs">
-        Zrušit skenování
-      </button>
-    </div>
-  </div>
-
-  <!-- MODAL 3: RUČNÍ ZADÁNÍ KÓDU -->
-  <div id="sync-manual-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-3xl max-w-sm w-full p-5 border-4 border-purple-600 shadow-2xl text-center flex flex-col items-center">
-      <div class="flex items-center justify-between w-full border-b pb-2 mb-3">
-        <span class="text-sm font-black text-slate-800 flex items-center gap-1.5"><span>⌨️</span> Vložit synchronizační kód</span>
-        <button onclick="closeManualCodeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black flex items-center justify-center">✕</button>
-      </div>
-
-      <p class="text-xs text-slate-600 font-bold mb-2 leading-relaxed">
-        Vložte kód vygenerovaný na tabletu a klikněte na Nahrát:
-      </p>
-
-      <textarea id="sync-manual-textarea" rows="4" placeholder="Vložte sem kód..." class="w-full font-mono text-xs font-bold p-3 bg-slate-50 border-2 border-purple-300 rounded-xl focus:outline-none focus:border-purple-600 text-indigo-950"></textarea>
-
-      <div class="flex gap-2 w-full mt-3">
-        <button onclick="closeManualCodeModal()" class="w-1/2 py-2.5 rounded-xl bg-slate-200 text-slate-700 font-black text-xs">Zrušit</button>
-        <button onclick="submitManualSyncCode()" class="w-1/2 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-black text-xs shadow-md">Nahrát data 📥</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL 4: PŘEHLED AKTIVNÍHO ÚČTU & CLOUD SYNCHRONIZACE -->
+  <!-- MODAL: PŘEHLED AKTIVNÍHO ÚČTU & CLOUD SYNCHRONIZACE -->
   <div id="cloud-env-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl max-w-md w-full p-5 border-4 border-indigo-500 shadow-2xl flex flex-col gap-3">
       <div class="flex items-center justify-between w-full border-b pb-2">
@@ -2990,11 +3077,11 @@
   </div>
 
   <!-- Načtení všech modulů v přesném pořadí závislostí (s cache-busting verzí pro GitHub Pages) -->
-  <script src="data.js?v=7.0"></script>
-  <script src="audio.js?v=7.0"></script>
-  <script src="wardrobe.js?v=7.0"></script>
-  <script src="clocks.js?v=7.0"></script>
-  <script src="petSystem.js?v=7.0"></script>
-  <script src="app.js?v=7.0"></script>
+  <script src="data.js?v=7.1"></script>
+  <script src="audio.js?v=7.1"></script>
+  <script src="wardrobe.js?v=7.1"></script>
+  <script src="clocks.js?v=7.1"></script>
+  <script src="petSystem.js?v=7.1"></script>
+  <script src="app.js?v=7.1"></script>
 </body>
 </html>

@@ -1247,14 +1247,14 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     }
 
-    if (candidates.length === 0 && typeof LEVEL_4_TWO_SYLLABLE_WORDS !== 'undefined') {
-      LEVEL_4_TWO_SYLLABLE_WORDS.slice(0, 15).forEach(w => {
+    if (candidates.length === 0) {
+      activeLetters.forEach(ch => {
         candidates.push({
           subject: 'reading',
           difficultyLabel: 'Silný útok • Čtení',
-          promptText: w.text,
-          subLabel: 'Dvouslabičné slovo',
-          signature: `reading:${w.text}`
+          promptText: ch,
+          subLabel: 'Písmeno',
+          signature: `reading:${ch}`
         });
       });
     }
@@ -1283,14 +1283,14 @@ function buildReadingCandidatesForAttack(attackType) {
       });
     }
 
-    if (candidates.length === 0 && typeof LEVEL_3_CVC_WORDS !== 'undefined') {
-      LEVEL_3_CVC_WORDS.slice(0, 15).forEach(w => {
+    if (candidates.length === 0) {
+      activeLetters.forEach(ch => {
         candidates.push({
           subject: 'reading',
           difficultyLabel: 'Lehký útok • Čtení',
-          promptText: w.text,
-          subLabel: 'Jednoslabičné slovo',
-          signature: `reading:${w.text}`
+          promptText: ch,
+          subLabel: 'Písmeno',
+          signature: `reading:${ch}`
         });
       });
     }
@@ -2244,41 +2244,45 @@ function renderStorePetsUI() {
   if (!grid) return;
   grid.innerHTML = '';
 
+  const petFrameThemes = {
+    pikachu: 'store-card-frame--amber',
+    bulbasaur: 'store-card-frame--emerald',
+    sonic: 'store-card-frame--sky',
+    charmander: 'store-card-frame--orange',
+    mewtwo: 'store-card-frame--purple'
+  };
+
   PETS_DATABASE.forEach(pet => {
     const pState = ps.pets[pet.id];
     const price = getPetPrice(pet.id);
     const isUnlocked = pState && pState.unlocked;
     const isActive = isUnlocked && ps.activePetId === pet.id;
-    const reqXp = getXpRequiredForNextLevel(pState ? pState.level : 1);
-    const petStage = pState ? (pState.currentStage || 1) : 1;
+    const baseFrame = petFrameThemes[pet.id] || 'store-card-frame--indigo';
+    const frameClass = isActive
+      ? 'store-card-frame store-card-frame--active'
+      : isUnlocked
+        ? 'store-card-frame store-card-frame--emerald'
+        : `store-card-frame ${baseFrame}`;
 
     const card = document.createElement('div');
-    card.className = `p-4 rounded-3xl border-3 bg-gradient-to-b ${pet.cardBg} bg-white flex flex-col justify-between text-center shadow-md transition-all ${
-      isActive ? `${pet.borderColor} ring-4 ring-amber-300` : isUnlocked ? 'border-emerald-300' : 'border-slate-200'
-    }`;
+    card.className = `${frameClass} p-3 flex flex-col justify-between items-center text-center`;
 
     card.innerHTML = `
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full ${pet.badgeClass}">${pet.element}</span>
-          <span class="text-xs font-black text-slate-700">${isUnlocked ? `Lv.${pState.level} • Patro ${petStage}` : `🔒 ${price} 💎`}</span>
-        </div>
-        <div class="w-24 h-24 mx-auto my-2 flex items-center justify-center ${!isUnlocked ? ' opacity-85' : ''}">
+      <div class="w-full flex flex-col items-center">
+        <div class="w-20 h-20 sm:w-24 sm:h-24 mx-auto my-1 flex items-center justify-center rounded-2xl bg-white/80 border border-white/90 shadow-inner ${!isUnlocked ? 'opacity-90' : ''}">
           ${pet.svg}
         </div>
-        <h4 class="text-base font-black text-slate-800 font-baloo">${pet.name}</h4>
-        <p class="text-[11px] text-slate-600 font-bold mt-1">${pet.description}</p>
-        <div class="mt-2 text-[10px] font-black text-indigo-900 bg-white/80 rounded-xl py-1 px-2 border border-indigo-100">
-          ⚡ ${pet.lightAttackName} • 🔥 ${pet.heavyAttackName}
-        </div>
+        <span class="mt-1.5 inline-flex items-center gap-1 text-xs font-black px-3 py-0.5 rounded-full bg-white/95 border border-slate-200 text-slate-800 shadow-2xs whitespace-nowrap">
+          ${isUnlocked ? `Lv.${pState.level} ⭐` : `${price} 💎`}
+        </span>
       </div>
-      <div class="mt-3">
+      <div class="w-full mt-2.5">
         ${
           isActive
-            ? `<button onclick="openArenaView()" class="game-button w-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-2 rounded-xl text-xs shadow-sm">⚔️ VSTOUPIT DO ARÉNY</button>`
+            ? `<button onclick="openArenaView()" class="game-button w-full bg-amber-400 hover:bg-amber-500 text-amber-950 font-black py-2 rounded-xl border-b-4 border-amber-600 text-xs shadow-sm">⚔️ Aréna</button>`
             : isUnlocked
-              ? `<button onclick="equipPetFromStore('${pet.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl text-xs shadow-sm">Zvolit parťáka (Lv.${pState.level})</button>`
-              : `<button onclick="buyPetFromStore('${pet.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-2 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Odemknout za ${price}</span> 💎</button>`
+              ? `<button onclick="equipPetFromStore('${pet.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-2 rounded-xl border-b-4 border-emerald-700 text-xs shadow-sm">Zvolit</button>`
+              : `<button onclick="buyPetFromStore('${pet.id}')" class="game-button w-full bg-gradient-to-b from-cyan-500 to-sky-600 hover:from-cyan-600 hover:to-sky-700 text-white font-black py-2 rounded-xl border-b-4 border-sky-800 text-xs shadow-sm">Koupit</button>`
         }
       </div>
     `;
@@ -2479,12 +2483,12 @@ function updateAdminPetsUI() {
       <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto justify-end">
         <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-200">
           <span class="text-[10px] font-bold text-slate-500">Cena:</span>
-          <input type="number" min="0" max="200" value="${price}" onchange="adminSetPetPrice('${pet.id}', this.value)" class="w-11 text-center font-black bg-white border border-slate-300 rounded px-1 py-0.5 text-xs">
+          <input type="number" min="0" max="200" value="${price}" onchange="adminSetPetPrice('${pet.id}', this.value)" class="w-11 text-center font-black text-slate-900 bg-white border border-slate-300 rounded px-1 py-0.5 text-xs">
           <span>💎</span>
         </div>
         <div class="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
           <span class="text-[10px] font-bold text-amber-800">Patro:</span>
-          <input type="number" min="1" max="999" value="${petStage}" onchange="adminSetPetStage('${pet.id}', this.value)" class="w-12 text-center font-black bg-white border border-amber-300 rounded px-1 py-0.5 text-xs">
+          <input type="number" min="1" max="999" value="${petStage}" onchange="adminSetPetStage('${pet.id}', this.value)" class="w-12 text-center font-black text-slate-900 bg-white border border-amber-300 rounded px-1 py-0.5 text-xs">
         </div>
         <button onclick="adminAdjustPetLevel('${pet.id}', 1)" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-black px-2 py-1 rounded-lg text-[10px]">+1 Lvl</button>
         <button onclick="adminAdjustPetLevel('${pet.id}', -1)" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-black px-2 py-1 rounded-lg text-[10px]">-1 Lvl</button>

@@ -157,8 +157,8 @@ function createDefaultDailyQuests() {
   return [
     {
       id: 'q_daily_all',
-      title: 'Denní Výzva: Čtení & Matematika (16× cvičení)',
-      desc: 'Splň dohromady 16 jakýchkoliv cvičení ze Čtení nebo Matematiky (písmenka, slabiky, slova, věty, hláskování, mince, porovnávání, řada, počítadlo, rozklad nebo slovní úlohy – bez omalovánky) a získej alespoň 15 min odměn za hraní.',
+      title: 'Denní výzva',
+      desc: '',
       icon: '🎯',
       target: 16,
       progress: 0,
@@ -168,8 +168,8 @@ function createDefaultDailyQuests() {
     },
     {
       id: 'q_test',
-      title: 'Denní TEST',
-      desc: 'Dokonči dnešní velký denní test (odměna je přímo v testu).',
+      title: 'Denní test',
+      desc: '',
       icon: '📝',
       target: 1,
       progress: 0,
@@ -179,8 +179,8 @@ function createDefaultDailyQuests() {
     },
     {
       id: 'q_arena',
-      title: 'Boj s pety (5 zápasů)',
-      desc: 'Odbojuj dnes 5 zápasů v Pet Aréně (odměna je přímo v boji).',
+      title: 'Boj s pety',
+      desc: '',
       icon: '⚔️',
       target: 5,
       progress: 0,
@@ -190,8 +190,8 @@ function createDefaultDailyQuests() {
     },
     {
       id: 'q_coloring',
-      title: 'Vymalovánka',
-      desc: 'Vybarvi dnes 1 celý obrázek Pokémona v omalovánce (odměna je přímo za vybarvení).',
+      title: 'Omalovánka',
+      desc: '',
       icon: '🎨',
       target: 1,
       progress: 0,
@@ -231,6 +231,7 @@ let state = {
   optimizeReadingTarget: 15,
   optimizeMathTarget: 15,
   letterCase: 'upper',
+  level5SubMode: 'shluky',
   showSyllableArcs: false,
   spellingMode: 'classic',
   reverseSpellingSpeed: 1,
@@ -763,17 +764,17 @@ function updateEnvironmentBadgeUI() {
 
   if (!currentLoggedInUser) {
     badge.textContent = '🔒 NEPŘIHLÁŠEN';
-    badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-slate-200 text-slate-700 border-slate-300';
+    badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider px-2.5 h-[32px] rounded-xl border whitespace-nowrap flex items-center justify-center bg-slate-200 text-slate-700 border-slate-300';
     return;
   }
 
   if (currentLoggedInUser.isTestAccount) {
-    badge.textContent = `🧪 ÚČET: ${currentLoggedInUser.username.toUpperCase()}`;
-    badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300';
+    badge.textContent = `🧪 ${currentLoggedInUser.username.toUpperCase()}`;
+    badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider px-2.5 h-[32px] rounded-xl border whitespace-nowrap flex items-center justify-center bg-amber-100 text-amber-900 border-amber-300';
     badge.title = 'Testovací účet (5 000 💎, vše odemčeno) – ukládá se do vlastního profilu "test" v GitHub Gistu, Míšův účet "misa" je 100% oddělen a chráněn.';
   } else {
-    badge.textContent = `🟢 ÚČET: ${currentLoggedInUser.username.toUpperCase()}`;
-    badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-emerald-100 text-emerald-900 border-emerald-400';
+    badge.textContent = `🟢 ${currentLoggedInUser.username.toUpperCase()}`;
+    badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[11px] font-black uppercase tracking-wider px-2.5 h-[32px] rounded-xl border whitespace-nowrap flex items-center justify-center bg-emerald-100 text-emerald-900 border-emerald-400';
     badge.title = `Hráčský účet "${currentLoggedInUser.username}" – automatické ukládání do localStorage i cloudu (GitHub Gist).`;
   }
 }
@@ -809,18 +810,25 @@ if (typeof window !== 'undefined' && window.visualViewport) {
 
 function showCloudSaveToast(message, icon = '💾', borderClass = 'border-emerald-400') {
   const toast = document.getElementById('cloud-save-toast');
+  const card = document.getElementById('cloud-save-toast-card');
   const iconEl = document.getElementById('cloud-save-toast-icon');
   const textEl = document.getElementById('cloud-save-toast-text');
   if (!toast || !textEl) return;
 
   if (iconEl) iconEl.textContent = icon;
   textEl.textContent = message;
-  toast.className = `fixed top-14 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-100 translate-y-0 transition-all duration-300 flex items-center gap-2 bg-slate-900 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
+  if (card) {
+    card.className = `center-popup-enter bg-gradient-to-b from-white via-emerald-50 to-teal-50 text-slate-800 border-4 ${borderClass} px-6 py-4 rounded-3xl shadow-2xl flex flex-col items-center text-center gap-1.5 max-w-xs w-full`;
+  }
+  toast.className = 'fixed inset-0 z-[85] pointer-events-none flex items-center justify-center p-4 bg-slate-950/25 backdrop-blur-[1px]';
 
   if (cloudToastHideTimer) clearTimeout(cloudToastHideTimer);
   cloudToastHideTimer = setTimeout(() => {
-    toast.className = `hidden fixed top-14 left-1/2 -translate-x-1/2 z-[70] pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 items-center gap-2 bg-slate-900 text-white border-2 ${borderClass} px-4 py-2 rounded-2xl shadow-xl text-xs sm:text-sm font-black`;
-  }, 2600);
+    if (card) card.classList.add('center-popup-exit');
+    setTimeout(() => {
+      toast.className = 'hidden fixed inset-0 z-[85] pointer-events-none items-center justify-center p-4';
+    }, 200);
+  }, 1900);
 }
 
 function isValidGameStateObject(obj) {
@@ -1760,25 +1768,17 @@ function checkAndHandleDailyResets() {
     state.testDoneToday = false;
   }
 
+  if ((state.vaultBalance || 0) > 0) {
+    const unlocked = state.vaultBalance;
+    state.minutesBalance = Math.round((state.minutesBalance + unlocked) * 100) / 100;
+    state.vaultBalance = 0.0;
+  }
+
   if (state.dailyEarnedDate !== today) {
     state.dailyEarnedDate = today;
     state.dailyEarnedToday = 0.0;
     state.dailyReadingEarnedToday = 0.0;
     state.dailyMathEarnedToday = 0.0;
-
-    if ((state.vaultBalance || 0) > 0) {
-      const unlocked = state.vaultBalance;
-      state.minutesBalance = Math.round((state.minutesBalance + unlocked) * 100) / 100;
-      state.vaultBalance = 0.0;
-      state.history.unshift({
-        id: Date.now(),
-        time: '00:01',
-        date: new Date().toLocaleDateString('cs-CZ'),
-        type: 'vault_unlocked',
-        minutes: unlocked,
-        note: `Noční trezor odemčen novým dnem (+${formatMinutes(unlocked)})`
-      });
-    }
   }
 
   if (state.vouchersBoughtDate !== today) {
@@ -2165,28 +2165,168 @@ function czechNounForm(n, one, twoToFour, fivePlus) {
   return fivePlus;
 }
 
-function extractUniqueLetters(text) {
-  const upper = text.toUpperCase();
-  const letters = new Set();
+const CZECH_VOWEL_SET = new Set(['A', 'Á', 'E', 'É', 'Ě', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Ů', 'Y', 'Ý']);
+const CZECH_CONSONANT_SET = new Set([
+  'B', 'C', 'Č', 'D', 'Ď', 'F', 'G', 'H', 'CH', 'J', 'K', 'L', 'M',
+  'N', 'Ň', 'P', 'Q', 'R', 'Ř', 'S', 'Š', 'T', 'Ť', 'V', 'W', 'X', 'Z', 'Ž'
+]);
+
+// Vyloučení slov, kde se O a U potkávají na švu předpony a kořene (po-u..., do-u..., samo-uk) a netvoří dvojhlásku OU v jedné slabice
+const NON_DIPHTHONG_OU_PREFIX_PATTERNS = /^(NE)?(POUČ|POUKÁZ|POUKAZ|POULIČ|POUMÝ|POUSM|POUŽI|POUŽÍ|POUVAŽ|POUZAV|POUZD|DOUČ|DOUPRAV|DOUZOV|PROUČ|SAMOUK)/i;
+
+function tokenizeCzechWord(text) {
+  if (!text || typeof text !== 'string') return [];
+  const upper = text.trim().toUpperCase();
+  const tokens = [];
   let i = 0;
   while (i < upper.length) {
     if (i < upper.length - 1 && upper.substring(i, i + 2) === 'CH') {
-      letters.add('CH');
+      tokens.push('CH');
       i += 2;
       continue;
     }
-    const char = upper[i];
-    if (FULL_CZECH_ALPHABET.includes(char)) letters.add(char);
+    const ch = upper[i];
+    if (FULL_CZECH_ALPHABET.includes(ch)) {
+      tokens.push(ch);
+    }
     i++;
   }
-  return Array.from(letters);
+  return tokens;
+}
+
+function extractUniqueLetters(text) {
+  return Array.from(new Set(tokenizeCzechWord(text)));
+}
+
+/**
+ * 1. Pravidla pro kategorii „Shluky“ (Souhláskové shluky):
+ * Spojení dvou nebo více souhlásek stojících těsně vedle sebe v rámci jednoho slova
+ * bez samohlásky (a, á, e, é, ě, i, í, o, ó, u, ú, ů, y, ý) mezi nimi.
+ * Pokud slovo obsahuje pouze střídající se souhlásky a samohlásky (např. pa-la-ta), vrací false.
+ */
+function hasConsonantCluster(word) {
+  if (!word || typeof word !== 'string') return false;
+  const clean = word.trim().toUpperCase();
+  if (!clean || clean.includes(' ')) return false;
+
+  const tokens = tokenizeCzechWord(clean);
+  if (tokens.length < 2) return false;
+
+  let consecutiveConsonants = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    const tk = tokens[i];
+    if (CZECH_VOWEL_SET.has(tk)) {
+      consecutiveConsonants = 0;
+    } else if (CZECH_CONSONANT_SET.has(tk)) {
+      consecutiveConsonants++;
+      if (consecutiveConsonants >= 2) {
+        return true;
+      }
+    } else {
+      consecutiveConsonants = 0;
+    }
+  }
+  return false;
+}
+
+/**
+ * 2. Pravidla pro kategorii „OU“ (Dvojhláska OU):
+ * Slovo musí obsahovat dvojhlásku „ou“ (O bezprostředně následované U v jedné slabice,
+ * např. kocour, louka, zoubek, ouško). Slova s odděleným O a U nebo na švu předpony po-u/do-u vrací false.
+ */
+function hasDiphthongOU(word) {
+  if (!word || typeof word !== 'string') return false;
+  const clean = word.trim().toUpperCase();
+  if (!clean || clean.includes(' ')) return false;
+  if (NON_DIPHTHONG_OU_PREFIX_PATTERNS.test(clean)) return false;
+
+  const tokens = tokenizeCzechWord(clean);
+  for (let i = 0; i < tokens.length - 1; i++) {
+    if (tokens[i] === 'O' && tokens[i + 1] === 'U') {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * 3. Společné pravidlo: Omezení výhradně na povolená písmena v admin módu.
+ */
+function isWordAllowedByAdminLetters(word, activeLetters = state.activeLetters) {
+  if (!word || typeof word !== 'string') return false;
+  if (!Array.isArray(activeLetters) || activeLetters.length === 0) return false;
+  const activeSet = new Set(activeLetters.map(l => String(l).trim().toUpperCase()));
+  const tokens = tokenizeCzechWord(word);
+  if (tokens.length === 0) return false;
+  return tokens.every(tk => activeSet.has(tk));
+}
+
+function buildStrictLevel5Pools() {
+  const allCandidateSources = [
+    ...(typeof RAW_LEVEL_5_SHLUKY_WORDS !== 'undefined' ? RAW_LEVEL_5_SHLUKY_WORDS : []),
+    ...(typeof RAW_LEVEL_5_OU_WORDS !== 'undefined' ? RAW_LEVEL_5_OU_WORDS : []),
+    ...(typeof RAW_LEVEL_5_WORDS !== 'undefined' ? RAW_LEVEL_5_WORDS : []),
+    ...(typeof RAW_LEVEL_4_WORDS !== 'undefined' ? RAW_LEVEL_4_WORDS : []),
+    ...(typeof RAW_LEVEL_6_WORDS !== 'undefined' ? RAW_LEVEL_6_WORDS : []),
+    ...(typeof SPELLING_WORDS_DATABASE !== 'undefined'
+      ? SPELLING_WORDS_DATABASE.map(item => ({ t: item.w, e: item.e }))
+      : [])
+  ];
+
+  const seenWords = new Set();
+  const uniqueEntries = [];
+
+  allCandidateSources.forEach(entry => {
+    const cleanText = (entry && entry.t ? String(entry.t) : '').trim().toUpperCase();
+    if (!cleanText || cleanText.includes(' ') || seenWords.has(cleanText)) return;
+    seenWords.add(cleanText);
+    uniqueEntries.push({
+      text: cleanText,
+      emoji: entry.e || '',
+      letters: extractUniqueLetters(cleanText),
+      isShluk: hasConsonantCluster(cleanText),
+      isOU: hasDiphthongOU(cleanText)
+    });
+  });
+
+  const shlukyWords = uniqueEntries.filter(w => w.isShluk);
+  const ouWords = uniqueEntries.filter(w => w.isOU);
+  const combinedWords = uniqueEntries.filter(w => w.isShluk || w.isOU);
+
+  return { shlukyWords, ouWords, combinedWords };
 }
 
 const LEVEL_3_CVC_WORDS = RAW_LEVEL_3_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
 const LEVEL_4_TWO_SYLLABLE_WORDS = RAW_LEVEL_4_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
-const LEVEL_5_CLUSTERS = RAW_LEVEL_5_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
+const STRICT_LEVEL_5_POOLS = buildStrictLevel5Pools();
+const LEVEL_5_SHLUKY_WORDS = STRICT_LEVEL_5_POOLS.shlukyWords;
+const LEVEL_5_OU_WORDS = STRICT_LEVEL_5_POOLS.ouWords;
+const LEVEL_5_CLUSTERS = STRICT_LEVEL_5_POOLS.combinedWords;
 const LEVEL_6_SOFT = RAW_LEVEL_6_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
 const LEVEL_7_SENTENCES = RAW_LEVEL_7_SENTENCES.map(s => ({ text: s.t, emoji: s.e, letters: extractUniqueLetters(s.t) }));
+
+function getFilteredLevel5Pool(subMode = state.level5SubMode || 'shluky', activeLetters = state.activeLetters) {
+  const normalizedMode = (subMode === 'ou' || subMode === 'all') ? subMode : 'shluky';
+  if (normalizedMode === 'shluky') {
+    return LEVEL_5_SHLUKY_WORDS.filter(w =>
+      hasConsonantCluster(w.text) &&
+      isWordAllowedByAdminLetters(w.text, activeLetters) &&
+      isItemFormedByActive(w.letters)
+    );
+  }
+  if (normalizedMode === 'ou') {
+    return LEVEL_5_OU_WORDS.filter(w =>
+      hasDiphthongOU(w.text) &&
+      isWordAllowedByAdminLetters(w.text, activeLetters) &&
+      isItemFormedByActive(w.letters)
+    );
+  }
+  return LEVEL_5_CLUSTERS.filter(w =>
+    (hasConsonantCluster(w.text) || hasDiphthongOU(w.text)) &&
+    isWordAllowedByAdminLetters(w.text, activeLetters) &&
+    isItemFormedByActive(w.letters)
+  );
+}
 
 let coloringState = {
   pokemon: null,
@@ -3452,24 +3592,29 @@ function generateLessonItems() {
 
   spellingView.classList.add('hidden');
   coloringView.classList.add('hidden');
-  generalControlBar.classList.remove('hidden');
+  state.displayMode = 'grid';
   document.getElementById('reading-review-prompt').textContent = 'Hodnocení rodiče (Poslechni si čtení syna):';
   document.getElementById('reading-retry-subtitle').textContent = 'Nová sada slov';
   document.getElementById('reading-success-title').textContent = 'PŘEČTENO SPRÁVNĚ!';
 
   let pool = [];
   if (subj === 'reading') {
+    generalControlBar.classList.remove('hidden');
     readingReviewPanel.classList.remove('hidden');
     mathEvalPanel.classList.add('hidden');
 
+    syncReadingTileCountUI();
+    syncLevel5SubModeUI();
+
     if (lvl === 1) pool = state.activeLetters.map(letter => ({ text: letter, emoji: '' }));
     else if (lvl === 2) pool = generatePedagogicalOpenSyllables();
-    else if (lvl === 3) pool = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters));
-    else if (lvl === 4) pool = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters));
-    else if (lvl === 5) pool = LEVEL_5_CLUSTERS.filter(w => isItemFormedByActive(w.letters));
-    else if (lvl === 6) pool = LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters));
+    else if (lvl === 3) pool = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters) && isWordAllowedByAdminLetters(w.text));
+    else if (lvl === 4) pool = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters) && isWordAllowedByAdminLetters(w.text));
+    else if (lvl === 5) pool = getFilteredLevel5Pool(state.level5SubMode || 'shluky', state.activeLetters);
+    else if (lvl === 6) pool = LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters) && isWordAllowedByAdminLetters(w.text));
     else if (lvl === 7) pool = LEVEL_7_SENTENCES.filter(sen => isItemFormedByActive(sen.letters));
   } else {
+    generalControlBar.classList.add('hidden');
     readingReviewPanel.classList.add('hidden');
     mathEvalPanel.classList.remove('hidden');
 
@@ -3484,6 +3629,8 @@ function generateLessonItems() {
   if (!pool || pool.length === 0) {
     gridView.classList.add('hidden');
     flashView.classList.add('hidden');
+    readingReviewPanel.classList.add('hidden');
+    updateEmptyNoticeForContext(subj, lvl);
     emptyNotice.classList.remove('hidden');
     state.currentItems = [];
     return;
@@ -3493,7 +3640,7 @@ function generateLessonItems() {
 
   const desiredCount = (subj === 'reading') 
     ? (state.gridCardCount || 8) 
-    : (lvl === 5 ? 4 : (lvl === 6 ? 3 : 4));
+    : (lvl === 6 ? 3 : 4);
 
   const { items } = selectStrictBatch(pool, desiredCount, subj, lvl);
   state.currentItems = items;
@@ -3799,29 +3946,31 @@ function setSubject(newSubj) {
   const mathEvalPanel = document.getElementById('math-eval-panel');
 
   // Všechna tlačítka hodíme do výchozího stavu
-  if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnTest) btnTest.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+  if (btnReading) btnReading.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnMath) btnMath.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnClocks) btnClocks.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnTest) btnTest.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-purple-700 hover:bg-purple-100 relative whitespace-nowrap';
 
   if (newSubj === 'reading') {
-    if (btnReading) btnReading.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-sky-500 text-white shadow-sm';
+    if (btnReading) btnReading.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-sky-500 text-white shadow-sm whitespace-nowrap';
     if (readingTabs) readingTabs.classList.remove('hidden');
     if (mathTabs) mathTabs.classList.add('hidden');
     if (generalControlBar) generalControlBar.classList.remove('hidden');
     if (readingReviewPanel) readingReviewPanel.classList.remove('hidden');
     if (mathEvalPanel) mathEvalPanel.classList.add('hidden');
   } else {
-    if (btnMath) btnMath.className = 'h-full px-2.5 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
+    if (btnMath) btnMath.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-amber-500 text-white shadow-sm whitespace-nowrap';
     if (mathTabs) mathTabs.classList.remove('hidden');
     if (readingTabs) readingTabs.classList.add('hidden');
-    if (generalControlBar) generalControlBar.classList.remove('hidden');
+    if (generalControlBar) generalControlBar.classList.add('hidden');
     if (mathEvalPanel) mathEvalPanel.classList.remove('hidden');
     if (readingReviewPanel) readingReviewPanel.classList.add('hidden');
   }
 
   const clockContainer = document.getElementById('content-grid-view');
   if (typeof showView === 'function') showView('learn');
+  const boardFrame = document.getElementById('main-game-board-frame');
+  if (boardFrame) boardFrame.setAttribute('data-board-mode', newSubj === 'math' ? 'math' : 'reading');
   if (typeof generateLessonItems === 'function') generateLessonItems();
 }
 
@@ -3831,12 +3980,14 @@ function setClockView() {
   const btnClocks = document.getElementById('subject-btn-clocks');
   const btnTest = document.getElementById('subject-btn-test');
 
-  if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-amber-500 text-white shadow-sm';
-  if (btnTest) btnTest.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-purple-700 hover:bg-purple-100 relative';
+  if (btnReading) btnReading.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnMath) btnMath.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnClocks) btnClocks.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-amber-500 text-white shadow-sm whitespace-nowrap';
+  if (btnTest) btnTest.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-purple-700 hover:bg-purple-100 relative whitespace-nowrap';
 
   if (typeof showView === 'function') showView('learn');
+  const boardFrame = document.getElementById('main-game-board-frame');
+  if (boardFrame) boardFrame.setAttribute('data-board-mode', 'clocks');
   
   const readingTabs = document.getElementById('reading-tabs-container');
   const mathTabs = document.getElementById('math-tabs-container');
@@ -3875,10 +4026,11 @@ function switchLevel(lvl) {
     const btn = document.getElementById(`lvl-btn-${i}`);
     if (btn) {
       if (i === lvl) {
-        btn.className = 'lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700 min-w-[105px] sm:min-w-0 flex-shrink-0';
+        btn.className = 'lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-sky-500 text-white shadow-game-btn border-b-4 border-sky-700 min-w-[115px] sm:min-w-0 flex-shrink-0 whitespace-nowrap';
         btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-200 leading-tight';
       } else {
-        btn.className = 'lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-sky-50 border-2 border-slate-200 min-w-[105px] sm:min-w-0 flex-shrink-0';
+        const borderClass = (i === 8) ? 'border-2 border-purple-300' : 'border-2 border-slate-200';
+        btn.className = `lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-sky-50 ${borderClass} min-w-[115px] sm:min-w-0 flex-shrink-0 whitespace-nowrap`;
         btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-600 leading-tight';
       }
     }
@@ -3896,11 +4048,13 @@ function switchMathLevel(lvl) {
     const btn = document.getElementById(`math-lvl-btn-${i}`);
     if (btn) {
       if (i === lvl) {
-        btn.className = 'math-lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-amber-500 text-white shadow-game-btn border-b-4 border-amber-700 min-w-[115px] sm:min-w-0 flex-shrink-0';
+        btn.className = 'math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-amber-500 text-white shadow-game-btn border-b-4 border-amber-700 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap';
         btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-200 leading-tight';
       } else {
-        btn.className = 'math-lvl-btn py-1 px-2 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[115px] sm:min-w-0 flex-shrink-0';
-        btn.querySelector('span:last-child').className = 'text-[9px] font-bold text-amber-600 leading-tight';
+        btn.className = 'math-lvl-btn h-[44px] py-1 px-1.5 rounded-xl font-black text-xs flex flex-col items-center justify-center gap-0.5 transition-all bg-white text-slate-700 hover:bg-amber-50 border-2 border-slate-200 min-w-[125px] sm:min-w-0 flex-shrink-0 whitespace-nowrap';
+        btn.querySelector('span:last-child').className = (i === 7)
+          ? 'text-[9px] font-bold text-cyan-600 leading-tight'
+          : 'text-[9px] font-bold text-amber-600 leading-tight';
       }
     }
   });
@@ -3934,35 +4088,114 @@ function setLetterCase(caseMode) {
 }
 
 function setDisplayMode(mode) {
-  state.displayMode = mode;
+  state.displayMode = 'grid';
   saveState();
-
-  const gridBtn = document.getElementById('mode-btn-grid');
-  const flashBtn = document.getElementById('mode-btn-flash');
-
-  if (mode === 'grid') {
-    gridBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm';
-    flashBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200';
-  } else {
-    flashBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm';
-    gridBtn.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200';
-  }
   renderCurrentContent();
 }
 
-function setGridCount(count) {
-  state.gridCardCount = count;
-  saveState();
-
+function syncReadingTileCountUI() {
+  const isSentence = (state.subject === 'reading' && state.currentLevel === 7);
+  const btn4 = document.getElementById('count-btn-4');
+  const btn6 = document.getElementById('count-btn-6');
   const btn8 = document.getElementById('count-btn-8');
   const btn10 = document.getElementById('count-btn-10');
-  if (count === 8) {
-    btn8.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
-    btn10.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
-  } else {
-    btn10.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
-    btn8.className = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
+
+  if (btn4) {
+    if (isSentence) {
+      btn4.classList.remove('hidden');
+    } else {
+      btn4.classList.add('hidden');
+    }
   }
+
+  const validCounts = isSentence ? [4, 6, 8, 10] : [6, 8, 10];
+  if (!validCounts.includes(state.gridCardCount)) {
+    state.gridCardCount = isSentence ? 4 : 6;
+  }
+
+  const activeClass = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all bg-emerald-500 text-white shadow-sm';
+  const inactiveClass = 'px-2 py-0.5 rounded-lg text-xs font-black transition-all text-emerald-900 hover:bg-emerald-200';
+
+  if (btn4 && isSentence) {
+    btn4.className = (state.gridCardCount === 4) ? activeClass : inactiveClass;
+  }
+  if (btn6) btn6.className = (state.gridCardCount === 6) ? activeClass : inactiveClass;
+  if (btn8) btn8.className = (state.gridCardCount === 8) ? activeClass : inactiveClass;
+  if (btn10) btn10.className = (state.gridCardCount === 10) ? activeClass : inactiveClass;
+}
+
+function syncLevel5SubModeUI() {
+  const wrapper = document.getElementById('control-level5-submode-wrapper');
+  if (!wrapper) return;
+
+  const isLevel5Reading = (state.subject === 'reading' && state.currentLevel === 5);
+  if (isLevel5Reading) {
+    wrapper.classList.remove('hidden');
+    wrapper.classList.add('flex');
+  } else {
+    wrapper.classList.add('hidden');
+    wrapper.classList.remove('flex');
+  }
+
+  const mode = (state.level5SubMode === 'ou' || state.level5SubMode === 'all') ? state.level5SubMode : 'shluky';
+  state.level5SubMode = mode;
+
+  const btnShluky = document.getElementById('lvl5-submode-shluky');
+  const btnOu = document.getElementById('lvl5-submode-ou');
+  const btnAll = document.getElementById('lvl5-submode-all');
+
+  const activeClass = 'px-2.5 py-0.5 rounded-lg text-xs font-black transition-all bg-sky-500 text-white shadow-sm';
+  const inactiveClass = 'px-2.5 py-0.5 rounded-lg text-xs font-black transition-all text-sky-900 hover:bg-sky-200';
+
+  if (btnShluky) btnShluky.className = (mode === 'shluky') ? activeClass : inactiveClass;
+  if (btnOu) btnOu.className = (mode === 'ou') ? activeClass : inactiveClass;
+  if (btnAll) btnAll.className = (mode === 'all') ? activeClass : inactiveClass;
+}
+
+function setLevel5SubMode(mode) {
+  const normalized = (mode === 'ou' || mode === 'all') ? mode : 'shluky';
+  state.level5SubMode = normalized;
+  saveState();
+  syncLevel5SubModeUI();
+  playTone(540, 0.08, 'sine', 0.15);
+  generateLessonItems();
+}
+
+function updateEmptyNoticeForContext(subj, lvl) {
+  const titleEl = document.getElementById('content-empty-title');
+  const descEl = document.getElementById('content-empty-desc');
+  if (!titleEl || !descEl) return;
+
+  const activeListText = (Array.isArray(state.activeLetters) && state.activeLetters.length > 0)
+    ? state.activeLetters.join(', ')
+    : 'žádná';
+
+  if (subj === 'reading' && lvl === 5) {
+    const mode = state.level5SubMode || 'shluky';
+    if (mode === 'shluky') {
+      titleEl.textContent = 'Pro tato písmena zatím nejsou k dispozici žádné shluky.';
+      descEl.textContent = `Aktivní písmena (${activeListText}) zatím neumožňují sestavit smysluplné české slovo se souhláskovým shlukem. Povol další písmenka v Rodičovské správě.`;
+    } else if (mode === 'ou') {
+      titleEl.textContent = 'Pro tato písmena zatím nejsou k dispozici žádné slova s OU.';
+      descEl.textContent = `Aktivní písmena (${activeListText}) zatím neumožňují sestavit smysluplné české slovo s dvojhláskou OU. Povol písmena O, U a další souhlásky v Rodičovské správě.`;
+    } else {
+      titleEl.textContent = 'Pro tato písmena zatím nejsou k dispozici žádné shluky / slova s OU.';
+      descEl.textContent = `Aktivní písmena (${activeListText}) zatím neumožňují sestavit žádné slovo se souhláskovým shlukem ani s dvojhláskou OU.`;
+    }
+    return;
+  }
+
+  titleEl.textContent = 'Chybí podklady pro procvičení';
+  descEl.textContent = 'V rodičovském nastavení zapni další písmenka nebo uprav rozsah matematiky.';
+}
+
+function setGridCount(count) {
+  const isSentence = (state.subject === 'reading' && state.currentLevel === 7);
+  const validCounts = isSentence ? [4, 6, 8, 10] : [6, 8, 10];
+  state.gridCardCount = validCounts.includes(count) ? count : 8;
+  saveState();
+
+  syncReadingTileCountUI();
 
   playTone(550, 0.08, 'sine', 0.15);
   generateLessonItems();
@@ -3975,15 +4208,9 @@ function renderCurrentContent() {
   if (!state.currentItems || state.currentItems.length === 0) return;
   const isMath = state.subject === 'math';
 
-  if (!isMath && state.displayMode === 'flash') {
-    gridContainer.classList.add('hidden');
-    flashContainer.classList.remove('hidden');
-    updateFlashcardDisplay();
-    return;
-  }
-
+  state.displayMode = 'grid';
   gridContainer.classList.remove('hidden');
-  flashContainer.classList.add('hidden');
+  if (flashContainer) flashContainer.classList.add('hidden');
   gridContainer.innerHTML = '';
 
   if (isMath) {
@@ -4069,9 +4296,15 @@ function renderCurrentContent() {
 
   } else {
     const isSentence = state.currentLevel === 7;
-    gridContainer.className = isSentence 
-      ? 'w-full grid grid-cols-1 md:grid-cols-2 gap-2 py-0.5'
-      : (state.gridCardCount === 10 ? 'w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 py-0.5' : 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2 py-0.5');
+    if (isSentence) {
+      gridContainer.className = 'w-full grid grid-cols-1 md:grid-cols-2 gap-2.5 py-0.5';
+    } else if (state.gridCardCount === 6) {
+      gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-3 gap-2.5 py-0.5';
+    } else if (state.gridCardCount === 10) {
+      gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 py-0.5';
+    } else {
+      gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2 py-0.5';
+    }
 
     state.currentItems.forEach((item, index) => {
       const card = document.createElement('div');
@@ -4156,60 +4389,26 @@ function creditRewardMinutes(amount, note, subjectHint = '') {
 
   const subj = detectRewardSubject(note, subjectHint);
   const currentEarnedToday = Math.max(0, Number(state.dailyEarnedToday) || 0);
-  const remainingDirect = Math.max(0, Math.round((DAILY_TOTAL_MAX_MINUTES - currentEarnedToday) * 100) / 100);
 
-  if (numAmount <= remainingDirect) {
-    state.dailyEarnedToday = Math.round((currentEarnedToday + numAmount) * 100) / 100;
-    if (subj === 'reading') {
-      state.dailyReadingEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + numAmount) * 100) / 100;
-    } else if (subj === 'math') {
-      state.dailyMathEarnedToday = Math.round(((state.dailyMathEarnedToday || 0) + numAmount) * 100) / 100;
-    }
-    state.minutesBalance = Math.round((state.minutesBalance + numAmount) * 100) / 100;
-    state.history.unshift({
-      id: Date.now(),
-      time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-      date: new Date().toLocaleDateString('cs-CZ'),
-      type: 'earned',
-      minutes: numAmount,
-      note: `${note} (+${formatMinutes(numAmount)})`
-    });
-  } else {
-    const directPart = remainingDirect;
-    const vaultPart = Math.round((numAmount - directPart) * 100) / 100;
-
-    state.dailyEarnedToday = DAILY_TOTAL_MAX_MINUTES;
-    if (subj === 'reading') {
-      state.dailyReadingEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + directPart) * 100) / 100;
-    } else if (subj === 'math') {
-      state.dailyMathEarnedToday = Math.round(((state.dailyMathEarnedToday || 0) + directPart) * 100) / 100;
-    }
-
-    if (directPart > 0) {
-      state.minutesBalance = Math.round((state.minutesBalance + directPart) * 100) / 100;
-      state.history.unshift({
-        id: Date.now(),
-        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-        date: new Date().toLocaleDateString('cs-CZ'),
-        type: 'earned',
-        minutes: directPart,
-        note: `${note} (+${formatMinutes(directPart)})`
-      });
-    }
-
-    if (vaultPart > 0) {
-      state.vaultBalance = Math.round(((state.vaultBalance || 0) + vaultPart) * 100) / 100;
-      state.history.unshift({
-        id: Date.now() + 1,
-        time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
-        date: new Date().toLocaleDateString('cs-CZ'),
-        type: 'vault_saved',
-        minutes: vaultPart,
-        note: `Dnešní limit ${DAILY_TOTAL_MAX_MINUTES} min dosažen. Uloženo do Trezoru (+${formatMinutes(vaultPart)})`
-      });
-      alertUserFeedback(`Dnešní limit ${DAILY_TOTAL_MAX_MINUTES} min dosažen! +${formatMinutes(vaultPart)} uloženo do Nočního trezoru! 🏦`);
-    }
+  state.dailyEarnedToday = Math.round((currentEarnedToday + numAmount) * 100) / 100;
+  if (subj === 'reading') {
+    state.dailyReadingEarnedToday = Math.round(((state.dailyReadingEarnedToday || 0) + numAmount) * 100) / 100;
+  } else if (subj === 'math') {
+    state.dailyMathEarnedToday = Math.round(((state.dailyMathEarnedToday || 0) + numAmount) * 100) / 100;
   }
+
+  state.minutesBalance = Math.round((state.minutesBalance + numAmount) * 100) / 100;
+  state.vaultBalance = 0.0;
+
+  state.history.unshift({
+    id: Date.now(),
+    time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+    date: new Date().toLocaleDateString('cs-CZ'),
+    type: 'earned',
+    minutes: numAmount,
+    note: `${note} (+${formatMinutes(numAmount)})`
+  });
+
   updateBalanceUI();
 }
 
@@ -4698,29 +4897,27 @@ function renderStoreSkinsUI() {
       const isActive = custom.activeSkin === skin.id;
 
       const card = document.createElement('div');
-      card.className = `p-3 rounded-2xl border-3 flex flex-col justify-between text-center transition-all ${
-        isActive 
-          ? 'bg-amber-50 border-amber-400 ring-4 ring-amber-300 shadow-md' 
-          : isUnlocked 
-            ? 'bg-white border-emerald-300' 
-            : 'bg-white border-slate-200'
-      }`;
+      const frameMod = isActive
+        ? 'store-card-frame--active'
+        : isUnlocked
+          ? 'store-card-frame--emerald'
+          : 'store-card-frame--indigo';
+      card.className = `store-card-frame ${frameMod} p-3 flex flex-col justify-between text-center`;
 
       card.innerHTML = `
         <div>
-          <div class="w-14 h-14 mx-auto mb-2 flex items-center justify-center rounded-2xl bg-slate-100 border border-slate-200 shadow-inner">
+          <div class="w-16 h-16 mx-auto mb-2 flex items-center justify-center rounded-2xl bg-white/90 border-2 border-slate-200/80 shadow-inner">
             ${skin.svg}
           </div>
           <h4 class="text-xs sm:text-sm font-black text-slate-800">${skin.name}</h4>
-          <p class="text-[10px] text-slate-500 font-bold mt-0.5 line-clamp-2">${skin.description}</p>
         </div>
-        <div class="mt-3">
+        <div class="mt-2.5">
           ${
             isActive 
-              ? `<span class="text-xs font-black text-amber-700 bg-amber-200/80 px-2.5 py-1 rounded-xl block">NASAZENO ⭐</span>`
+              ? `<span class="text-xs font-black text-amber-800 bg-amber-300/80 border border-amber-400 px-2.5 py-1.5 rounded-xl block">NASAZENO ⭐</span>`
               : isUnlocked 
-                ? `<button onclick="equipSkin('${skin.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm">Nasadit skin</button>`
-                : `<button onclick="buySkinAction('${skin.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Koupit za ${price}</span> 💎</button>`
+                ? `<button onclick="equipSkin('${skin.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl border-b-4 border-emerald-700 text-xs shadow-sm">Nasadit skin</button>`
+                : `<button onclick="buySkinAction('${skin.id}')" class="game-button w-full bg-gradient-to-b from-cyan-500 to-sky-600 hover:from-cyan-600 hover:to-sky-700 text-white font-black py-1.5 rounded-xl border-b-4 border-sky-800 text-xs shadow-sm flex items-center justify-center gap-1"><span>${price}</span> 💎</button>`
           }
         </div>
       `;
@@ -4737,29 +4934,26 @@ function renderStoreSkinsUI() {
       const isActive = custom.activeTheme === theme.id;
 
       const card = document.createElement('div');
-      card.className = `p-3 rounded-2xl border-3 flex flex-col justify-between text-center transition-all ${
-        isActive 
-          ? 'bg-amber-50 border-amber-400 ring-4 ring-amber-300 shadow-md' 
-          : isUnlocked 
-            ? 'bg-white border-emerald-300' 
-            : 'bg-white border-slate-200'
-      }`;
+      const frameMod = isActive
+        ? 'store-card-frame--active'
+        : isUnlocked
+          ? 'store-card-frame--emerald'
+          : 'store-card-frame--purple';
+      card.className = `store-card-frame ${frameMod} p-3 flex flex-col justify-between text-center`;
 
       card.innerHTML = `
         <div>
-          <div class="w-full h-12 rounded-xl mb-2 shadow-inner border border-black/10 flex items-center justify-center text-xs font-black text-white" style="background: ${theme.previewGradient};">
-            Náhled tapety
+          <div class="w-full h-14 rounded-xl mb-2 shadow-inner border-2 border-white/60 flex items-center justify-center text-xs font-black text-white" style="background: ${theme.previewGradient};">
+            ${theme.name}
           </div>
-          <h4 class="text-xs sm:text-sm font-black text-slate-800">${theme.name}</h4>
-          <p class="text-[10px] text-slate-500 font-bold mt-0.5 line-clamp-2">${theme.description}</p>
         </div>
-        <div class="mt-3">
+        <div class="mt-2">
           ${
             isActive 
-              ? `<span class="text-xs font-black text-amber-700 bg-amber-200/80 px-2.5 py-1 rounded-xl block">AKTIVNÍ TAPETA 🌍</span>`
+              ? `<span class="text-xs font-black text-amber-800 bg-amber-300/80 border border-amber-400 px-2.5 py-1.5 rounded-xl block">AKTIVNÍ TAPETA 🌍</span>`
               : isUnlocked 
-                ? `<button onclick="equipTheme('${theme.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm">Nastavit tapetu</button>`
-                : `<button onclick="buyThemeAction('${theme.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Koupit za ${price}</span> 💎</button>`
+                ? `<button onclick="equipTheme('${theme.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl border-b-4 border-emerald-700 text-xs shadow-sm">Nastavit tapetu</button>`
+                : `<button onclick="buyThemeAction('${theme.id}')" class="game-button w-full bg-gradient-to-b from-cyan-500 to-sky-600 hover:from-cyan-600 hover:to-sky-700 text-white font-black py-1.5 rounded-xl border-b-4 border-sky-800 text-xs shadow-sm flex items-center justify-center gap-1"><span>${price}</span> 💎</button>`
           }
         </div>
       `;
@@ -4776,32 +4970,30 @@ function renderStoreSkinsUI() {
       const isActive = custom.activeSound === snd.id;
 
       const card = document.createElement('div');
-      card.className = `p-3 rounded-2xl border-3 flex flex-col justify-between text-center transition-all ${
-        isActive 
-          ? 'bg-amber-50 border-amber-400 ring-4 ring-amber-300 shadow-md' 
-          : isUnlocked 
-            ? 'bg-white border-emerald-300' 
-            : 'bg-white border-slate-200'
-      }`;
+      const frameMod = isActive
+        ? 'store-card-frame--active'
+        : isUnlocked
+          ? 'store-card-frame--emerald'
+          : 'store-card-frame--sky';
+      card.className = `store-card-frame ${frameMod} p-3 flex flex-col justify-between text-center`;
 
       card.innerHTML = `
         <div>
-          <div class="flex items-center justify-between mb-1">
-            <span class="text-xl">🔔</span>
-            <button onclick="playSoundById('${snd.id}')" class="game-button bg-indigo-100 hover:bg-indigo-200 text-indigo-900 px-2 py-0.5 rounded-lg text-xs font-bold" title="Poslechnout zvuk">
-              Poslech 🔊
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="w-9 h-9 rounded-xl bg-white/90 border border-sky-200 flex items-center justify-center text-lg shadow-inner">🔔</span>
+            <button onclick="playSoundById('${snd.id}')" class="game-button bg-indigo-100 hover:bg-indigo-200 text-indigo-900 border border-indigo-200 px-2.5 py-1 rounded-xl text-xs font-bold" title="Poslechnout zvuk">
+              🔊
             </button>
           </div>
           <h4 class="text-xs sm:text-sm font-black text-slate-800">${snd.name}</h4>
-          <p class="text-[10px] text-slate-500 font-bold mt-0.5">${snd.description}</p>
         </div>
-        <div class="mt-3">
+        <div class="mt-2.5">
           ${
             isActive 
-              ? `<span class="text-xs font-black text-amber-700 bg-amber-200/80 px-2.5 py-1 rounded-xl block">AKTIVNÍ ZVUK 🔊</span>`
+              ? `<span class="text-xs font-black text-amber-800 bg-amber-300/80 border border-amber-400 px-2.5 py-1.5 rounded-xl block">AKTIVNÍ ZVUK 🔊</span>`
               : isUnlocked 
-                ? `<button onclick="equipSound('${snd.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm">Zvolit zvuk</button>`
-                : `<button onclick="buySoundAction('${snd.id}')" class="game-button w-full bg-cyan-500 hover:bg-cyan-600 text-white font-black py-1.5 rounded-xl text-xs shadow-sm flex items-center justify-center gap-1"><span>Koupit za ${price}</span> 💎</button>`
+                ? `<button onclick="equipSound('${snd.id}')" class="game-button w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-1.5 rounded-xl border-b-4 border-emerald-700 text-xs shadow-sm">Zvolit zvuk</button>`
+                : `<button onclick="buySoundAction('${snd.id}')" class="game-button w-full bg-gradient-to-b from-cyan-500 to-sky-600 hover:from-cyan-600 hover:to-sky-700 text-white font-black py-1.5 rounded-xl border-b-4 border-sky-800 text-xs shadow-sm flex items-center justify-center gap-1"><span>${price}</span> 💎</button>`
           }
         </div>
       `;
@@ -5072,12 +5264,12 @@ function updateDiamondMarketUI() {
   if (vaultLimitLabel) vaultLimitLabel.textContent = `${maxLimit} min`;
 
   const rateBadge = document.getElementById('diamond-rate-badge');
-  if (rateBadge) rateBadge.textContent = `Cena: ${state.diamondExchangeRate || 20} 💎`;
+  if (rateBadge) rateBadge.textContent = `${state.diamondExchangeRate || 20} 💎`;
 
   const dynTitle = document.getElementById('dynamic-package-title');
   const dynCost = document.getElementById('dynamic-package-cost');
   if (dynTitle) dynTitle.textContent = `${maxLimit} MINUT`;
-  if (dynCost) dynCost.textContent = `Cena: ${maxLimit} hvězd ⭐`;
+  if (dynCost) dynCost.textContent = `${maxLimit} ⭐`;
 
   const pinDesc = document.getElementById('pin-card-description');
   if (state.goldDiamonds >= 50) {
@@ -5094,22 +5286,11 @@ function updateVoucherStoreUI() {
   const stdBought = state.dailyStandardVoucherBought;
   const maxBought = state.dailyMaxVoucherBought;
 
-  const bannerEl = document.getElementById('store-voucher-status-banner');
-  if (bannerEl) {
-    const stdStatusHtml = stdBought !== null
-      ? `<span class="text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-lg">✅ Poukaz ${stdBought} min koupen</span>`
-      : `<span class="text-amber-900 bg-white/80 border border-amber-300 px-2 py-0.5 rounded-lg">🟢 5/10/15 min: volný (1×)</span>`;
-    const maxStatusHtml = maxBought !== null
-      ? `<span class="text-emerald-700 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-lg">✅ MAX poukaz (${maxBought} min) koupen</span>`
-      : `<span class="text-amber-900 bg-white/80 border border-amber-300 px-2 py-0.5 rounded-lg">🟢 MAX poukaz: volný (1×)</span>`;
-    bannerEl.innerHTML = `
-      <div class="flex flex-wrap items-center justify-center gap-1.5 text-[11px] font-black">
-        <span>🎟️ Dnešní limit (reset 00:00):</span>
-        ${stdStatusHtml}
-        ${maxStatusHtml}
-      </div>
-    `;
-  }
+  const defaultTicketFrame = {
+    5: 'store-card-frame--sky',
+    10: 'store-card-frame--emerald',
+    15: 'store-card-frame--purple'
+  };
 
   [5, 10, 15].forEach(m => {
     const cardEl = document.getElementById(`voucher-card-${m}`);
@@ -5118,33 +5299,31 @@ function updateVoucherStoreUI() {
 
     if (stdBought === m) {
       if (cardEl) {
-        cardEl.className = 'bg-emerald-50 border-3 border-emerald-500 ring-2 ring-emerald-300 rounded-2xl p-3 flex flex-col justify-between text-center shadow-md relative transition-all';
+        cardEl.className = 'store-card-frame store-card-frame--emerald p-4 flex flex-col justify-between text-center relative';
       }
       if (badgeEl) {
         badgeEl.textContent = '✅ KOUPENO DNES';
-        badgeEl.className = 'mb-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs inline-block mx-auto';
+        badgeEl.className = 'mb-1 text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs inline-block mx-auto';
       }
       if (btnEl) {
-        btnEl.textContent = `✅ Koupeno dnes (${m} min)`;
-        btnEl.className = 'w-full bg-emerald-600 text-white font-black py-2 rounded-xl border-b-4 border-emerald-800 text-sm cursor-not-allowed opacity-90';
+        btnEl.textContent = `✅ Koupeno (${m} min)`;
+        btnEl.className = 'w-full bg-emerald-600 text-white font-black py-2.5 rounded-xl border-b-4 border-emerald-800 text-xs sm:text-sm cursor-not-allowed opacity-95';
       }
     } else if (stdBought !== null) {
       if (cardEl) {
-        cardEl.className = 'bg-slate-100 border-3 border-slate-300 rounded-2xl p-3 flex flex-col justify-between text-center opacity-65 relative transition-all';
+        cardEl.className = 'store-card-frame store-card-frame--disabled p-4 flex flex-col justify-between text-center opacity-75 relative';
       }
       if (badgeEl) {
-        badgeEl.textContent = `🔒 Vyčerpáno (koupeno ${stdBought} min)`;
-        badgeEl.className = 'mb-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-300 text-slate-700 inline-block mx-auto';
+        badgeEl.textContent = `🔒 Vyčerpáno`;
+        badgeEl.className = 'mb-1 text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-300 text-slate-700 inline-block mx-auto';
       }
       if (btnEl) {
-        btnEl.textContent = '🔒 Limit 1× denně vyčerpán';
-        btnEl.className = 'w-full bg-slate-400 text-white font-black py-2 rounded-xl border-b-4 border-slate-500 text-xs cursor-not-allowed';
+        btnEl.textContent = '🔒 Limit vyčerpán';
+        btnEl.className = 'w-full bg-slate-400 text-white font-black py-2.5 rounded-xl border-b-4 border-slate-500 text-xs cursor-not-allowed';
       }
     } else {
       if (cardEl) {
-        cardEl.className = m === 15
-          ? 'bg-gradient-to-b from-amber-50 to-orange-50 border-3 border-amber-400 rounded-2xl p-3 flex flex-col justify-between text-center hover:border-orange-500 transition-all shadow-sm relative'
-          : 'bg-amber-50/70 border-3 border-amber-300 rounded-2xl p-3 flex flex-col justify-between text-center hover:border-amber-400 transition-all shadow-sm relative';
+        cardEl.className = `store-card-frame ${defaultTicketFrame[m] || 'store-card-frame--amber'} p-4 flex flex-col justify-between text-center relative`;
       }
       if (badgeEl) {
         badgeEl.className = 'hidden mb-1 text-[10px] font-black px-2 py-0.5 rounded-full';
@@ -5152,8 +5331,8 @@ function updateVoucherStoreUI() {
       if (btnEl) {
         btnEl.textContent = 'Koupit lístek 🎟️';
         btnEl.className = m === 15
-          ? 'game-button w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2 rounded-xl border-b-4 border-orange-700 text-sm shadow-game-btn'
-          : 'game-button w-full bg-amber-400 hover:bg-amber-500 text-indigo-950 font-black py-2 rounded-xl border-b-4 border-amber-600 text-sm shadow-game-btn';
+          ? 'game-button w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2.5 rounded-xl border-b-4 border-orange-700 text-xs sm:text-sm shadow-game-btn'
+          : 'game-button w-full bg-amber-400 hover:bg-amber-500 text-indigo-950 font-black py-2.5 rounded-xl border-b-4 border-amber-600 text-xs sm:text-sm shadow-game-btn';
       }
     }
   });
@@ -5164,26 +5343,26 @@ function updateVoucherStoreUI() {
 
   if (maxBought !== null) {
     if (cardMax) {
-      cardMax.className = 'bg-gradient-to-b from-emerald-700 to-teal-900 text-white border-3 border-emerald-300 ring-2 ring-emerald-300 rounded-2xl p-3 flex flex-col justify-between text-center shadow-lg relative transition-all';
+      cardMax.className = 'store-card-frame store-card-frame--emerald p-4 flex flex-col justify-between text-center relative text-slate-800';
     }
     if (badgeMax) {
-      badgeMax.textContent = `✅ KOUPENO DNES (${maxBought} min)`;
-      badgeMax.className = 'mt-1 mb-0.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-400 text-emerald-950 shadow-xs inline-block mx-auto';
+      badgeMax.textContent = `✅ KOUPENO DNES`;
+      badgeMax.className = 'mt-1 mb-0.5 text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-white shadow-xs inline-block mx-auto';
     }
     if (btnMax) {
       btnMax.textContent = '✅ Koupeno dnes!';
-      btnMax.className = 'w-full bg-emerald-500 text-emerald-950 font-black py-2 rounded-xl border-b-4 border-emerald-700 text-sm cursor-not-allowed';
+      btnMax.className = 'w-full bg-emerald-600 text-white font-black py-2.5 rounded-xl border-b-4 border-emerald-800 text-xs sm:text-sm cursor-not-allowed';
     }
   } else {
     if (cardMax) {
-      cardMax.className = 'bg-gradient-to-b from-indigo-600 to-purple-700 text-white border-3 border-amber-300 rounded-2xl p-3 flex flex-col justify-between text-center shadow-lg relative transition-all';
+      cardMax.className = 'store-card-frame store-card-frame--max p-4 flex flex-col justify-between text-center relative text-white';
     }
     if (badgeMax) {
       badgeMax.className = 'hidden mt-1 mb-0.5 text-[10px] font-black px-2 py-0.5 rounded-full';
     }
     if (btnMax) {
       btnMax.textContent = 'Koupit MAX lístek 🚀';
-      btnMax.className = 'game-button w-full bg-emerald-400 hover:bg-emerald-300 text-indigo-950 font-black py-2 rounded-xl border-b-4 border-emerald-600 text-sm shadow-game-btn';
+      btnMax.className = 'game-button w-full bg-emerald-400 hover:bg-emerald-300 text-indigo-950 font-black py-2.5 rounded-xl border-b-4 border-emerald-600 text-xs sm:text-sm shadow-game-btn';
     }
   }
 }
@@ -5307,8 +5486,11 @@ function showView(viewName) {
   if (testView) testView.classList.add('hidden');
   if (arenaView) arenaView.classList.add('hidden');
 
+  const boardFrame = document.getElementById('main-game-board-frame');
+
   if (viewName === 'store') {
     if (storeView) storeView.classList.remove('hidden');
+    if (boardFrame) boardFrame.setAttribute('data-board-mode', 'store');
     const storeBalEl = document.getElementById('store-balance-display');
     if (storeBalEl) storeBalEl.textContent = formatMinutes(state.minutesBalance).replace(' min', '');
     const vaultEl = document.getElementById('vault-display');
@@ -5318,14 +5500,18 @@ function showView(viewName) {
     if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
   } else if (viewName === 'quests') {
     if (questsView) questsView.classList.remove('hidden');
+    if (boardFrame) boardFrame.setAttribute('data-board-mode', 'quests');
     switchQuestsSubTab('tasks');
   } else if (viewName === 'test') {
     if (testView) testView.classList.remove('hidden');
+    if (boardFrame) boardFrame.setAttribute('data-board-mode', 'test');
   } else if (viewName === 'arena') {
     if (arenaView) arenaView.classList.remove('hidden');
+    if (boardFrame) boardFrame.setAttribute('data-board-mode', 'arena');
     if (typeof renderArenaMainUI === 'function') renderArenaMainUI();
   } else {
     if (learnView) learnView.classList.remove('hidden');
+    if (boardFrame) boardFrame.setAttribute('data-board-mode', state.subject === 'math' ? 'math' : 'reading');
   }
   updateBalanceUI();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
@@ -5340,14 +5526,14 @@ function updateBalanceUI() {
   const displayTop = document.getElementById('top-balance-display');
   const displayStore = document.getElementById('store-balance-display');
   const displayAdmin = document.getElementById('admin-balance-display');
-  const vaultStore = document.getElementById('vault-display');
-  const vaultAdmin = document.getElementById('admin-vault-indicator');
+  const minutesDirectInp = document.getElementById('admin-minutes-direct-input');
 
-  if (displayTop) displayTop.textContent = formatMinutes(state.minutesBalance);
+  if (displayTop) displayTop.textContent = formatMinutes(state.minutesBalance).replace(' min', '');
   if (displayStore) displayStore.textContent = formatMinutes(state.minutesBalance).replace(' min', '');
   if (displayAdmin) displayAdmin.textContent = formatMinutes(state.minutesBalance);
-  if (vaultStore) vaultStore.textContent = formatMinutes(state.vaultBalance || 0);
-  if (vaultAdmin) vaultAdmin.textContent = formatMinutes(state.vaultBalance || 0);
+  if (minutesDirectInp && document.activeElement !== minutesDirectInp) {
+    minutesDirectInp.value = (Math.round((state.minutesBalance || 0) * 100) / 100).toString();
+  }
 
   const mainQuest = Array.isArray(state.quests)
     ? state.quests.find(q => q.id === 'q_daily_all' || !q.isTrackerOnly)
@@ -5994,10 +6180,10 @@ function openTestView() {
   const btnClocks = document.getElementById('subject-btn-clocks');
   const btnTest = document.getElementById('subject-btn-test');
 
-  if (btnReading) btnReading.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnMath) btnMath.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnClocks) btnClocks.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 text-slate-600 hover:bg-slate-200';
-  if (btnTest) btnTest.className = 'h-full px-2 sm:px-3 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm relative';
+  if (btnReading) btnReading.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnMath) btnMath.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnClocks) btnClocks.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 text-slate-600 hover:bg-slate-200 whitespace-nowrap';
+  if (btnTest) btnTest.className = 'h-full min-w-[58px] sm:min-w-[64px] px-3 sm:px-3.5 rounded-xl font-black text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm relative whitespace-nowrap';
 
   const introBox = document.getElementById('test-intro-box');
   const runnerBox = document.getElementById('test-runner-box');
@@ -6030,48 +6216,37 @@ function generateRandomReadingTaskForLevel(level) {
   const activeLetters = (state.activeLetters && state.activeLetters.length > 0) ? state.activeLetters : ['M', 'A', 'L', 'E', 'S', 'O'];
   const sylls = generatePedagogicalOpenSyllables();
 
-  const pickStrictFallback = () => {
-    const pools = [
-      { list: LEVEL_7_SENTENCES.filter(s => isItemFormedByActive(s.letters)), label: 'Celá věta' },
-      { list: LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters)), label: 'Měkčení DĚ/TĚ/NĚ' },
-      { list: LEVEL_5_CLUSTERS.filter(w => isItemFormedByActive(w.letters)), label: 'Shluk / Dvojhláska' },
-      { list: LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters)), label: 'Dvouslabičné slovo' },
-      { list: LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters)), label: 'Jednoslabičné slovo' }
-    ].filter(p => p.list.length > 0);
-
-    if (pools.length > 0) {
-      const p = pools[0];
-      const chosen = p.list[Math.floor(Math.random() * p.list.length)];
-      return { text: chosen.text, label: p.label };
-    }
-    if (sylls.length > 0) {
-      const s = sylls[Math.floor(Math.random() * sylls.length)];
-      return { text: s.text, label: 'Slabika' };
-    }
-    const ch = activeLetters[Math.floor(Math.random() * activeLetters.length)];
-    return { text: ch, label: 'Písmeno' };
-  };
-
   if (level === 1) {
+    if (!activeLetters.length) return null;
     const char = activeLetters[Math.floor(Math.random() * activeLetters.length)];
     item = { text: char, label: 'Písmeno' };
   } else if (level === 2) {
-    item = sylls.length ? { text: sylls[Math.floor(Math.random() * sylls.length)].text, label: 'Slabika' } : pickStrictFallback();
+    if (!sylls.length) return null;
+    item = { text: sylls[Math.floor(Math.random() * sylls.length)].text, label: 'Slabika' };
   } else if (level === 3) {
-    const list = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Jednoslabičné slovo' } : pickStrictFallback();
+    const list = LEVEL_3_CVC_WORDS.filter(w => isItemFormedByActive(w.letters) && isWordAllowedByAdminLetters(w.text, activeLetters));
+    if (!list.length) return null;
+    item = { text: list[Math.floor(Math.random() * list.length)].text, label: 'Jednoslabičné slovo' };
   } else if (level === 4) {
-    const list = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Dvouslabičné slovo' } : pickStrictFallback();
+    const list = LEVEL_4_TWO_SYLLABLE_WORDS.filter(w => isItemFormedByActive(w.letters) && isWordAllowedByAdminLetters(w.text, activeLetters));
+    if (!list.length) return null;
+    item = { text: list[Math.floor(Math.random() * list.length)].text, label: 'Dvouslabičné slovo' };
   } else if (level === 5) {
-    const list = LEVEL_5_CLUSTERS.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Shluk / Dvojhláska' } : pickStrictFallback();
+    const list = getFilteredLevel5Pool('all', activeLetters);
+    if (!list.length) return null;
+    const chosen = list[Math.floor(Math.random() * list.length)];
+    const subLabel = (hasConsonantCluster(chosen.text) && hasDiphthongOU(chosen.text))
+      ? 'Shluk + OU'
+      : (hasDiphthongOU(chosen.text) ? 'Slovo s OU' : 'Souhláskový shluk');
+    item = { text: chosen.text, label: subLabel };
   } else if (level === 6) {
-    const list = LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters));
-    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Měkčení DĚ/TĚ/NĚ' } : pickStrictFallback();
+    const list = LEVEL_6_SOFT.filter(w => isItemFormedByActive(w.letters) && isWordAllowedByAdminLetters(w.text, activeLetters));
+    if (!list.length) return null;
+    item = { text: list[Math.floor(Math.random() * list.length)].text, label: 'Měkčení DĚ/TĚ/NĚ' };
   } else {
     const list = LEVEL_7_SENTENCES.filter(sen => isItemFormedByActive(sen.letters));
-    item = list.length ? { text: list[Math.floor(Math.random() * list.length)].text, label: 'Celá věta' } : pickStrictFallback();
+    if (!list.length) return null;
+    item = { text: list[Math.floor(Math.random() * list.length)].text, label: 'Celá věta' };
   }
 
   return { 
@@ -6189,6 +6364,16 @@ function startDailyTest() {
       seenKeys.add(task.uniqueKey);
       taskList.push(task);
     }
+  }
+
+  if (taskList.length === 0) {
+    soundError();
+    if (activeReadingLevels.includes(5) && activeReadingLevels.length === 1 && activeMathLevels.length === 0) {
+      alertUserFeedback('Pro tato písmena zatím nejsou k dispozici žádné shluky / slova s OU.');
+    } else {
+      alertUserFeedback('Pro tato písmena zatím nejsou k dispozici žádné úlohy pro vybrané okruhy.');
+    }
+    return;
   }
 
   testState.tasks = taskList;
@@ -6567,7 +6752,7 @@ function updateAdminTestUI() {
         <span class="w-28 truncate text-slate-700 text-[11px]">${th.label}:</span>
         <div class="flex items-center gap-1">
           <span class="text-slate-500 text-[10px]">Od:</span>
-          <input type="number" min="0" max="100" value="${th.minPercent}" onchange="saveAdminTestThreshold(${idx}, 'minPercent', this.value)" class="w-12 text-center font-black py-0.5 px-1 border border-purple-300 rounded-lg bg-white text-xs">
+          <input type="number" min="0" max="100" value="${th.minPercent}" onchange="saveAdminTestThreshold(${idx}, 'minPercent', this.value)" class="w-12 text-center font-black text-slate-900 py-0.5 px-1 border border-purple-300 rounded-lg bg-white text-xs">
           <span class="text-slate-500 text-[10px]">%</span>
         </div>
         <div class="flex items-center gap-1">
@@ -6960,7 +7145,15 @@ function renderDailyQuests() {
 
   container.innerHTML = '';
 
+  const cleanQuestTitles = {
+    q_daily_all: 'Denní výzva',
+    q_test: 'Denní test',
+    q_arena: 'Boj s pety',
+    q_coloring: 'Omalovánka'
+  };
+
   state.quests.forEach(quest => {
+    const qTitle = cleanQuestTitles[quest.id] || quest.title;
     const qRate = getQuestRewardRate(quest.id);
     const isTracker = !!quest.isTrackerOnly;
     const totalWithQuest = Math.round(((state.dailyEarnedToday || 0) + (quest.claimed ? 0 : qRate)) * 100) / 100;
@@ -6969,7 +7162,7 @@ function renderDailyQuests() {
     const percent = Math.min(100, Math.round((quest.progress / quest.target) * 100));
 
     const card = document.createElement('div');
-    card.className = `p-2 sm:p-2.5 rounded-2xl border-2 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition-all ${
+    card.className = `p-3 sm:p-3.5 rounded-2xl border-2 shadow-sm flex items-center justify-between gap-3 transition-all ${
       quest.claimed || (isTracker && isDone)
         ? 'bg-emerald-50/60 border-emerald-300 opacity-90' 
         : isDone 
@@ -6987,68 +7180,53 @@ function renderDailyQuests() {
     if (isTracker) {
       if (isDone) {
         actionHtml = `
-          <div class="flex items-center gap-1.5 text-emerald-800 font-black text-xs bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-xl self-start sm:self-auto">
-            <span>✅</span> SPLNĚNO DNES
+          <div class="flex items-center gap-1.5 text-emerald-800 font-black text-xs bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-xl flex-shrink-0">
+            <span>✅</span> Hotovo
           </div>
         `;
       } else {
         actionHtml = `
-          <div class="flex items-center gap-2 self-start sm:self-auto">
-            <span class="text-[10px] font-extrabold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-lg">
-              📋 Přehled
-            </span>
-            <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-slate-700 hover:bg-slate-800 text-white px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
-              Přejít ➡️
-            </button>
-          </div>
+          <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-slate-700 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl shadow-sm flex items-center gap-1 flex-shrink-0">
+            Přejít ➡️
+          </button>
         `;
       }
     } else if (quest.claimed) {
       actionHtml = `
-        <div class="flex items-center gap-1.5 text-emerald-700 font-black text-xs bg-emerald-100 border border-emerald-300 px-2.5 py-1 rounded-xl self-start sm:self-auto">
-          <span>✅</span> SPLNĚNO (+${formatMinutes(qRate)} ⭐ & 🔥)
+        <div class="flex items-center gap-1.5 text-emerald-700 font-black text-xs bg-emerald-100 border border-emerald-300 px-3 py-1.5 rounded-xl flex-shrink-0">
+          <span>✅</span> +${formatMinutes(qRate)} ⭐
         </div>
       `;
     } else if (isDone) {
       actionHtml = `
-        <button onclick="event.stopPropagation(); claimQuestReward('${quest.id}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl border-b-4 border-emerald-700 text-xs shadow-game-btn flex items-center gap-1.5 self-start sm:self-auto animate-bounce">
-          <span>🎁</span> VYZVEDNOUT +${formatMinutes(qRate)}!
+        <button onclick="event.stopPropagation(); claimQuestReward('${quest.id}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3.5 py-2 rounded-xl border-b-4 border-emerald-700 text-xs shadow-game-btn flex items-center gap-1.5 flex-shrink-0 animate-bounce">
+          <span>🎁</span> +${formatMinutes(qRate)}
         </button>
       `;
     } else {
-      const missingMin = Math.max(0, Math.round((15 - totalWithQuest) * 100) / 100);
       actionHtml = `
-        <div class="flex flex-col sm:items-end gap-1 self-start sm:self-auto">
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2 py-0.5 rounded-lg">
-              +${formatMinutes(qRate)} ⭐ + 🔥
-            </span>
-            <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1 rounded-xl shadow-sm flex items-center gap-1">
-              Trénovat ➡️
-            </button>
-          </div>
-          ${quest.progress >= quest.target && missingMin > 0 ? `
-            <span class="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-300 px-2 py-0.5 rounded-lg">
-              ⚠️ Chybí získat ještě ${formatMinutes(missingMin)} do podmínky 15 min
-            </span>
-          ` : ''}
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <span class="text-[11px] font-black text-indigo-900 bg-amber-200 border border-amber-400 px-2.5 py-1 rounded-xl whitespace-nowrap">
+            +${formatMinutes(qRate)} ⭐ + 🔥
+          </span>
+          <button onclick="event.stopPropagation(); goToQuestLevel('${quest.id}')" class="game-button text-xs font-black bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-xl shadow-sm flex items-center gap-1 whitespace-nowrap">
+            Trénovat ➡️
+          </button>
         </div>
       `;
     }
 
     card.innerHTML = `
-      <div class="flex items-center gap-2.5 flex-grow">
-        <span class="text-2xl ${isTracker ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'} p-1.5 rounded-xl border">${quest.icon}</span>
-        <div class="flex-grow">
-          <div class="flex items-center flex-wrap gap-1.5">
-            <h4 class="font-black text-slate-800 text-xs sm:text-sm">${quest.title}</h4>
-            ${isDone ? '<span class="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Hotovo!</span>' : '<span class="bg-amber-100 text-amber-800 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase">Chybí splnit</span>'}
-            <span class="text-[10px] font-extrabold text-slate-500 ml-auto sm:ml-2">
-              <span class="text-indigo-700">${quest.progress}/${quest.target}</span> (${percent}%)
+      <div class="flex items-center gap-3 flex-grow min-w-0">
+        <span class="text-2xl ${isTracker ? 'bg-slate-100 border-slate-200' : 'bg-indigo-50 border-indigo-100'} p-2 rounded-xl border flex-shrink-0">${quest.icon}</span>
+        <div class="flex-grow min-w-0">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <h4 class="font-black text-slate-800 text-sm sm:text-base truncate">${qTitle}</h4>
+            <span class="text-xs font-black text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg flex-shrink-0">
+              ${quest.progress}/${quest.target}
             </span>
           </div>
-          <p class="text-[11px] text-slate-600 font-bold leading-tight">${quest.desc}</p>
-          <div class="mt-1 w-full max-w-md bg-slate-200 rounded-full h-2 overflow-hidden border border-slate-300">
+          <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden border border-slate-300">
             <div class="bg-gradient-to-r ${isDone ? 'from-emerald-500 to-teal-500' : 'from-indigo-500 to-purple-500'} h-full rounded-full transition-all duration-500" style="width: ${percent}%;"></div>
           </div>
         </div>
@@ -7266,12 +7444,101 @@ function adminUnlockVaultNow() {
   alertUserFeedback(`Celý trezor převeden (+${formatMinutes(val)})!`);
 }
 
+let activeFeedbackPopupTimer = null;
+
 function alertUserFeedback(msg) {
-  const el = document.createElement('div');
-  el.className = 'fixed top-4 left-1/2 -translate-x-1/2 bg-slate-900 text-white font-black text-xs sm:text-sm px-4 py-2.5 rounded-2xl shadow-2xl z-50 animate-bounce text-center max-w-sm';
-  el.textContent = `✅ ${msg}`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3200);
+  const existing = document.getElementById('center-feedback-popup-overlay');
+  if (existing) existing.remove();
+  if (activeFeedbackPopupTimer) {
+    clearTimeout(activeFeedbackPopupTimer);
+    activeFeedbackPopupTimer = null;
+  }
+
+  const rawText = String(msg || '').trim();
+  const lower = rawText.toLowerCase();
+
+  const isWarningOrLimit =
+    lower.includes('potřebuješ') ||
+    lower.includes('dnes už byl') ||
+    lower.includes('nebylo úplně správně') ||
+    lower.includes('chyba') ||
+    lower.includes('nelze') ||
+    lower.includes('chybí') ||
+    lower.includes('došly') ||
+    lower.includes('nejsou') ||
+    lower.includes('zadej') ||
+    lower.includes('vložte') ||
+    lower.includes('musí zůstat');
+
+  let badgeIcon = '🎉';
+  if (rawText.includes('💎')) badgeIcon = '💎';
+  else if (rawText.includes('⭐') || rawText.includes('🌟')) badgeIcon = '⭐';
+  else if (rawText.includes('🐾')) badgeIcon = '🐾';
+  else if (rawText.includes('🔥')) badgeIcon = '🔥';
+  else if (rawText.includes('🌙')) badgeIcon = '🌙';
+  else if (rawText.includes('⏱️') || rawText.includes('⏹')) badgeIcon = '⏱️';
+  else if (rawText.includes('🚀')) badgeIcon = '🚀';
+  else if (isWarningOrLimit) badgeIcon = '💡';
+
+  const frameTheme = isWarningOrLimit
+    ? 'store-card-frame--amber'
+    : rawText.includes('💎')
+      ? 'store-card-frame--sky'
+      : 'store-card-frame--emerald';
+
+  const iconBoxBg = isWarningOrLimit
+    ? 'from-amber-400 to-orange-500 border-amber-200'
+    : rawText.includes('💎')
+      ? 'from-cyan-400 to-blue-600 border-cyan-200'
+      : 'from-emerald-400 to-teal-500 border-emerald-200';
+
+  const btnBg = isWarningOrLimit
+    ? 'bg-amber-400 hover:bg-amber-500 text-amber-950 border-amber-600'
+    : rawText.includes('💎')
+      ? 'bg-cyan-500 hover:bg-cyan-600 text-white border-cyan-700'
+      : 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-700';
+
+  const overlay = document.createElement('div');
+  overlay.id = 'center-feedback-popup-overlay';
+  overlay.className = 'fixed inset-0 z-[95] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-[2px] cursor-pointer';
+
+  const card = document.createElement('div');
+  card.className = `store-card-frame ${frameTheme} center-popup-enter max-w-sm w-full p-5 text-center flex flex-col items-center gap-2.5 cursor-default`;
+  card.onclick = (e) => e.stopPropagation();
+
+  const closePopup = () => {
+    if (activeFeedbackPopupTimer) {
+      clearTimeout(activeFeedbackPopupTimer);
+      activeFeedbackPopupTimer = null;
+    }
+    card.classList.remove('center-popup-enter');
+    card.classList.add('center-popup-exit');
+    setTimeout(() => {
+      if (overlay.parentNode) overlay.remove();
+    }, 210);
+  };
+
+  overlay.onclick = closePopup;
+
+  card.innerHTML = `
+    <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr ${iconBoxBg} border-2 shadow-lg flex items-center justify-center text-3xl select-none center-popup-icon-anim">
+      ${badgeIcon}
+    </div>
+    <div class="text-base sm:text-lg font-black text-slate-800 font-baloo leading-snug px-1">
+      ${rawText}
+    </div>
+    <button type="button" class="game-button mt-1 px-6 py-2 rounded-2xl font-black text-xs sm:text-sm border-b-4 shadow-sm ${btnBg}">
+      ${isWarningOrLimit ? 'Rozumím 👍' : 'Paráda! 👍'}
+    </button>
+  `;
+
+  const btn = card.querySelector('button');
+  if (btn) btn.onclick = closePopup;
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  activeFeedbackPopupTimer = setTimeout(closePopup, 2800);
 }
 
 function openParentModal() {
@@ -8319,7 +8586,41 @@ function adjustMinutes(delta, note) {
   saveState();
   renderHistoryLog();
   updateBalanceUI();
+  const minutesDirectInp = document.getElementById('admin-minutes-direct-input');
+  if (minutesDirectInp) minutesDirectInp.value = (Math.round((state.minutesBalance || 0) * 100) / 100).toString();
   playTone(550, 0.2, 'sine', 0.2);
+}
+
+function adminSetMinutesDirect(val) {
+  checkAndHandleDailyResets();
+  const parsed = parseFloat(String(val ?? '0').replace(',', '.'));
+  const num = Math.max(0, Math.round((isNaN(parsed) ? 0 : parsed) * 100) / 100);
+  const prev = Math.max(0, Math.round((state.minutesBalance || 0) * 100) / 100);
+  const diff = Math.round((num - prev) * 100) / 100;
+
+  state.minutesBalance = num;
+  if (diff < 0) {
+    state.dailyEarnedToday = Math.max(0, Math.round(((state.dailyEarnedToday || 0) + diff) * 100) / 100);
+  }
+
+  if (diff !== 0) {
+    state.history.unshift({
+      id: Date.now(),
+      time: new Date().toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }),
+      date: new Date().toLocaleDateString('cs-CZ'),
+      type: diff >= 0 ? 'admin_add' : 'admin_deduct',
+      minutes: diff,
+      note: `Ruční nastavení kreditu rodičem na ${formatMinutes(num)}`
+    });
+  }
+
+  saveState();
+  renderHistoryLog();
+  updateBalanceUI();
+  const minutesDirectInp = document.getElementById('admin-minutes-direct-input');
+  if (minutesDirectInp) minutesDirectInp.value = num.toString();
+  playTone(600, 0.1, 'sine', 0.15);
+  alertUserFeedback(`Kredit na tabletu nastaven na ${formatMinutes(num)} ⭐`);
 }
 
 function renderHistoryLog() {
@@ -8393,6 +8694,7 @@ function resetAllData() {
     preferredSystemVoiceURI: '',
     displayMode: 'grid',
     gridCardCount: 8,
+    level5SubMode: 'shluky',
     showImages: true,
     showSpeechButton: true,
     spellingRepeatCount: 3,

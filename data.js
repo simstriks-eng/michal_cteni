@@ -749,17 +749,21 @@ const RAW_LEVEL_4_WORDS = [
   { t: 'PÍŠE', e: '✍️' },  { t: 'ŠÁLA', e: '🧣' },  { t: 'ŽENA', e: '👩' },  { t: 'ŽITO', e: '🌾' }
 ];
 
-/* 5. ZÁLOŽKA: SOUHLÁSKOVÉ SHLUKY A DVOJHLÁSKY OU / AU */
-const RAW_LEVEL_5_WORDS = [
-  // Shluky z raných písmen (M, L, S, P, T, N, V)
-  { t: 'MÁSLO', e: '🧈' }, { t: 'SLÁMA', e: '🌾' }, { t: 'SLOVO', e: '💬' }, { t: 'SLANÝ', e: '🧂' },
-  { t: 'SLEPÝ', e: '🕶️' }, { t: 'SLONI', e: '🐘' }, { t: 'PLAVE', e: '🏊' }, { t: 'PLUJE', e: '⛵' },
-  { t: 'PLÁN', e: '🗺️' },  { t: 'PLOT', e: '🪵' },  { t: 'SPÍ', e: '😴' },   { t: 'SPOLU', e: '🤝' },
-  { t: 'SPONA', e: '📎' }, { t: 'STŮL', e: '🪑' },  { t: 'STOPA', e: '🐾' }, { t: 'STÍN', e: '👤' },
-  { t: 'STOJÍ', e: '🧍' }, { t: 'STÁDO', e: '🐑' }, { t: 'SMŮLA', e: '🖤' }, { t: 'SVETR', e: '🧶' },
+/* 5. ZÁLOŽKA: SOUHLÁSKOVÉ SHLUKY A DVOJHLÁSKA OU */
+const RAW_LEVEL_5_SHLUKY_WORDS = [
+  // Shluky z raných písmen (M, L, S, P, T, N, V + samohlásky)
+  { t: 'MÁSLO', e: '🧈' }, { t: 'SLÁMA', e: '🌾' }, { t: 'OSLA', e: '🫏' },  { t: 'SMOLA', e: '🌲' },
+  { t: 'SLOVO', e: '💬' }, { t: 'SLANÝ', e: '🧂' }, { t: 'SLEPÝ', e: '🕶️' }, { t: 'SLONI', e: '🐘' },
+  { t: 'PLAVE', e: '🏊' }, { t: 'PLUJE', e: '⛵' }, { t: 'PLÁN', e: '🗺️' },  { t: 'PLOT', e: '🪵' },
+  { t: 'PLÁT', e: '🛡️' },  { t: 'PLATÍ', e: '🪙' }, { t: 'PLETE', e: '🧶' }, { t: 'PLOUT', e: '🏊' },
+  { t: 'SPÍ', e: '😴' },   { t: 'SPOLU', e: '🤝' }, { t: 'SPONA', e: '📎' }, { t: 'STŮL', e: '🪑' },
+  { t: 'STOPA', e: '🐾' }, { t: 'STÍN', e: '👤' },  { t: 'STOJÍ', e: '🧍' }, { t: 'STÁDO', e: '🐑' },
+  { t: 'STÁLE', e: '⏳' }, { t: 'STÁLÝ', e: '⭐' }, { t: 'POSTEL', e: '🛏️' },{ t: 'SMŮLA', e: '🖤' },
+  { t: 'SMETÍ', e: '🧹' }, { t: 'TLAMA', e: '🦁' }, { t: 'TLUSTÝ', e: '🐻' },{ t: 'SVETR', e: '🧶' },
   { t: 'PAST', e: '🪤' },  { t: 'MOST', e: '🌉' },  { t: 'LIST', e: '🍃' },  { t: 'LESK', e: '✨' },
+  { t: 'SLOUP', e: '🏛️' }, { t: 'STOUPÁ', e: '🧗' },{ t: 'SOUSTO', e: '🥪' },
 
-  // Další shluky souhlásek
+  // Další souhláskové shluky (str-, mr-, vl-, kr-, kl-, sk-, šk-, tr-, pr-, br-, hr-, dr-, pt-, zv-, bl-, ml-)
   { t: 'STROM', e: '🌳' }, { t: 'MRAK', e: '☁️' },  { t: 'VLAK', e: '🚂' },  { t: 'VLK', e: '🐺' },
   { t: 'VLNA', e: '🌊' },  { t: 'VLASY', e: '💇' }, { t: 'KROK', e: '👟' },  { t: 'KRK', e: '🦒' },
   { t: 'KRÁL', e: '👑' },  { t: 'KRÁVA', e: '🐮' }, { t: 'KLUK', e: '👦' },  { t: 'KLÍČ', e: '🔑' },
@@ -771,14 +775,26 @@ const RAW_LEVEL_5_WORDS = [
   { t: 'SMRK', e: '🌲' },  { t: 'DRÁT', e: '🪢' },  { t: 'DRAK', e: '🪁' },  { t: 'DRÁHA', e: '🛤️' },
   { t: 'DŘEVO', e: '🪵' }, { t: 'PTÁK', e: '🐦' },  { t: 'ZVON', e: '🔔' },  { t: 'ZVUK', e: '🔊' },
   { t: 'ZVÍŘE', e: '🦌' }, { t: 'BLESK', e: '⚡' }, { t: 'BLÁTO', e: '🥾' }, { t: 'MLÉKO', e: '🥛' },
-  { t: 'MLHA', e: '🌫️' },  { t: 'MLÝN', e: '⚙️' },  { t: 'PARK', e: '🌳' },
+  { t: 'MLHA', e: '🌫️' },  { t: 'MLÝN', e: '⚙️' },  { t: 'PARK', e: '🌳' }
+];
 
-  // Dvojhlásky OU a AU
-  { t: 'AUTO', e: '🚗' },   { t: 'AUTOBUS', e: '🚌' }, { t: 'LOUKA', e: '🌼' }, { t: 'MOUKA', e: '🌾' },
-  { t: 'KOULE', e: '⚪' },  { t: 'BOUDA', e: '🐶' },   { t: 'HOUBA', e: '🍄' }, { t: 'LOUŽE', e: '🌧️' },
-  { t: 'MOUCHA', e: '🪰' }, { t: 'FOUKÁ', e: '💨' },   { t: 'KOUKÁ', e: '👀' }, { t: 'HOUPÁ', e: '🎠' },
-  { t: 'LOUPÁ', e: '🍌' },  { t: 'KOUŘ', e: '💨' },    { t: 'BOUŘE', e: '⛈️' }, { t: 'KOUZLO', e: '🪄' },
-  { t: 'PAVOUK', e: '🕷️' }, { t: 'KOHOUT', e: '🐓' },  { t: 'KOCOUR', e: '🐈' }, { t: 'DLOUHÝ', e: '📏' }
+const RAW_LEVEL_5_OU_WORDS = [
+  // Slova s dvojhláskou OU (plynulý zvuk ou v jedné slabice)
+  { t: 'KOCOUR', e: '🐈' }, { t: 'LOUKA', e: '🌼' },  { t: 'ZOUBEK', e: '🦷' }, { t: 'OUŠKO', e: '👂' },
+  { t: 'PLOUT', e: '🏊' },  { t: 'MOUKA', e: '🌾' },  { t: 'KOULE', e: '⚪' },  { t: 'BOUDA', e: '🐶' },
+  { t: 'HOUBA', e: '🍄' },  { t: 'LOUŽE', e: '🌧️' },  { t: 'MOUCHA', e: '🪰' }, { t: 'FOUKÁ', e: '💨' },
+  { t: 'KOUKÁ', e: '👀' },  { t: 'HOUPÁ', e: '🎠' },  { t: 'LOUPÁ', e: '🍌' },  { t: 'LOUPE', e: '🍌' },
+  { t: 'KOUŘ', e: '💨' },   { t: 'BOUŘE', e: '⛈️' },  { t: 'KOUZLO', e: '🪄' }, { t: 'PAVOUK', e: '🕷️' },
+  { t: 'KOHOUT', e: '🐓' }, { t: 'DLOUHÝ', e: '📏' }, { t: 'SLOUP', e: '🏛️' },  { t: 'SLOUPEK', e: '🏛️' },
+  { t: 'STOUPÁ', e: '🧗' }, { t: 'SOUSTO', e: '🥪' }, { t: 'POUTO', e: '🔗' },  { t: 'POUTA', e: '🔗' },
+  { t: 'TOULÁ', e: '🐾' },  { t: 'SOUPIS', e: '📋' }, { t: 'SOUD', e: '⚖️' },   { t: 'SOUDEK', e: '🛢️' },
+  { t: 'SOUSED', e: '👋' }, { t: 'KOUPÍ', e: '🛒' },  { t: 'KOUPEL', e: '🛁' }, { t: 'ROURA', e: '🔧' },
+  { t: 'BROUK', e: '🪲' },  { t: 'DOUŠEK', e: '🥤' }, { t: 'KROUŽEK', e: '⭕' },{ t: 'POUZE', e: '☝️' }
+];
+
+const RAW_LEVEL_5_WORDS = [
+  ...RAW_LEVEL_5_SHLUKY_WORDS,
+  ...RAW_LEVEL_5_OU_WORDS.filter(ouItem => !RAW_LEVEL_5_SHLUKY_WORDS.some(shItem => shItem.t === ouItem.t))
 ];
 
 /* 6. ZÁLOŽKA: MĚKČENÉ HLÁSKY (DĚ, TĚ, NĚ, BĚ, PĚ, VĚ, MĚ, DI, TI, NI) */
