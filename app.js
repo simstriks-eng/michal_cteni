@@ -325,6 +325,23 @@ function getMaxDailyDirectLimit() {
   return 15.0 + (state.bonusMaxLimitMinutes || 0);
 }
 
+/**
+ * Progresivní zdražování dokupu +1 minuty k dennímu limitu za diamanty:
+ * 1. nákup (0 bonusových min) = 20 💎
+ * 2. nákup (1 bonusová min)  = 24 💎 (+4)
+ * 3. nákup (2 bonusové min)  = 29 💎 (+5)
+ * 4. nákup (3 bonusové min)  = 35 💎 (+6)  <-- aktuální stav Míši (má již koupeno 3×, limit 18 min)
+ * 5. nákup (4 bonusové min)  = 42 💎 (+7)
+ * 6. nákup (5 bonusových min) = 50 💎 (+8)
+ * 7. nákup (6 bonusových min) = 59 💎 (+9)
+ * 8. nákup (7 bonusových min) = 69 💎 (+10)
+ * atd. (zdražování roste o +4, +5, +6, +7, +8, +9, +10...)
+ */
+function getLimitExtensionCost(bonusCount = (state && state.bonusMaxLimitMinutes !== undefined ? state.bonusMaxLimitMinutes : 0)) {
+  const n = Math.max(0, parseInt(bonusCount, 10) || 0);
+  return 20 + Math.round((n * (n + 7)) / 2);
+}
+
 let spellingState = {
   mode: 'classic',
   unseenDeck: [],
@@ -753,6 +770,7 @@ let cloudAutoSaveTimer = null;
 let isCloudSyncInFlight = false;
 let pendingCloudSync = false;
 let cloudToastHideTimer = null;
+let isSuppressingAutoSave = false;
 
 function updateEnvironmentBadgeUI() {
   const badge = document.getElementById('top-env-mode-badge');
@@ -851,6 +869,11 @@ function computeStateProgressScore(s) {
   score += Math.round((Number(s.vaultBalance) || 0) * 4);
   score += Math.min(Number(s.goldDiamonds) || 0, 500) * 2;
   score += (Number(s.streakDays) || 0) * 15;
+  score += (Number(s.bonusMaxLimitMinutes) || 0) * 25;
+  score += Math.round((Number(s.dailyEarnedToday) || 0) * 5);
+  if (s.petSystem && typeof s.petSystem === 'object') {
+    score += (Number(s.petSystem.highestStage) || 0) * 20;
+  }
   if (s.petState && Array.isArray(s.petState.ownedPets)) {
     score += s.petState.ownedPets.length * 20;
   }
@@ -867,9 +890,9 @@ function isPollutedTestStateForRealAccount(s) {
   return (Number(s.goldDiamonds) || 0) > 2000;
 }
 
-function mergeLocalAndCloudStates(localObj, cloudObj) {
+function mergeLocalAndCloudStates(localObj, cloudObj, preferCloud = false) {
   if (!isValidGameStateObject(cloudObj)) return localObj;
-  if (!isValidGameStateObject(localObj)) return cloudObj;
+  if (!isValidGameStateObject(localObj)) return JSON.parse(JSON.stringify(cloudObj));
 
   // Pokud lokální paměť (např. na PC z dřívějšího testování v AI Studiu) obsahuje testovací miliony diamantů (> 2000),
   // zatímco v cloudu jsou reálná data z iPadu, vždy použijeme čistý stav z cloudu!
@@ -885,14 +908,14 @@ function mergeLocalAndCloudStates(localObj, cloudObj) {
   if (localScore <= 30 && cloudScore > localScore) {
     return JSON.parse(JSON.stringify(cloudObj));
   }
-  if (cloudScore <= 30 && localScore > cloudScore) {
+  if (!preferCloud && cloudScore <= 30 && localScore > cloudScore) {
     return JSON.parse(JSON.stringify(localObj));
   }
 
-  // Pokud má cloud novější nebo stejné časové razítko (nebo lokální záznam razítko nemá), primární je vždy cloud (data uložená z iPadu)
+  // Při přihlášení nebo startu aplikace (preferCloud = true) je primární vždy cloud (data uložená z tabletu přes disketu)
   let primary = cloudObj;
   let secondary = localObj;
-  if (localTime > cloudTime && cloudTime > 0) {
+  if (!preferCloud && localTime > cloudTime && cloudTime > 0) {
     primary = localObj;
     secondary = cloudObj;
   }
@@ -913,17 +936,25 @@ function mergeLocalAndCloudStates(localObj, cloudObj) {
   if (Array.isArray(primary.traceabilityHistory) || Array.isArray(secondary.traceabilityHistory)) {
     const tMap = new Map();
     (secondary.traceabilityHistory || []).forEach(day => {
-      if (day && day.date) tMap.set(day.date, day);
+      const dKey = day ? (day.dateIso || day.date) : null;
+      if (dKey) tMap.set(dKey, day);
     });
     (primary.traceabilityHistory || []).forEach(day => {
-      if (day && day.date) {
-        const existing = tMap.get(day.date);
-        if (!existing || (day.totalSeconds || 0) >= (existing.totalSeconds || 0)) {
-          tMap.set(day.date, day);
+      const dKey = day ? (day.dateIso || day.date) : null;
+      if (dKey) {
+        const existing = tMap.get(dKey);
+        const pSec = (day.totalDurationSec !== undefined ? day.totalDurationSec : (day.totalSeconds || 0));
+        const eSec = existing ? (existing.totalDurationSec !== undefined ? existing.totalDurationSec : (existing.totalSeconds || 0)) : -1;
+        if (!existing || pSec >= eSec) {
+          tMap.set(dKey, day);
         }
       }
     });
-    merged.traceabilityHistory = Array.from(tMap.values());
+    merged.traceabilityHistory = Array.from(tMap.values()).sort((a, b) => {
+      const da = a.dateIso || a.date || '';
+      const db = b.dateIso || b.date || '';
+      return db.localeCompare(da);
+    });
   }
 
   if (primary.customizations && secondary.customizations) {
@@ -943,15 +974,17 @@ function mergeLocalAndCloudStates(localObj, cloudObj) {
     merged.petState.ownedPets = Array.from(new Set([...pOwned, ...sOwned]));
   }
 
-  merged.lastSavedAt = Math.max(localTime, cloudTime, Date.now());
+  merged.lastSavedAt = preferCloud ? (cloudTime || Date.now()) : Math.max(localTime, cloudTime, Date.now());
   return merged;
 }
 
-function saveStateToLocalStorageOnly() {
+function saveStateToLocalStorageOnly(preserveTimestamp = false) {
   if (!currentLoggedInUser) return;
   try {
     state.appVersion = APP_VERSION;
-    state.lastSavedAt = Date.now();
+    if (!preserveTimestamp || !state.lastSavedAt) {
+      state.lastSavedAt = Date.now();
+    }
     const serialized = JSON.stringify(state);
     const userKey = `${USER_STORAGE_PREFIX}${currentLoggedInUser.username}`;
     localStorage.setItem(userKey, serialized);
@@ -1058,7 +1091,8 @@ function normalizeCloudEnvelope(rawRecord) {
 }
 
 async function fetchCloudEnvelopeFromGist() {
-  const response = await fetch(GIST_API_URL, {
+  const cacheBustUrl = `${GIST_API_URL}?t=${Date.now()}`;
+  const response = await fetch(cacheBustUrl, {
     method: 'GET',
     headers: {
       'Authorization': `token ${GITHUB_TOKEN}`,
@@ -1236,7 +1270,8 @@ function scheduleAutoCloudSave() {
 
 function saveState() {
   if (!currentLoggedInUser) return;
-  saveStateToLocalStorageOnly();
+  if (isSuppressingAutoSave) return;
+  saveStateToLocalStorageOnly(false);
   scheduleAutoCloudSave();
 }
 
@@ -1370,51 +1405,63 @@ function readLocalParsedStateForUser(username) {
 }
 
 function loadState() {
-  state = createCleanDefaultGameState();
-  window.state = state;
+  const prevSuppress = isSuppressingAutoSave;
+  isSuppressingAutoSave = true;
+  try {
+    state = createCleanDefaultGameState();
+    window.state = state;
 
-  if (currentLoggedInUser) {
-    try {
-      const parsed = readLocalParsedStateForUser(currentLoggedInUser.username);
-      if (parsed) {
-        applyParsedStateToRuntime(parsed);
-      } else if (currentLoggedInUser.isTestAccount) {
-        applyTestAccountPerks(state);
+    if (currentLoggedInUser) {
+      try {
+        const parsed = readLocalParsedStateForUser(currentLoggedInUser.username);
+        if (parsed) {
+          applyParsedStateToRuntime(parsed);
+        } else if (currentLoggedInUser.isTestAccount) {
+          applyTestAccountPerks(state);
+        }
+      } catch (e) {
+        console.error('Chyba při načítání stavu:', e);
       }
-    } catch (e) {
-      console.error('Chyba při načítání stavu:', e);
     }
-  }
 
-  checkAndHandleDailyResets();
-  applyCurrentTheme();
-  updateTopAvatarDisplay();
-  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
-  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+    checkAndHandleDailyResets();
+    applyCurrentTheme();
+    updateTopAvatarDisplay();
+    if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+    if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+  } finally {
+    isSuppressingAutoSave = prevSuppress;
+  }
 }
 
 function refreshAllUIAfterCloudSync() {
-  checkAndHandleDailyResets();
-  applyCurrentTheme();
-  updateEnvironmentBadgeUI();
-  updateTopAvatarDisplay();
-  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
-  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
-  updateStopwatchUI();
-  updateBalanceUI();
-  updateTopBadges();
-  updateDiamondMarketUI();
-  renderStoreSkinsUI();
-  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
-  updateImageToggleUI();
-  updateSpeechToggleUI();
-  updateSyllableArcsToggleUI();
-  setLetterCase(state.letterCase || 'upper');
-  setSubject(state.subject || 'reading');
-  setGridCount(state.gridCardCount || 8);
+  const prevSuppress = isSuppressingAutoSave;
+  isSuppressingAutoSave = true;
+  try {
+    checkAndHandleDailyResets();
+    applyCurrentTheme();
+    updateEnvironmentBadgeUI();
+    updateTopAvatarDisplay();
+    if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+    if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+    updateStopwatchUI();
+    updateBalanceUI();
+    updateTopBadges();
+    updateDiamondMarketUI();
+    renderStoreSkinsUI();
+    if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+    updateImageToggleUI();
+    updateSpeechToggleUI();
+    updateSyllableArcsToggleUI();
+    setLetterCase(state.letterCase || 'upper');
+    setSubject(state.subject || 'reading');
+    setGridCount(state.gridCardCount || 8);
+  } finally {
+    isSuppressingAutoSave = prevSuppress;
+  }
 }
 
-async function syncWithCloudOnStartup() {
+async function syncWithCloudOnStartup(forceCloudPriority = false) {
   updateEnvironmentBadgeUI();
 
   if (!currentLoggedInUser || !currentLoggedInUser.cloudEnabled) {
@@ -1441,21 +1488,29 @@ async function syncWithCloudOnStartup() {
       cloudRecord.lastSavedAt = cloudTime;
       const localTime = localParsed ? (Number(localParsed.lastSavedAt) || 0) : 0;
 
+      // Pokud nejde o čekající offline uložení (pendingCloudSync), má při startu a přihlášení vždy přednost stav z Gistu
+      const preferCloud = forceCloudPriority || !pendingCloudSync;
+
       const merged = currentLoggedInUser.isTestAccount
-        ? (localTime > cloudTime && localParsed ? localParsed : cloudRecord)
-        : mergeLocalAndCloudStates(localParsed, cloudRecord);
+        ? (!preferCloud && localTime > cloudTime && localParsed ? localParsed : cloudRecord)
+        : mergeLocalAndCloudStates(localParsed, cloudRecord, preferCloud);
+
+      if (cloudAutoSaveTimer) {
+        clearTimeout(cloudAutoSaveTimer);
+        cloudAutoSaveTimer = null;
+      }
 
       applyParsedStateToRuntime(merged);
-      saveStateToLocalStorageOnly();
+      saveStateToLocalStorageOnly(true);
       refreshAllUIAfterCloudSync();
 
-      // Do Gistu při startu nahráváme pouze tehdy, pokud měl tento přístroj prokazatelně novější lokální časové razítko než Gist
-      if (localTime > cloudTime && cloudTime > 0 && (currentLoggedInUser.isTestAccount || !isPollutedTestStateForRealAccount(localParsed))) {
+      // Do Gistu při startu nahráváme pouze tehdy, pokud zařízení hrálo offline a čekalo na synchronizaci
+      if (!preferCloud && pendingCloudSync && localTime > cloudTime && cloudTime > 0 && (currentLoggedInUser.isTestAccount || !isPollutedTestStateForRealAccount(localParsed))) {
         await pushStateToGist(false);
       }
     } else if (isValidGameStateObject(localParsed) && (currentLoggedInUser.isTestAccount || !isPollutedTestStateForRealAccount(localParsed))) {
       // V Gistu ještě tento účet nemá nahraný plný herní stav -> uložíme ho do Gistu!
-      saveStateToLocalStorageOnly();
+      saveStateToLocalStorageOnly(true);
       await pushStateToGist(false);
     }
   } catch (err) {
@@ -1466,6 +1521,12 @@ async function syncWithCloudOnStartup() {
 window.addEventListener('online', () => {
   if (currentLoggedInUser && currentLoggedInUser.cloudEnabled && pendingCloudSync) {
     pushStateToGist(false);
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && currentLoggedInUser && currentLoggedInUser.cloudEnabled && navigator.onLine && !pendingCloudSync && !isCloudSyncInFlight) {
+    syncWithCloudOnStartup(true);
   }
 });
 
@@ -1537,13 +1598,18 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
   setTimeout(resetIPadViewportScroll, 80);
   setTimeout(resetIPadViewportScroll, 280);
 
+  if (cloudAutoSaveTimer) {
+    clearTimeout(cloudAutoSaveTimer);
+    cloudAutoSaveTimer = null;
+  }
+
   if (isNewRegistration) {
     state = createCleanDefaultGameState();
     window.state = state;
     if (currentLoggedInUser.isTestAccount) {
       applyTestAccountPerks(state);
     }
-    saveStateToLocalStorageOnly();
+    saveStateToLocalStorageOnly(false);
     refreshAllUIAfterCloudSync();
     if (currentLoggedInUser.cloudEnabled) {
       await pushStateToGist(false);
@@ -1552,12 +1618,12 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
   } else {
     loadState();
     refreshAllUIAfterCloudSync();
-    await syncWithCloudOnStartup();
-    saveStateToLocalStorageOnly();
+    await syncWithCloudOnStartup(true);
+    saveStateToLocalStorageOnly(true);
     if (currentLoggedInUser.isTestAccount) {
       showCloudSaveToast('Přihlášen testovací účet "test" (5 000 💎, vše odemčeno, vlastní profil v Gistu)', '🧪', 'border-amber-400');
     } else {
-      showCloudSaveToast(`Vítej zpět, ${currentLoggedInUser.displayName}!`, '🎒', 'border-emerald-400');
+      showCloudSaveToast(`Vítej zpět, ${currentLoggedInUser.displayName}! Data načtena z cloudu.`, '🎒', 'border-emerald-400');
     }
   }
 }
@@ -5263,8 +5329,9 @@ function updateDiamondMarketUI() {
   const vaultLimitLabel = document.getElementById('vault-direct-limit-label');
   if (vaultLimitLabel) vaultLimitLabel.textContent = `${maxLimit} min`;
 
+  const nextCost = getLimitExtensionCost();
   const rateBadge = document.getElementById('diamond-rate-badge');
-  if (rateBadge) rateBadge.textContent = `${state.diamondExchangeRate || 20} 💎`;
+  if (rateBadge) rateBadge.textContent = `${nextCost} 💎`;
 
   const dynTitle = document.getElementById('dynamic-package-title');
   const dynCost = document.getElementById('dynamic-package-cost');
@@ -5368,16 +5435,17 @@ function updateVoucherStoreUI() {
 }
 
 function buyLimitExtension() {
-  const rate = state.diamondExchangeRate || 20;
-  if ((state.goldDiamonds || 0) < rate) {
+  const currentCost = getLimitExtensionCost();
+  if ((state.goldDiamonds || 0) < currentCost) {
     soundError();
-    alertUserFeedback(`Potřebuješ ${rate} modrých diamantů 💎 (máš jen ${state.goldDiamonds || 0}).`);
+    alertUserFeedback(`Potřebuješ ${currentCost} modrých diamantů 💎 (máš jen ${state.goldDiamonds || 0}).`);
     return;
   }
 
-  state.goldDiamonds -= rate;
+  state.goldDiamonds -= currentCost;
   state.bonusMaxLimitMinutes = (state.bonusMaxLimitMinutes || 0) + 1;
   const newMax = getMaxDailyDirectLimit();
+  const nextCost = getLimitExtensionCost();
 
   state.history.unshift({
     id: Date.now(),
@@ -5385,7 +5453,7 @@ function buyLimitExtension() {
     date: new Date().toLocaleDateString('cs-CZ'),
     type: 'limit_extended',
     minutes: 0,
-    note: `Nákup za ${rate} 💎: Denní limit zvýšen na ${newMax} min!`
+    note: `Nákup za ${currentCost} 💎: Denní limit zvýšen na ${newMax} min!`
   });
 
   saveState();
@@ -5394,7 +5462,8 @@ function buyLimitExtension() {
   updateBalanceUI();
   updateTopBadges();
   updateDiamondMarketUI();
-  alertUserFeedback(`Denní limit navýšen na ${newMax} minut! 🚀`);
+  if (typeof updateAdminDiamondUI === 'function') updateAdminDiamondUI();
+  alertUserFeedback(`Denní limit navýšen na ${newMax} minut! Další nákup bude za ${nextCost} 💎.`);
 }
 
 function revealSecretPinAction() {
@@ -7322,7 +7391,7 @@ function updateAdminDiamondUI() {
   if (diamondsDirectInp) diamondsDirectInp.value = (state.goldDiamonds || 0).toString();
 
   const rateInput = document.getElementById('admin-diamond-rate-input');
-  if (rateInput) rateInput.value = state.diamondExchangeRate || 20;
+  if (rateInput) rateInput.value = getLimitExtensionCost();
 }
 
 function adminAdjustStreak(delta) {
@@ -7693,7 +7762,7 @@ async function renderAdminAccountsList(fetchFromCloud = false) {
     if (cloudState) {
       const cloudTime = Math.max(Number(cloudMeta.updatedAt) || 0, Number(cloudState.lastSavedAt) || 0);
       const localTime = localState ? (Number(localState.lastSavedAt) || 0) : 0;
-      bestState = (localState && localTime > cloudTime && cloudTime > 0 && (isTest || !isPollutedTestStateForRealAccount(localState)))
+      bestState = (isCurrent && pendingCloudSync && localState && localTime > cloudTime)
         ? localState
         : cloudState;
 
@@ -8959,51 +9028,57 @@ function initSkolackaMiseApp() {
   } catch (e) {}
 
   updateEnvironmentBadgeUI();
-  loadState();
+  isSuppressingAutoSave = true;
+  try {
+    loadState();
+    if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
+    if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
+    attachStopwatchStopHoldListeners();
+    updateStopwatchUI();
+    updateBalanceUI();
+    updateTopBadges();
+    updateDiamondMarketUI();
+    renderStoreSkinsUI();
+    if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
+    if (!state.gridCardCount) state.gridCardCount = 8;
+    if (state.showImages === undefined) state.showImages = true;
+    if (state.showSpeechButton === undefined) state.showSpeechButton = true;
+    if (state.showSyllableArcs === undefined) state.showSyllableArcs = false;
+    if (!state.spellingMode) state.spellingMode = 'classic';
+    if (!state.reverseSpellingSpeed) state.reverseSpellingSpeed = 1;
+    if (!state.ttsEngine) state.ttsEngine = 'ai';
+    if (!state.aiVoiceName) state.aiVoiceName = 'Kore';
+    if (state.preferredSystemVoiceURI === undefined) state.preferredSystemVoiceURI = '';
+    if (!state.spellingRepeatCount) state.spellingRepeatCount = 3;
+    if (!state.mathMax) state.mathMax = 10;
+    if (!state.coinMaxLimit) state.coinMaxLimit = 20;
+    if (state.coinHardMode === undefined) state.coinHardMode = true;
+    if (!state.goldDiamonds) state.goldDiamonds = 0;
+    if (!state.bonusMaxLimitMinutes) state.bonusMaxLimitMinutes = 0;
+    if (!state.diamondExchangeRate) state.diamondExchangeRate = 20;
+    if (!state.pokemonSegmentsCount) state.pokemonSegmentsCount = 12;
+    if (!state.tabletSecretPin) state.tabletSecretPin = 'XXXX';
+    if (!state.customDailyLevelChoice) state.customDailyLevelChoice = 4;
+    if (state.streakDays === undefined) state.streakDays = 0;
+    if (state.letterCase === 'lower') state.letterCase = 'upper';
+
+    updateImageToggleUI();
+    updateSpeechToggleUI();
+    updateSyllableArcsToggleUI();
+    setLetterCase(state.letterCase || 'upper');
+    setSubject(state.subject || 'reading');
+    setGridCount(state.gridCardCount);
+  } finally {
+    isSuppressingAutoSave = false;
+  }
+
   if (currentLoggedInUser) {
-    syncWithCloudOnStartup();
+    syncWithCloudOnStartup(true);
   } else if (navigator.onLine) {
     fetchCloudEnvelopeFromGist().catch(err => {
       console.warn('Nelze přednačíst účty z GitHub Gistu při startu:', err);
     });
   }
-  if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
-  if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
-  attachStopwatchStopHoldListeners();
-  updateStopwatchUI();
-  updateBalanceUI();
-  updateTopBadges();
-  updateDiamondMarketUI();
-  renderStoreSkinsUI();
-  if (typeof renderStorePetsUI === 'function') renderStorePetsUI();
-  if (!state.gridCardCount) state.gridCardCount = 8;
-  if (state.showImages === undefined) state.showImages = true;
-  if (state.showSpeechButton === undefined) state.showSpeechButton = true;
-  if (state.showSyllableArcs === undefined) state.showSyllableArcs = false;
-  if (!state.spellingMode) state.spellingMode = 'classic';
-  if (!state.reverseSpellingSpeed) state.reverseSpellingSpeed = 1;
-  if (!state.ttsEngine) state.ttsEngine = 'ai';
-  if (!state.aiVoiceName) state.aiVoiceName = 'Kore';
-  if (state.preferredSystemVoiceURI === undefined) state.preferredSystemVoiceURI = '';
-  if (!state.spellingRepeatCount) state.spellingRepeatCount = 3;
-  if (!state.mathMax) state.mathMax = 10;
-  if (!state.coinMaxLimit) state.coinMaxLimit = 20;
-  if (state.coinHardMode === undefined) state.coinHardMode = true;
-  if (!state.goldDiamonds) state.goldDiamonds = 0;
-  if (!state.bonusMaxLimitMinutes) state.bonusMaxLimitMinutes = 0;
-  if (!state.diamondExchangeRate) state.diamondExchangeRate = 20;
-  if (!state.pokemonSegmentsCount) state.pokemonSegmentsCount = 12;
-  if (!state.tabletSecretPin) state.tabletSecretPin = 'XXXX';
-  if (!state.customDailyLevelChoice) state.customDailyLevelChoice = 4;
-  if (state.streakDays === undefined) state.streakDays = 0;
-  if (state.letterCase === 'lower') state.letterCase = 'upper';
-
-  updateImageToggleUI();
-  updateSpeechToggleUI();
-  updateSyllableArcsToggleUI();
-  setLetterCase(state.letterCase || 'upper');
-  setSubject(state.subject || 'reading');
-  setGridCount(state.gridCardCount);
 
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = () => {
