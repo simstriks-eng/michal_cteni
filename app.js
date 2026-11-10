@@ -13,9 +13,10 @@ const USER_STORAGE_PREFIX = 'ctenarska_mise_v20_user_';
 const LOCAL_ACCOUNTS_REGISTRY_KEY = 'ctenarska_mise_accounts_registry_v1';
 const REMEMBERED_USER_KEY = 'ctenarska_mise_remembered_user_v1';
 const SESSION_USER_KEY = 'ctenarska_mise_session_user_v1';
-const JSONBIN_BIN_ID = '6af21391ffd5d16053b4659f';
-const JSONBIN_MASTER_KEY = '$2a$10$MHfc4gF.YN5Kiy3bL9tEeeS4.K/1KeaYfyY2DA8//pFtLwINyNN32';
-const JSONBIN_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+const GIST_ID = 'd7f00f126ab1aa7021d4ba47bddc7e8e';
+const GITHUB_TOKEN = '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';
+const GIST_API_URL = `https://api.github.com/gists/${GIST_ID}`;
+let cachedGistFilename = 'gistfile1.txt';
 
 const BUILTIN_ACCOUNTS = {
   misa: {
@@ -29,13 +30,13 @@ const BUILTIN_ACCOUNTS = {
     username: 'test',
     password: 'test1',
     displayName: 'ŠKOLÁK TEST',
-    cloudEnabled: false,
+    cloudEnabled: true,
     isTestAccount: true
   }
 };
 
 let currentLoggedInUser = null; // { username, displayName, cloudEnabled, isTestAccount }
-let cachedCloudEnvelope = null; // { multiAccountVersion: 2, updatedAt, accounts: { [username]: { username, password, displayName, updatedAt, state } } }
+let cachedCloudEnvelope = null; // { updatedAt, users: { [username]: { username, password, displayName, updatedAt, progress, state } }, accounts: ... }
 
 function normalizeAccountUsername(raw) {
   if (!raw || typeof raw !== 'string') return '';
@@ -768,11 +769,11 @@ function updateEnvironmentBadgeUI() {
   if (currentLoggedInUser.isTestAccount) {
     badge.textContent = `🧪 ÚČET: ${currentLoggedInUser.username.toUpperCase()}`;
     badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-amber-100 text-amber-900 border-amber-300';
-    badge.title = 'Testovací účet (5 000 💎, vše odemčeno) – ukládá se pouze lokálně, Míšův cloud je chráněn.';
+    badge.title = 'Testovací účet (5 000 💎, vše odemčeno) – ukládá se do vlastního profilu "test" v GitHub Gistu, Míšův účet "misa" je 100% oddělen a chráněn.';
   } else {
     badge.textContent = `🟢 ÚČET: ${currentLoggedInUser.username.toUpperCase()}`;
     badge.className = 'cursor-pointer hover:brightness-95 active:scale-95 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border whitespace-nowrap bg-emerald-100 text-emerald-900 border-emerald-400';
-    badge.title = `Hráčský účet "${currentLoggedInUser.username}" – automatické ukládání do localStorage i cloudu JSONbin.io.`;
+    badge.title = `Hráčský účet "${currentLoggedInUser.username}" – automatické ukládání do localStorage i cloudu (GitHub Gist).`;
   }
 }
 
@@ -956,8 +957,8 @@ function saveStateToLocalStorageOnly() {
 
 function normalizeCloudEnvelope(rawRecord) {
   const envelope = {
-    multiAccountVersion: 2,
     updatedAt: Date.now(),
+    users: {},
     accounts: {}
   };
 
@@ -965,59 +966,151 @@ function normalizeCloudEnvelope(rawRecord) {
     return envelope;
   }
 
-  if (rawRecord.accounts && typeof rawRecord.accounts === 'object' && !Array.isArray(rawRecord.accounts)) {
-    envelope.accounts = { ...rawRecord.accounts };
-    Object.values(envelope.accounts).forEach(acc => {
-      if (acc && acc.state && typeof acc.state === 'object') {
-        const envTime = Number(acc.updatedAt) || Number(rawRecord.updatedAt) || 0;
-        if (envTime > (Number(acc.state.lastSavedAt) || 0)) {
-          acc.state.lastSavedAt = envTime;
+  const rawUsersMap = (rawRecord.users && typeof rawRecord.users === 'object' && !Array.isArray(rawRecord.users))
+    ? rawRecord.users
+    : (rawRecord.accounts && typeof rawRecord.accounts === 'object' && !Array.isArray(rawRecord.accounts))
+      ? rawRecord.accounts
+      : null;
+
+  if (rawUsersMap) {
+    Object.entries(rawUsersMap).forEach(([rawKey, acc]) => {
+      const uname = normalizeAccountUsername(rawKey || (acc && acc.username) || '');
+      if (!uname || !acc || typeof acc !== 'object') return;
+
+      const builtin = BUILTIN_ACCOUNTS[uname] || null;
+      const password = acc.password || (builtin ? builtin.password : '');
+      const displayName = acc.displayName || (builtin ? builtin.displayName : `ŠKOLÁK ${uname.toUpperCase()}`);
+      const envTime = Number(acc.updatedAt) || Number(rawRecord.updatedAt) || 0;
+
+      let progressObj = null;
+      if (acc.progress && typeof acc.progress === 'object' && !Array.isArray(acc.progress)) {
+        progressObj = acc.progress;
+      } else if (acc.state && typeof acc.state === 'object' && !Array.isArray(acc.state)) {
+        progressObj = acc.state;
+      }
+
+      // Pokud má účet 'test' v Gistu jen výchozí zkrácený zápis { gems: 5000, unlockedEverything: true }, převedeme ho na plný herní stav
+      if (uname === 'test' && progressObj && !isValidGameStateObject(progressObj)) {
+        if (typeof progressObj.gems === 'number' || progressObj.unlockedEverything) {
+          const fullTest = createCleanDefaultGameState();
+          applyTestAccountPerks(fullTest);
+          if (typeof progressObj.gems === 'number') {
+            fullTest.goldDiamonds = progressObj.gems;
+          }
+          progressObj = fullTest;
         }
       }
+
+      const validState = isValidGameStateObject(progressObj) ? progressObj : null;
+      if (validState && envTime > (Number(validState.lastSavedAt) || 0)) {
+        validState.lastSavedAt = envTime;
+      }
+
+      const normalizedEntry = {
+        username: uname,
+        password,
+        displayName,
+        updatedAt: envTime || (validState ? Number(validState.lastSavedAt) || 0 : 0),
+        progress: validState || (progressObj || {}),
+        state: validState
+      };
+
+      envelope.users[uname] = normalizedEntry;
+      envelope.accounts[uname] = normalizedEntry;
+
+      saveLocalAccountToRegistry({
+        username: uname,
+        password,
+        displayName,
+        cloudEnabled: true,
+        isTestAccount: uname === 'test'
+      });
     });
     return envelope;
   }
 
-  // Zpětná kompatibilita: pokud je v JSONbin.io uložen přímo Míšův herní stav z předchozí verze, přiřadíme ho účtu 'misa'
+  // Zpětná kompatibilita: pokud je v cloudu uložen přímo Míšův herní stav z předchozí verze, přiřadíme ho účtu 'misa'
   if (isValidGameStateObject(rawRecord)) {
     const ts = Number(rawRecord.lastSavedAt) || Date.now();
     rawRecord.lastSavedAt = ts;
-    envelope.accounts.misa = {
+    const misaEntry = {
       username: 'misa',
       password: BUILTIN_ACCOUNTS.misa.password,
       displayName: BUILTIN_ACCOUNTS.misa.displayName,
       updatedAt: ts,
+      progress: rawRecord,
       state: rawRecord
     };
+    envelope.users.misa = misaEntry;
+    envelope.accounts.misa = misaEntry;
   }
 
   return envelope;
 }
 
-async function fetchCloudEnvelopeFromJsonBin() {
-  const response = await fetch(`${JSONBIN_URL}/latest`, {
+async function fetchCloudEnvelopeFromGist() {
+  const response = await fetch(GIST_API_URL, {
     method: 'GET',
     headers: {
-      'X-Master-Key': JSONBIN_MASTER_KEY,
-      'X-Bin-Meta': 'false'
-    }
+      'Authorization': `token ${GITHUB_TOKEN}`,
+      'Accept': 'vnd.github.v3+json'
+    },
+    cache: 'no-store'
   });
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`);
+    throw new Error(`GitHub Gist GET HTTP ${response.status}`);
   }
-  const rawJson = await response.json();
-  const record = rawJson && rawJson.record && typeof rawJson.record === 'object' ? rawJson.record : rawJson;
-  cachedCloudEnvelope = normalizeCloudEnvelope(record);
+  const gistData = await response.json();
+  const files = (gistData && gistData.files && typeof gistData.files === 'object') ? gistData.files : {};
+  const fileNames = Object.keys(files);
+  const targetFileName = files['gistfile1.txt'] ? 'gistfile1.txt' : (fileNames[0] || 'gistfile1.txt');
+  cachedGistFilename = targetFileName;
+
+  const fileObj = files[targetFileName];
+  let parsedContent = { users: {} };
+  if (fileObj && typeof fileObj.content === 'string' && fileObj.content.trim()) {
+    try {
+      parsedContent = JSON.parse(fileObj.content);
+    } catch (parseErr) {
+      console.warn('Chyba při parsování JSON obsahu z GitHub Gistu:', parseErr);
+    }
+  }
+
+  cachedCloudEnvelope = normalizeCloudEnvelope(parsedContent);
   return cachedCloudEnvelope;
 }
 
-async function pushStateToJsonBin(isManual = false) {
+// Zachováme alias pro všechna místa v kódu
+const fetchCloudEnvelopeFromJsonBin = fetchCloudEnvelopeFromGist;
+
+function buildGistUsersPayloadFromEnvelope(envelope) {
+  const usersOut = {};
+  const sourceMap = (envelope && envelope.users) ? envelope.users : (envelope && envelope.accounts ? envelope.accounts : {});
+  Object.entries(sourceMap).forEach(([uname, entry]) => {
+    if (!entry || typeof entry !== 'object') return;
+    const progressData = isValidGameStateObject(entry.state)
+      ? entry.state
+      : (entry.progress && typeof entry.progress === 'object' ? entry.progress : {});
+    usersOut[uname] = {
+      username: uname,
+      password: entry.password || (BUILTIN_ACCOUNTS[uname] ? BUILTIN_ACCOUNTS[uname].password : ''),
+      displayName: entry.displayName || (BUILTIN_ACCOUNTS[uname] ? BUILTIN_ACCOUNTS[uname].displayName : `ŠKOLÁK ${uname.toUpperCase()}`),
+      updatedAt: Number(entry.updatedAt) || Date.now(),
+      progress: progressData
+    };
+  });
+  return {
+    updatedAt: Date.now(),
+    users: usersOut
+  };
+}
+
+async function pushStateToGist(isManual = false) {
   if (!currentLoggedInUser) return false;
 
-  // Testovací účet ('test') se nikdy neukládá do cloudu JSONbin.io!
-  if (currentLoggedInUser.isTestAccount || !currentLoggedInUser.cloudEnabled) {
+  if (!currentLoggedInUser.cloudEnabled) {
     if (isManual) {
-      showCloudSaveToast(`Uloženo lokálně! (Účet "${currentLoggedInUser.username}" – Míšův cloud chráněn)`, '🧪', 'border-amber-400');
+      showCloudSaveToast(`Uloženo lokálně! (Účet "${currentLoggedInUser.username}")`, '💾', 'border-amber-400');
     }
     return false;
   }
@@ -1025,7 +1118,7 @@ async function pushStateToJsonBin(isManual = false) {
   if (!navigator.onLine) {
     pendingCloudSync = true;
     if (isManual) {
-      showCloudSaveToast('Uloženo v tabletu (offline – do cloudu se nahraje po připojení)', '📦', 'border-amber-400');
+      showCloudSaveToast('Uloženo v zařízení (offline – do GitHub Gistu se nahraje po připojení)', '📦', 'border-amber-400');
     }
     return false;
   }
@@ -1040,39 +1133,58 @@ async function pushStateToJsonBin(isManual = false) {
   if (saveIcon && isManual) saveIcon.classList.add('animate-bounce');
 
   try {
-    // Pokud ještě nemáme načtenou obálku všech účtů z cloudu, nejprve si ji stáhneme, abychom nepřepsali jiný účet (např. synovce)
-    if (!cachedCloudEnvelope) {
-      try {
-        await fetchCloudEnvelopeFromJsonBin();
-      } catch (fetchErr) {
-        cachedCloudEnvelope = { multiAccountVersion: 2, updatedAt: Date.now(), accounts: {} };
+    // Nejprve stáhneme aktuální stav Gistu, abychom vždy aktualizovali jen aktivní účet v objektu "users" a nikdy nepřepsali ostatní účty (např. "misa")
+    try {
+      await fetchCloudEnvelopeFromGist();
+    } catch (fetchErr) {
+      if (!cachedCloudEnvelope) {
+        cachedCloudEnvelope = { updatedAt: Date.now(), users: {}, accounts: {} };
       }
     }
 
     const uname = currentLoggedInUser.username;
     const reg = getLocalAccountsRegistry();
     const accMeta = reg[uname] || currentLoggedInUser;
+    const nowTs = Date.now();
+    state.lastSavedAt = nowTs;
+    const stateClone = JSON.parse(JSON.stringify(state));
 
-    cachedCloudEnvelope.updatedAt = Date.now();
-    cachedCloudEnvelope.accounts[uname] = {
+    const updatedUserEntry = {
       username: uname,
-      password: accMeta.password || '',
+      password: accMeta.password || (BUILTIN_ACCOUNTS[uname] ? BUILTIN_ACCOUNTS[uname].password : ''),
       displayName: accMeta.displayName || `ŠKOLÁK ${uname.toUpperCase()}`,
-      updatedAt: Date.now(),
-      state: JSON.parse(JSON.stringify(state))
+      updatedAt: nowTs,
+      progress: stateClone,
+      state: stateClone
     };
 
-    const response = await fetch(JSONBIN_URL, {
-      method: 'PUT',
+    if (!cachedCloudEnvelope.users) cachedCloudEnvelope.users = {};
+    if (!cachedCloudEnvelope.accounts) cachedCloudEnvelope.accounts = {};
+    cachedCloudEnvelope.updatedAt = nowTs;
+    cachedCloudEnvelope.users[uname] = updatedUserEntry;
+    cachedCloudEnvelope.accounts[uname] = updatedUserEntry;
+
+    const gistPayload = buildGistUsersPayloadFromEnvelope(cachedCloudEnvelope);
+    const targetFile = cachedGistFilename || 'gistfile1.txt';
+
+    const response = await fetch(GIST_API_URL, {
+      method: 'PATCH',
       headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_MASTER_KEY
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Accept': 'vnd.github.v3+json',
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(cachedCloudEnvelope)
+      body: JSON.stringify({
+        files: {
+          [targetFile]: {
+            content: JSON.stringify(gistPayload, null, 2)
+          }
+        }
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(`GitHub Gist PATCH HTTP ${response.status}`);
     }
 
     pendingCloudSync = false;
@@ -1081,10 +1193,10 @@ async function pushStateToJsonBin(isManual = false) {
     }
     return true;
   } catch (err) {
-    console.warn('Uložení na JSONbin.io se nezdařilo (data jsou v bezpečí v localStorage):', err);
+    console.warn('Uložení na GitHub Gist se nezdařilo (data jsou v bezpečí v localStorage):', err);
     pendingCloudSync = true;
     if (isManual) {
-      showCloudSaveToast('Uloženo v tabletu (cloud momentálně nedostupný)', '⚠️', 'border-amber-400');
+      showCloudSaveToast('Uloženo v zařízení (GitHub Gist momentálně nedostupný)', '⚠️', 'border-amber-400');
     }
     return false;
   } finally {
@@ -1097,8 +1209,10 @@ async function pushStateToJsonBin(isManual = false) {
   }
 }
 
+const pushStateToJsonBin = pushStateToGist;
+
 function scheduleAutoCloudSave() {
-  if (!currentLoggedInUser || !currentLoggedInUser.cloudEnabled || currentLoggedInUser.isTestAccount) {
+  if (!currentLoggedInUser || !currentLoggedInUser.cloudEnabled) {
     return;
   }
   if (!navigator.onLine) {
@@ -1107,7 +1221,7 @@ function scheduleAutoCloudSave() {
   }
   if (cloudAutoSaveTimer) clearTimeout(cloudAutoSaveTimer);
   cloudAutoSaveTimer = setTimeout(() => {
-    pushStateToJsonBin(false);
+    pushStateToGist(false);
   }, 1500);
 }
 
@@ -1125,7 +1239,7 @@ async function manualSaveProgress() {
     cloudAutoSaveTimer = null;
   }
   saveStateToLocalStorageOnly();
-  await pushStateToJsonBin(true);
+  await pushStateToGist(true);
 }
 
 function applyParsedStateToRuntime(parsed) {
@@ -1294,7 +1408,7 @@ function refreshAllUIAfterCloudSync() {
 async function syncWithCloudOnStartup() {
   updateEnvironmentBadgeUI();
 
-  if (!currentLoggedInUser || currentLoggedInUser.isTestAccount || !currentLoggedInUser.cloudEnabled) {
+  if (!currentLoggedInUser || !currentLoggedInUser.cloudEnabled) {
     return;
   }
 
@@ -1306,37 +1420,43 @@ async function syncWithCloudOnStartup() {
   const localParsed = readLocalParsedStateForUser(uname);
 
   try {
-    const envelope = await fetchCloudEnvelopeFromJsonBin();
-    const cloudAccountEntry = envelope.accounts ? envelope.accounts[uname] : null;
-    const cloudRecord = cloudAccountEntry && cloudAccountEntry.state ? cloudAccountEntry.state : null;
+    const envelope = await fetchCloudEnvelopeFromGist();
+    const usersMap = envelope.users || envelope.accounts || {};
+    const cloudAccountEntry = usersMap[uname] || null;
+    const cloudRecord = cloudAccountEntry && isValidGameStateObject(cloudAccountEntry.state)
+      ? cloudAccountEntry.state
+      : (cloudAccountEntry && isValidGameStateObject(cloudAccountEntry.progress) ? cloudAccountEntry.progress : null);
 
     if (isValidGameStateObject(cloudRecord)) {
       const cloudTime = Math.max(Number(cloudAccountEntry.updatedAt) || 0, Number(cloudRecord.lastSavedAt) || 0);
       cloudRecord.lastSavedAt = cloudTime;
       const localTime = localParsed ? (Number(localParsed.lastSavedAt) || 0) : 0;
 
-      const merged = mergeLocalAndCloudStates(localParsed, cloudRecord);
+      const merged = currentLoggedInUser.isTestAccount
+        ? (localTime > cloudTime && localParsed ? localParsed : cloudRecord)
+        : mergeLocalAndCloudStates(localParsed, cloudRecord);
+
       applyParsedStateToRuntime(merged);
       saveStateToLocalStorageOnly();
       refreshAllUIAfterCloudSync();
 
-      // Do cloudu při startu nahráváme pouze tehdy, pokud měl tento tablet prokazatelně novější lokální časové razítko než cloud
-      if (localTime > cloudTime && cloudTime > 0 && !isPollutedTestStateForRealAccount(localParsed)) {
-        await pushStateToJsonBin(false);
+      // Do Gistu při startu nahráváme pouze tehdy, pokud měl tento přístroj prokazatelně novější lokální časové razítko než Gist
+      if (localTime > cloudTime && cloudTime > 0 && (currentLoggedInUser.isTestAccount || !isPollutedTestStateForRealAccount(localParsed))) {
+        await pushStateToGist(false);
       }
-    } else if (isValidGameStateObject(localParsed) && !isPollutedTestStateForRealAccount(localParsed)) {
-      // V cloudu ještě tento účet nemá nahraný stav -> uložíme ho do cloudu!
+    } else if (isValidGameStateObject(localParsed) && (currentLoggedInUser.isTestAccount || !isPollutedTestStateForRealAccount(localParsed))) {
+      // V Gistu ještě tento účet nemá nahraný plný herní stav -> uložíme ho do Gistu!
       saveStateToLocalStorageOnly();
-      await pushStateToJsonBin(false);
+      await pushStateToGist(false);
     }
   } catch (err) {
-    console.warn('Synchronizace účtu s JSONbin.io selhala, pokračujeme z localStorage:', err);
+    console.warn('Synchronizace účtu s GitHub Gistem selhala, pokračujeme z localStorage:', err);
   }
 }
 
 window.addEventListener('online', () => {
-  if (currentLoggedInUser && currentLoggedInUser.cloudEnabled && !currentLoggedInUser.isTestAccount && pendingCloudSync) {
-    pushStateToJsonBin(false);
+  if (currentLoggedInUser && currentLoggedInUser.cloudEnabled && pendingCloudSync) {
+    pushStateToGist(false);
   }
 });
 
@@ -1386,9 +1506,9 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
   currentLoggedInUser = {
     username: accountObj.username,
     password: accountObj.password || '',
-    displayName: accountObj.displayName || (accountObj.username === 'misa' ? 'ŠKOLÁK MÍŠA' : accountObj.username === 'test' ? 'TESTOVACÍ HRDINA' : `ŠKOLÁK ${accountObj.username.toUpperCase()}`),
-    cloudEnabled: accountObj.cloudEnabled !== false && !accountObj.isTestAccount,
-    isTestAccount: Boolean(accountObj.isTestAccount)
+    displayName: accountObj.displayName || (accountObj.username === 'misa' ? 'ŠKOLÁK MÍŠA' : accountObj.username === 'test' ? 'ŠKOLÁK TEST' : `ŠKOLÁK ${accountObj.username.toUpperCase()}`),
+    cloudEnabled: accountObj.cloudEnabled !== false,
+    isTestAccount: Boolean(accountObj.isTestAccount || accountObj.username === 'test')
   };
 
   saveLocalAccountToRegistry(currentLoggedInUser);
@@ -1417,7 +1537,7 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
     saveStateToLocalStorageOnly();
     refreshAllUIAfterCloudSync();
     if (currentLoggedInUser.cloudEnabled) {
-      await pushStateToJsonBin(false);
+      await pushStateToGist(false);
     }
     showCloudSaveToast(`Vítej! Nový účet "${currentLoggedInUser.username}" byl vytvořen!`, '✨', 'border-indigo-400');
   } else {
@@ -1426,7 +1546,7 @@ async function activateUserAccountSession(accountObj, rememberOnDevice = false, 
     await syncWithCloudOnStartup();
     saveStateToLocalStorageOnly();
     if (currentLoggedInUser.isTestAccount) {
-      showCloudSaveToast('Přihlášen testovací účet (5 000 💎, vše odemčeno, lokální režim)', '🧪', 'border-amber-400');
+      showCloudSaveToast('Přihlášen testovací účet "test" (5 000 💎, vše odemčeno, vlastní profil v Gistu)', '🧪', 'border-amber-400');
     } else {
       showCloudSaveToast(`Vítej zpět, ${currentLoggedInUser.displayName}!`, '🎒', 'border-emerald-400');
     }
@@ -1452,29 +1572,35 @@ async function submitAccountLogin() {
     return;
   }
 
-  const localReg = getLocalAccountsRegistry();
-  let matchedAccount = localReg[uname] || null;
+  let matchedAccount = null;
 
-  // Pokud účet není v lokálním registru (např. synovec se přihlašuje na jiném zařízení), zkusíme ho ověřit v cloudu JSONbin.io
-  if (!matchedAccount && navigator.onLine) {
+  // 1. Při přihlášení vždy nejprve stáhneme čerstvý JSON z GitHub Gistu (pokud je zařízení online) a ověříme přihlašovací údaje
+  if (navigator.onLine) {
     if (submitBtn) submitBtn.disabled = true;
     try {
-      const env = await fetchCloudEnvelopeFromJsonBin();
-      if (env && env.accounts && env.accounts[uname]) {
-        const cloudAcc = env.accounts[uname];
+      const env = await fetchCloudEnvelopeFromGist();
+      const usersMap = (env && env.users) ? env.users : (env && env.accounts ? env.accounts : {});
+      if (usersMap[uname]) {
+        const cloudAcc = usersMap[uname];
         matchedAccount = {
           username: uname,
-          password: cloudAcc.password || '',
-          displayName: cloudAcc.displayName || `ŠKOLÁK ${uname.toUpperCase()}`,
+          password: cloudAcc.password || (BUILTIN_ACCOUNTS[uname] ? BUILTIN_ACCOUNTS[uname].password : ''),
+          displayName: cloudAcc.displayName || (BUILTIN_ACCOUNTS[uname] ? BUILTIN_ACCOUNTS[uname].displayName : `ŠKOLÁK ${uname.toUpperCase()}`),
           cloudEnabled: true,
-          isTestAccount: false
+          isTestAccount: uname === 'test'
         };
       }
     } catch (e) {
-      console.warn('Nelze ověřit účet v cloudu:', e);
+      console.warn('Nelze ověřit účet v GitHub Gistu, použiji lokální registr:', e);
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }
+  }
+
+  // 2. Fallback na lokální registr účtů (pro offline režim nebo výchozí účty)
+  if (!matchedAccount) {
+    const localReg = getLocalAccountsRegistry();
+    matchedAccount = localReg[uname] || null;
   }
 
   if (!matchedAccount) {
@@ -1517,14 +1643,15 @@ async function submitAccountRegister() {
   if (navigator.onLine) {
     if (submitBtn) submitBtn.disabled = true;
     try {
-      const env = await fetchCloudEnvelopeFromJsonBin();
-      if (env && env.accounts && env.accounts[uname]) {
-        showAuthError('auth-reg-error', `⚠️ Účet "${uname}" už v cloudu existuje! Přepni se na "Přihlásit se".`);
+      const env = await fetchCloudEnvelopeFromGist();
+      const usersMap = (env && env.users) ? env.users : (env && env.accounts ? env.accounts : {});
+      if (usersMap[uname]) {
+        showAuthError('auth-reg-error', `⚠️ Účet "${uname}" už v GitHub Gistu existuje! Přepni se na "Přihlásit se".`);
         if (submitBtn) submitBtn.disabled = false;
         return;
       }
     } catch (e) {
-      console.warn('Nelze zkontrolovat existenci účtu v cloudu, zakládám lokálně:', e);
+      console.warn('Nelze zkontrolovat existenci účtu v GitHub Gistu, zakládám lokálně:', e);
     } finally {
       if (submitBtn) submitBtn.disabled = false;
     }
@@ -1579,13 +1706,13 @@ function renderCloudEnvModalUI() {
     statusBox.innerHTML = `
       <div class="font-black text-sm text-amber-900 mb-1">🧪 Aktivní účet: ${currentLoggedInUser.username.toUpperCase()} (${currentLoggedInUser.displayName})</div>
       <div>Tento testovací účet má <b>5 000 💎</b> a odemčené všechny možnosti k testování.</div>
-      <div class="mt-1.5 text-[11px] text-amber-800">🔒 Ukládá se <b>pouze lokálně</b> – Míšův účet i cloud JSONbin.io jsou 100% oddělené a chráněné.</div>
+      <div class="mt-1.5 text-[11px] text-amber-800">🔒 Zapisuje pouze do svého odděleného profilu <b>"test"</b> v GitHub Gistu – Míšův účet <b>"misa"</b> je 100% oddělený a chráněný.</div>
     `;
   } else {
     statusBox.className = 'p-3.5 rounded-2xl border-2 bg-emerald-50 border-emerald-400 text-xs font-bold text-emerald-950 leading-relaxed';
     statusBox.innerHTML = `
       <div class="font-black text-sm text-emerald-900 mb-1">🟢 Aktivní účet: ${currentLoggedInUser.username.toUpperCase()} (${currentLoggedInUser.displayName})</div>
-      <div>Progres tohoto účtu se automaticky ukládá jak do <b>localStorage</b> tohoto tabletu, tak pod vlastní profil <b>"${currentLoggedInUser.username}"</b> v cloudu JSONbin.io.</div>
+      <div>Progres tohoto účtu se automaticky ukládá jak do <b>localStorage</b> tohoto zařízení, tak pod vlastní profil <b>"${currentLoggedInUser.username}"</b> v cloudu (GitHub Gist).</div>
       <div class="mt-1.5 text-[11px] text-emerald-800">☁️ Ostatní účty (např. synovec nebo test) mají svá vlastní oddělená data a tento účet nikdy nepřepíší.</div>
     `;
   }
@@ -7255,20 +7382,22 @@ async function renderAdminAccountsList(fetchFromCloud = false) {
   if ((fetchFromCloud || !cachedCloudEnvelope) && navigator.onLine) {
     container.innerHTML = `
       <div class="p-4 text-center text-xs font-bold text-slate-500 bg-white rounded-2xl border border-slate-200">
-        🔄 Načítám aktuální stav účtů z cloudu JSONbin.io...
+        🔄 Načítám aktuální stav účtů z cloudu (GitHub Gist)...
       </div>
     `;
     try {
-      await fetchCloudEnvelopeFromJsonBin();
+      await fetchCloudEnvelopeFromGist();
     } catch (e) {
-      console.warn('Nelze stáhnout seznam účtů z cloudu:', e);
+      console.warn('Nelze stáhnout seznam účtů z GitHub Gistu:', e);
     }
   }
 
   const localReg = getLocalAccountsRegistry();
-  const cloudAccounts = (cachedCloudEnvelope && cachedCloudEnvelope.accounts) ? cachedCloudEnvelope.accounts : {};
+  const cloudAccounts = (cachedCloudEnvelope && cachedCloudEnvelope.users)
+    ? cachedCloudEnvelope.users
+    : ((cachedCloudEnvelope && cachedCloudEnvelope.accounts) ? cachedCloudEnvelope.accounts : {});
 
-  // Sjednotíme všechny klíče účtů (misa, test + jakékoliv vytvořené účty lokálně či v cloudu)
+  // Sjednotíme všechny klíče účtů (misa, test + jakékoliv vytvořené účty lokálně či v Gistu)
   const allUsernames = Array.from(new Set([
     'misa',
     'test',
@@ -7286,21 +7415,21 @@ async function renderAdminAccountsList(fetchFromCloud = false) {
     const isMisa = uname === 'misa';
     const isTest = uname === 'test';
 
-    // Zjistíme uložený stav účtu: u cloudových účtů (misa a další) má přednost čerstvý stav z cloudu JSONbin.io!
+    // Zjistíme uložený stav účtu: přednost má čerstvý stav z GitHub Gistu
     const localState = readLocalParsedStateForUser(uname);
-    const cloudState = cloudMeta && cloudMeta.state ? cloudMeta.state : null;
+    const cloudState = cloudMeta && isValidGameStateObject(cloudMeta.state)
+      ? cloudMeta.state
+      : (cloudMeta && isValidGameStateObject(cloudMeta.progress) ? cloudMeta.progress : null);
 
     let bestState = null;
-    if (isTest) {
-      bestState = isCurrent ? state : (localState || { minutesBalance: 0, goldDiamonds: 5000, streakDays: 0 });
-    } else if (cloudState) {
+    if (cloudState) {
       const cloudTime = Math.max(Number(cloudMeta.updatedAt) || 0, Number(cloudState.lastSavedAt) || 0);
       const localTime = localState ? (Number(localState.lastSavedAt) || 0) : 0;
-      bestState = (localState && localTime > cloudTime && cloudTime > 0 && !isPollutedTestStateForRealAccount(localState))
+      bestState = (localState && localTime > cloudTime && cloudTime > 0 && (isTest || !isPollutedTestStateForRealAccount(localState)))
         ? localState
         : cloudState;
 
-      // Zároveň aktualizujeme lokální paměť tohoto zařízení podle cloudu, aby v ní nezůstávala stará testovací data
+      // Aktualizujeme lokální paměť tohoto zařízení podle Gistu, aby v ní nezůstávala stará testovací data
       try {
         const serializedCloud = JSON.stringify(bestState);
         localStorage.setItem(`${USER_STORAGE_PREFIX}${uname}`, serializedCloud);
@@ -7308,12 +7437,14 @@ async function renderAdminAccountsList(fetchFromCloud = false) {
           localStorage.setItem(STORAGE_KEY, serializedCloud);
         }
       } catch (e) {}
+    } else if (isTest) {
+      bestState = isCurrent ? state : (localState || { minutesBalance: 0, goldDiamonds: 5000, streakDays: 0 });
     } else {
       bestState = isCurrent ? state : localState;
     }
 
     const mins = bestState ? formatMinutes(bestState.minutesBalance || 0) : '0 min';
-    const dias = bestState ? (bestState.goldDiamonds || 0) : 0;
+    const dias = bestState ? (bestState.goldDiamonds !== undefined ? bestState.goldDiamonds : (bestState.gems || 0)) : (isTest ? 5000 : 0);
     const streak = bestState ? (bestState.streakDays || 0) : 0;
 
     let badgeHtml = '';
@@ -7364,7 +7495,7 @@ async function renderAdminAccountsList(fetchFromCloud = false) {
             <span>⭐ Kredit: <strong class="text-amber-700">${mins}</strong></span>
             <span>💎 Diamanty: <strong class="text-cyan-700">${dias}</strong></span>
             <span>🔥 Řada: <strong class="text-orange-600">${streak} dní</strong></span>
-            <span>💾 Úložiště: <strong>${isTest ? 'Pouze lokální' : (cloudMeta ? 'Lokální + Cloud' : 'Lokální')}</strong></span>
+            <span>💾 Úložiště: <strong>${cloudMeta ? 'Lokální + GitHub Gist' : 'Lokální'}</strong></span>
           </div>
         </div>
         <div class="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
@@ -7375,15 +7506,53 @@ async function renderAdminAccountsList(fetchFromCloud = false) {
   }).join('');
 }
 
-function resetTestAccountFromAdmin() {
+async function resetTestAccountFromAdmin() {
   try {
-    localStorage.removeItem(`${USER_STORAGE_PREFIX}test`);
+    const cleanTest = createCleanDefaultGameState();
+    applyTestAccountPerks(cleanTest);
+    cleanTest.lastSavedAt = Date.now();
+    localStorage.setItem(`${USER_STORAGE_PREFIX}test`, JSON.stringify(cleanTest));
+
     if (currentLoggedInUser && currentLoggedInUser.username === 'test') {
-      state = createCleanDefaultGameState();
-      applyTestAccountPerks(state);
+      state = cleanTest;
       window.state = state;
       saveStateToLocalStorageOnly();
       refreshAllUIAfterCloudSync();
+      await pushStateToGist(false);
+    } else if (navigator.onLine) {
+      try {
+        await fetchCloudEnvelopeFromGist();
+        if (cachedCloudEnvelope && cachedCloudEnvelope.users) {
+          cachedCloudEnvelope.users.test = {
+            username: 'test',
+            password: BUILTIN_ACCOUNTS.test.password,
+            displayName: BUILTIN_ACCOUNTS.test.displayName,
+            updatedAt: Date.now(),
+            progress: cleanTest,
+            state: cleanTest
+          };
+          cachedCloudEnvelope.accounts.test = cachedCloudEnvelope.users.test;
+          const gistPayload = buildGistUsersPayloadFromEnvelope(cachedCloudEnvelope);
+          const targetFile = cachedGistFilename || 'gistfile1.txt';
+          await fetch(GIST_API_URL, {
+            method: 'PATCH',
+            headers: {
+              'Authorization': `token ${GITHUB_TOKEN}`,
+              'Accept': 'vnd.github.v3+json',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              files: {
+                [targetFile]: {
+                  content: JSON.stringify(gistPayload, null, 2)
+                }
+              }
+            })
+          });
+        }
+      } catch (err) {
+        console.warn('Chyba při resetu test účtu v Gistu:', err);
+      }
     }
     renderAdminAccountsList(false);
     alertUserFeedback('Testovací účet "test" byl vyčištěn a nastaven na 5 000 💎!');
@@ -7415,26 +7584,34 @@ async function deleteUserAccountFromAdmin(username) {
     console.error('Chyba při mazání lokálního účtu:', e);
   }
 
-  // 2. Odstraníme i z cloudu JSONbin.io, pokud je zařízení online
+  // 2. Odstraníme i z GitHub Gistu, pokud je zařízení online
   if (navigator.onLine) {
     try {
-      if (!cachedCloudEnvelope) {
-        await fetchCloudEnvelopeFromJsonBin();
-      }
-      if (cachedCloudEnvelope && cachedCloudEnvelope.accounts && cachedCloudEnvelope.accounts[uname]) {
-        delete cachedCloudEnvelope.accounts[uname];
+      await fetchCloudEnvelopeFromGist();
+      if (cachedCloudEnvelope) {
+        if (cachedCloudEnvelope.users) delete cachedCloudEnvelope.users[uname];
+        if (cachedCloudEnvelope.accounts) delete cachedCloudEnvelope.accounts[uname];
         cachedCloudEnvelope.updatedAt = Date.now();
-        await fetch(JSONBIN_URL, {
-          method: 'PUT',
+        const gistPayload = buildGistUsersPayloadFromEnvelope(cachedCloudEnvelope);
+        const targetFile = cachedGistFilename || 'gistfile1.txt';
+        await fetch(GIST_API_URL, {
+          method: 'PATCH',
           headers: {
-            'Content-Type': 'application/json',
-            'X-Master-Key': JSONBIN_MASTER_KEY
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'vnd.github.v3+json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(cachedCloudEnvelope)
+          body: JSON.stringify({
+            files: {
+              [targetFile]: {
+                content: JSON.stringify(gistPayload, null, 2)
+              }
+            }
+          })
         });
       }
     } catch (err) {
-      console.warn('Chyba při mazání účtu z cloudu:', err);
+      console.warn('Chyba při mazání účtu z GitHub Gistu:', err);
     }
   }
 
@@ -8482,6 +8659,10 @@ function initSkolackaMiseApp() {
   loadState();
   if (currentLoggedInUser) {
     syncWithCloudOnStartup();
+  } else if (navigator.onLine) {
+    fetchCloudEnvelopeFromGist().catch(err => {
+      console.warn('Nelze přednačíst účty z GitHub Gistu při startu:', err);
+    });
   }
   if (typeof ensurePetStateInitialized === 'function') ensurePetStateInitialized();
   if (typeof updateTopPetCompanionWidget === 'function') updateTopPetCompanionWidget();
