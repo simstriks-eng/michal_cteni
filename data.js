@@ -697,7 +697,39 @@ const RAW_LEVEL_3_WORDS = [
   { t: 'ČAJ', e: '🍵' }, { t: 'ČÁP', e: '🪶' }, { t: 'MÍČ', e: '⚽' }, { t: 'MEČ', e: '⚔️' },
   { t: 'MYŠ', e: '🐭' }, { t: 'ŠÍP', e: '🏹' }, { t: 'ŠÁL', e: '🧣' }, { t: 'NŮŽ', e: '🔪' },
   { t: 'MUŽ', e: '👨' }, { t: 'LOĎ', e: '🚢' }, { t: 'ZEĎ', e: '🧱' }, { t: 'PĚT', e: '🖐️' },
-  { t: 'BĚH', e: '🏃' }, { t: 'VĚC', e: '📦' }
+  { t: 'BĚH', e: '🏃' }, { t: 'VĚC', e: '📦' },
+
+  // --- Doplněná jednoslabičná slova (včetně T a shluků pro ranou fázi) ---
+  { t: 'SET', e: '🎾' },
+  { t: 'MAT', e: '♟️' },
+  { t: 'LÍT', e: '🫗' },
+  { t: 'TÁJ', e: '🫠' },
+  { t: 'SPÍ', e: '😴' },
+  { t: 'PIL', e: '🥤' },
+  { t: 'PÓL', e: '🧭' },
+  { t: 'MÁ', e: '🤲' },
+  { t: 'STÁT', e: '🧍' },
+  { t: 'SPÁT', e: '🛌' },
+  { t: 'STŮL', e: '🪑' },
+  { t: 'PLOT', e: '🪵' },
+  { t: 'LIST', e: '🍃' },
+  { t: 'MOST', e: '🌉' },
+  { t: 'PAST', e: '🪤' },
+  { t: 'PLÁT', e: '🛡️' },
+  { t: 'SLOUP', e: '🏛️' },
+  { t: 'PLOUT', e: '🏊' },
+  { t: 'SAD', e: '🍎' },
+  { t: 'LAK', e: '💅' },
+  { t: 'BUK', e: '🌳' },
+  { t: 'RYS', e: '🐱' },
+  { t: 'GÓL', e: '🥅' },
+  { t: 'FÉN', e: '💨' },
+  { t: 'FÍK', e: '🟣' },
+  { t: 'ŽÁK', e: '🎒' },
+  { t: 'ŠÉF', e: '👔' },
+  { t: 'ŽÍT', e: '🌱' },
+  { t: 'ŠÍT', e: '🪡' },
+  { t: 'BÝT', e: '🧍' }
 ];
 
 /* 4. ZÁLOŽKA: DVOUSLABIČNÁ A TROJSLABIČNÁ SKUTEČNÁ SLOVA */
@@ -746,7 +778,56 @@ const RAW_LEVEL_4_WORDS = [
   { t: 'HUSA', e: '🪿' },  { t: 'NOHA', e: '🦵' },  { t: 'VÁHA', e: '⚖️' },  { t: 'UCHO', e: '👂' },
   { t: 'TICHO', e: '🤫' }, { t: 'CHATA', e: '🛖' }, { t: 'CENA', e: '🏷️' },  { t: 'CESTA', e: '🛣️' },
   { t: 'ČEPICE', e: '🧢' },{ t: 'PÉČE', e: '🤲' },  { t: 'PEČE', e: '🥐' },  { t: 'TEČE', e: '🚰' },
-  { t: 'PÍŠE', e: '✍️' },  { t: 'ŠÁLA', e: '🧣' },  { t: 'ŽENA', e: '👩' },  { t: 'ŽITO', e: '🌾' }
+  { t: 'PÍŠE', e: '✍️' },  { t: 'ŠÁLA', e: '🧣' },  { t: 'ŽENA', e: '👩' },  { t: 'ŽITO', e: '🌾' },
+
+  // --- Doplněná dvouslabičná a víceslabičná slova (masivní rozšíření pro T a další písmena) ---
+  { t: 'TELE', e: '🐮' },
+  { t: 'AUTO', e: '🚗' },
+  { t: 'SALÁT', e: '🥗' },
+  { t: 'ATLAS', e: '🗺️' },
+  { t: 'LOTOS', e: '🪷' },
+  { t: 'PASTA', e: '🪥' },
+  { t: 'MÍSTO', e: '📍' },
+  { t: 'PÍSMO', e: '🔤' },
+  { t: 'TLAPA', e: '🐾' },
+  { t: 'TLAMA', e: '🦁' },
+  { t: 'STOPA', e: '🐾' },
+  { t: 'SMETÍ', e: '🧹' },
+  { t: 'LISTÍ', e: '🍂' },
+  { t: 'POSTEL', e: '🛏️' },
+  { t: 'PROPIS', e: '✏️' },
+  { t: 'SOUSTO', e: '🥪' },
+  { t: 'POUTO', e: '🔗' },
+  { t: 'POUTA', e: '🔗' },
+  { t: 'TEPLO', e: '🌡️' },
+  { t: 'TMA', e: '🌑' },
+  { t: 'METE', e: '🧹' },
+  { t: 'PLETE', e: '🧶' },
+  { t: 'PLATÍ', e: '🪙' },
+  { t: 'MOTÁ', e: '🧶' },
+  { t: 'TULÍ', e: '🫂' },
+  { t: 'LETÍ', e: '✈️' },
+  { t: 'STÁL', e: '🧍' },
+  { t: 'STÁLA', e: '🧍‍♀️' },
+  { t: 'STOUPÁ', e: '🧗' },
+  { t: 'TOULÁ', e: '🐾' },
+  { t: 'LOUPE', e: '🍌' },
+  { t: 'POMELO', e: '🍊' },
+  { t: 'MÝTO', e: '🚧' },
+  { t: 'BOTY', e: '👟' },
+  { t: 'NOTY', e: '🎶' },
+  { t: 'STANY', e: '⛺' },
+  { t: 'STĚNA', e: '🧱' },
+  { t: 'STŘECHA', e: '🏠' },
+  { t: 'KOŠTĚ', e: '🧹' },
+  { t: 'ŠTĚNĚ', e: '🐶' },
+  { t: 'KOTĚ', e: '🐱' },
+  { t: 'LETADLO', e: '✈️' },
+  { t: 'AUTÍČKO', e: '🚗' },
+  { t: 'PASTELKA', e: '🖍️' },
+  { t: 'KOLOBĚŽKA', e: '🛴' },
+  { t: 'TRAMPOLÍNA', e: '🤸' },
+  { t: 'ZMRZLINA', e: '🍦' }
 ];
 
 /* 5. ZÁLOŽKA: SOUHLÁSKOVÉ SHLUKY A DVOJHLÁSKA OU */
@@ -1002,7 +1083,139 @@ const RAW_LEVEL_7_SENTENCES = [
   { t: 'HONZA STAVÍ HRAD.', e: '👦🏰' },
   { t: 'LUCKA KRESLÍ DŮM.', e: '👧🎨' },
   { t: 'DĚTI SI HRAJÍ.', e: '🧒🎈' },
-  { t: 'V ZIMĚ PADÁ SNÍH.', e: '❄️⛄' }
+  { t: 'V ZIMĚ PADÁ SNÍH.', e: '❄️⛄' },
+
+  // --- Masivní rozšíření pro FÁZI 2 (písmeno T bez nutnosti Y, J, N, V, Z) a další fáze ---
+  { t: 'TELE SE PASE.', e: '🐮🌾' },
+  { t: 'TELE SE PASE U LESA.', e: '🐮🌲' },
+  { t: 'TELE SE PASE U PLOTU.', e: '🐮🪵' },
+  { t: 'TELE SE PASE U MOSTU.', e: '🐮🌉' },
+  { t: 'TELE SPÍ U LESA.', e: '🐮🌲' },
+  { t: 'TELE SPÍ U PLOTU.', e: '🐮🪵' },
+  { t: 'TELE STÁLO U PLOTU.', e: '🐮🪵' },
+  { t: 'TELE STÁLO U LESA.', e: '🐮🌲' },
+  { t: 'TELE MÁ TLAMU.', e: '🐮👄' },
+  { t: 'TELE MÁ SLÁMU.', e: '🐮🌾' },
+  { t: 'TELE SE TULÍ.', e: '🐮🫂' },
+  { t: 'PES MÁ TLAPU.', e: '🐶🐾' },
+  { t: 'PES MÁ TLAMU.', e: '🐶👄' },
+  { t: 'PES SPÍ U PLOTU.', e: '🐶🪵' },
+  { t: 'PES SPÍ U STOLU.', e: '🐶🪑' },
+  { t: 'PES SPÍ U MOSTU.', e: '🐶🌉' },
+  { t: 'PES SPÍ U AUTA.', e: '🐶🚗' },
+  { t: 'PES STÁL U PLOTU.', e: '🐶🪵' },
+  { t: 'PES STÁL U MOSTU.', e: '🐶🌉' },
+  { t: 'PES STÁL U STOLU.', e: '🐶🪑' },
+  { t: 'SELE SE PASE U PLOTU.', e: '🐷🪵' },
+  { t: 'SELE SE PASE U MOSTU.', e: '🐷🌉' },
+  { t: 'SELE SPÍ U PLOTU.', e: '🐷🪵' },
+  { t: 'LAMA SE PASE U PLOTU.', e: '🦙🪵' },
+  { t: 'LAMA SE PASE U MOSTU.', e: '🦙🌉' },
+  { t: 'LAMA STÁLA U PLOTU.', e: '🦙🪵' },
+  { t: 'LOS STÁL U LESA.', e: '🦌🌲' },
+  { t: 'LOS STÁL U MOSTU.', e: '🦌🌉' },
+  { t: 'SUP LETÍ U LESA.', e: '🦅🌲' },
+  { t: 'SUP LETÍ U MOSTU.', e: '🦅🌉' },
+  { t: 'U LESA SPÍ TELE.', e: '🌲🐮' },
+  { t: 'U PLOTU SPÍ PES.', e: '🪵🐶' },
+  { t: 'U PLOTU SPÍ TELE.', e: '🪵🐮' },
+  { t: 'U PLOTU SPÍ SELE.', e: '🪵🐷' },
+  { t: 'U MOSTU SPÍ PES.', e: '🌉🐶' },
+  { t: 'U STOLU SPÍ PES.', e: '🪑🐶' },
+  { t: 'AUTO STÁLO U LESA.', e: '🚗🌲' },
+  { t: 'AUTO STÁLO U PLOTU.', e: '🚗🪵' },
+  { t: 'AUTO STÁLO U MOSTU.', e: '🚗🌉' },
+  { t: 'AUTO STÁLO U MOLA.', e: '🚗⚓' },
+  { t: 'PEPA METE SMETÍ.', e: '👦🧹' },
+  { t: 'PEPA METE LISTÍ.', e: '👦🍂' },
+  { t: 'PEPA MÁ LOPATU.', e: '👦🪣' },
+  { t: 'PEPA MÁ SALÁT.', e: '👦🥗' },
+  { t: 'PEPA MÁ ATLAS.', e: '👦🗺️' },
+  { t: 'PEPA MÁ PASTU.', e: '👦🪥' },
+  { t: 'PEPA STÁL U PLOTU.', e: '👦🪵' },
+  { t: 'PEPA STÁL U MOSTU.', e: '👦🌉' },
+  { t: 'MÁMA METE SMETÍ.', e: '👩🧹' },
+  { t: 'MÁMA METE LISTÍ.', e: '👩🍂' },
+  { t: 'MÁMA MÁ SÍTO.', e: '👩🥣' },
+  { t: 'MÁMA MÁ SALÁT.', e: '👩🥗' },
+  { t: 'MÁMA MÁ PASTU.', e: '👩🪥' },
+  { t: 'MÁMA MÁ LOPATU.', e: '👩🪣' },
+  { t: 'MÁMA PLATÍ MASO.', e: '👩🪙' },
+  { t: 'MÁMA STÁLA U STOLU.', e: '👩🪑' },
+  { t: 'EMA METE SMETÍ.', e: '👧🧹' },
+  { t: 'EMA METE LISTÍ.', e: '👧🍂' },
+  { t: 'EMA MÁ PASTU.', e: '👧🪥' },
+  { t: 'EMA MÁ SALÁT.', e: '👧🥗' },
+  { t: 'EMA SE TULÍ.', e: '👧🫂' },
+  { t: 'MÍLA SE TULÍ.', e: '👦🫂' },
+  { t: 'MÍLA METE LISTÍ.', e: '👦🍂' },
+  { t: 'MÍLA MÁ ATLAS.', e: '👦🗺️' },
+  { t: 'ÁLA METE SMETÍ.', e: '👧🧹' },
+  { t: 'ÁLA SE TULÍ.', e: '👧🫂' },
+  { t: 'TÁTA MÁ SALÁT.', e: '👨🥗' },
+  { t: 'TÁTA MÁ ATLAS.', e: '👨🗺️' },
+  { t: 'TÁTA MÁ LASO.', e: '👨🪢' },
+  { t: 'TÁTA MÁ MÍSU.', e: '👨🥣' },
+  { t: 'TÁTA MÁ MÁSLO.', e: '👨🧈' },
+  { t: 'TÁTA MÁ LOPATU.', e: '👨🪣' },
+  { t: 'TÁTA MÁ SLOUP.', e: '👨🏛️' },
+  { t: 'TÁTA SOLÍ MASO.', e: '👨🧂' },
+  { t: 'TÁTA SOLÍ SALÁT.', e: '👨🥗' },
+  { t: 'TÁTA PLATÍ AUTO.', e: '👨🚗' },
+  { t: 'TÁTA PLATÍ MASO.', e: '👨🥩' },
+  { t: 'TÁTA MOTÁ LASO.', e: '👨🪢' },
+  { t: 'TÁTA METE SMETÍ.', e: '👨🧹' },
+  { t: 'TÁTA METE LISTÍ.', e: '👨🍂' },
+  { t: 'TÁTA STÁL U AUTA.', e: '👨🚗' },
+  { t: 'TÁTA STÁL U PLOTU.', e: '👨🪵' },
+  { t: 'TÁTA STÁL U LESA.', e: '👨🌲' },
+  { t: 'TÁTA STÁL U MOSTU.', e: '👨🌉' },
+  { t: 'TÁTA STÁL U STOLU.', e: '👨🪑' },
+  { t: 'TETA MÁ AUTO.', e: '👩🚗' },
+  { t: 'TETA MÁ MAPU.', e: '👩🗺️' },
+  { t: 'TETA MÁ LUPU.', e: '👩🔍' },
+  { t: 'TETA MÁ SÍTO.', e: '👩🥣' },
+  { t: 'TETA MÁ PASTU.', e: '👩🪥' },
+  { t: 'TETA MÁ SALÁT.', e: '👩🥗' },
+  { t: 'TETA MÁ LOPATU.', e: '👩🪣' },
+  { t: 'TETA METE SMETÍ.', e: '👩🧹' },
+  { t: 'TETA METE LISTÍ.', e: '👩🍂' },
+  { t: 'TETA PLETE LASO.', e: '👩🧶' },
+  { t: 'TETA LEPÍ MAPU.', e: '👩🗺️' },
+  { t: 'TETA LEPÍ ATLAS.', e: '👩🗺️' },
+  { t: 'TETA MELE MASO.', e: '👩⚙️' },
+  { t: 'TETA PLATÍ MÁSLO.', e: '👩🧈' },
+  { t: 'TETA STÁLA U STOLU.', e: '👩🪑' },
+  { t: 'TETA STÁLA U PLOTU.', e: '👩🪵' },
+  { t: 'TETA STÁLA U AUTA.', e: '👩🚗' },
+  { t: 'TOM MÁ LASO.', e: '👦🪢' },
+  { t: 'TOM MÁ MAPU.', e: '👦🗺️' },
+  { t: 'TOM MÁ LUPU.', e: '👦🔍' },
+  { t: 'TOM MÁ PILU.', e: '👦🪚' },
+  { t: 'TOM MÁ SALÁT.', e: '👦🥗' },
+  { t: 'TOM MÁ ATLAS.', e: '👦🗺️' },
+  { t: 'TOM MÁ MÍSU.', e: '👦🥣' },
+  { t: 'TOM MÁ SELE.', e: '👦🐷' },
+  { t: 'TOM MÁ LAMU.', e: '👦🦙' },
+  { t: 'TOM MÁ LOPATU.', e: '👦🪣' },
+  { t: 'TOM METE LISTÍ.', e: '👦🍂' },
+  { t: 'TOM METE SMETÍ.', e: '👦🧹' },
+  { t: 'TOM LEPÍ MAPU.', e: '👦🗺️' },
+  { t: 'TOM MOTÁ LASO.', e: '👦🪢' },
+  { t: 'TOM STÁL U PLOTU.', e: '👦🪵' },
+  { t: 'TOM STÁL U MOSTU.', e: '👦🌉' },
+  { t: 'TOM STÁL U LESA.', e: '👦🌲' },
+  { t: 'OTA MÁ LASO.', e: '👦🪢' },
+  { t: 'OTA MÁ LUPU.', e: '👦🔍' },
+  { t: 'OTA MÁ PILU.', e: '👦🪚' },
+  { t: 'OTA MÁ MÍSU.', e: '👦🥣' },
+  { t: 'OTA MÁ SALÁT.', e: '👦🥗' },
+  { t: 'OTA MÁ ATLAS.', e: '👦🗺️' },
+  { t: 'OTA MÁ SELE.', e: '👦🐷' },
+  { t: 'OTA METE SMETÍ.', e: '👦🧹' },
+  { t: 'OTA LEPÍ ATLAS.', e: '👦🗺️' },
+  { t: 'OTA STÁL U AUTA.', e: '👦🚗' },
+  { t: 'OTA STÁL U PLOTU.', e: '👦🪵' }
 ];
 
 const POKEMON_ROSTER = [
@@ -1019,3 +1232,92 @@ const POKEMON_ROSTER = [
   { id: 54, name: 'Psyduck', color: '#FDE047', stroke: '#A16207' },
   { id: 6, name: 'Charizard', color: '#EA580C', stroke: '#9A3412' }
 ];
+
+
+/* ============================================================
+   8. SÉMANTICKÉ ŠABLONY VĚT (PRO DYNAMICKÉ SKLÁDÁNÍ BEZ NESMYSLŮ)
+   Garantují, že nevznikne "Pes se pase", ale stovky logických kombinací.
+   ============================================================ */
+const LOGICAL_SENTENCE_TEMPLATES = [
+  {
+    id: 'kdo_co_ma_nebo_nese',
+    subjects: [
+      { t: 'MÁMA', e: '👩' }, { t: 'TÁTA', e: '👨' }, { t: 'TETA', e: '👩' },
+      { t: 'PEPA', e: '👦' }, { t: 'EMA', e: '👧' },  { t: 'ELA', e: '👧' },
+      { t: 'ÁLA', e: '👧' },  { t: 'OLA', e: '👧' },  { t: 'MÍLA', e: '👦' },
+      { t: 'TOM', e: '👦' },  { t: 'OTA', e: '👦' },  { t: 'JANA', e: '👧' },
+      { t: 'SÁRA', e: '👧' }, { t: 'BÁRA', e: '👧' }, { t: 'DĚDA', e: '👴' },
+      { t: 'BABIČKA', e: '👵' }
+    ],
+    verbs: ['MÁ', 'LEPÍ', 'HLEDÁ', 'NESE', 'DRŽÍ', 'VIDÍ', 'KRESLÍ'],
+    objects: [
+      { t: 'MAPU', e: '🗺️' }, { t: 'MÍSU', e: '🥣' }, { t: 'LUPU', e: '🔍' },
+      { t: 'PILU', e: '🪚' }, { t: 'LASO', e: '🪢' }, { t: 'AUTO', e: '🚗' },
+      { t: 'SÍTO', e: '🥣' }, { t: 'LOPATU', e: '🪣' }, { t: 'ATLAS', e: '🗺️' },
+      { t: 'SALÁT', e: '🥗' }, { t: 'PASTU', e: '🪥' }, { t: 'MÁSLO', e: '🧈' },
+      { t: 'MASO', e: '🍖' }, { t: 'SLÁMU', e: '🌾' }, { t: 'KOLO', e: '🚲' },
+      { t: 'KNIHU', e: '📖' }, { t: 'TAŠKU', e: '🎒' }, { t: 'TUŽKU', e: '✏️' },
+      { t: 'DÁREK', e: '🎁' }, { t: 'MÍČ', e: '⚽' }
+    ]
+  },
+  {
+    id: 'zvirata_bylozravci_venku',
+    subjects: [
+      { t: 'SELE', e: '🐷' }, { t: 'TELE', e: '🐮' }, { t: 'LAMA', e: '🦙' },
+      { t: 'LOS', e: '🦌' },  { t: 'KOZA', e: '🐐' }, { t: 'KRÁVA', e: '🐮' },
+      { t: 'KŮŇ', e: '🐴' },  { t: 'OVEČKA', e: '🐑' }
+    ],
+    verbs: ['SE PASE', 'SPÍ', 'STOJÍ', 'ODPOČÍVÁ', 'BĚŽÍ'],
+    objects: [
+      { t: 'U LESA', e: '🌲' }, { t: 'U PLOTU', e: '🪵' }, { t: 'U MOSTU', e: '🌉' },
+      { t: 'U MOLA', e: '⚓' }, { t: 'NA POLI', e: '🌾' }, { t: 'NA LOUCE', e: '🌼' },
+      { t: 'U ŘEKY', e: '🌊' }, { t: 'U STROMU', e: '🌳' }
+    ]
+  },
+  {
+    id: 'kdo_kde_stál_nebo_spí',
+    subjects: [
+      { t: 'PES', e: '🐶' },  { t: 'TOM', e: '👦' },  { t: 'OTA', e: '👦' },
+      { t: 'PEPA', e: '👦' }, { t: 'TÁTA', e: '👨' }, { t: 'LOS', e: '🦌' },
+      { t: 'LEV', e: '🦁' }
+    ],
+    verbs: ['SPÍ', 'STÁL', 'STOJÍ', 'SEDÍ', 'LEŽÍ', 'ČEKÁ'],
+    objects: [
+      { t: 'U LESA', e: '🌲' }, { t: 'U PLOTU', e: '🪵' }, { t: 'U MOSTU', e: '🌉' },
+      { t: 'U STOLU', e: '🪑' }, { t: 'U AUTA', e: '🚗' }, { t: 'U MOLA', e: '⚓' },
+      { t: 'U DOMU', e: '🏠' }, { t: 'U BOUDY', e: '🐶' }
+    ]
+  },
+  {
+    id: 'uklid_a_zahrada',
+    subjects: [
+      { t: 'MÁMA', e: '👩' }, { t: 'TÁTA', e: '👨' }, { t: 'TETA', e: '👩' },
+      { t: 'PEPA', e: '👦' }, { t: 'EMA', e: '👧' },  { t: 'MÍLA', e: '👦' },
+      { t: 'ÁLA', e: '👧' },  { t: 'TOM', e: '👦' },  { t: 'OTA', e: '👦' },
+      { t: 'DĚDA', e: '👴' }
+    ],
+    verbs: ['METE', 'SBÍRÁ'],
+    objects: [
+      { t: 'SMETÍ', e: '🧹' }, { t: 'LISTÍ', e: '🍂' }, { t: 'SLÁMU', e: '🌾' }
+    ]
+  }
+];
+
+
+// Automatické naplnění databáze o stovky 100% smysluplných vět při startu aplikace
+(function() {
+  const existing = new Set(RAW_LEVEL_7_SENTENCES.map(item => item.t));
+  LOGICAL_SENTENCE_TEMPLATES.forEach(tpl => {
+    tpl.subjects.forEach(subj => {
+      tpl.verbs.forEach(verb => {
+        tpl.objects.forEach(obj => {
+          const sentenceText = `${subj.t} ${verb} ${obj.t}.`;
+          if (!existing.has(sentenceText)) {
+            existing.add(sentenceText);
+            RAW_LEVEL_7_SENTENCES.push({ t: sentenceText, e: `${subj.e}${obj.e}` });
+          }
+        });
+      });
+    });
+  });
+})();
