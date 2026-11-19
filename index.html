@@ -593,6 +593,36 @@
     .center-popup-icon-anim {
       animation: popupIconPop 0.52s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     }
+
+    /* VLASTNÍ NUMERICKÁ KLÁVESNICE PRO MATEMATIKU (ZÁKAZ MOBILNÍ KLÁVESNICE) */
+    .math-keypad-input {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
+      caret-color: transparent !important;
+      cursor: pointer !important;
+      transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .math-keypad-input.math-input-active {
+      background-color: #ffffff !important;
+      border-color: #4f46e5 !important;
+      border-style: solid !important;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.28), inset 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+      transform: scale(1.05);
+    }
+    .math-row-card.math-card-active {
+      border-color: #6366f1 !important;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18), 0 10px 22px -4px rgba(0, 0, 0, 0.08) !important;
+    }
+    .math-numpad-btn {
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      touch-action: manipulation;
+      transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.12s ease;
+    }
+    .math-numpad-btn:active {
+      transform: translateY(3px) scale(0.96);
+    }
   </style>
 </head>
 <body id="app-body" class="theme-sky min-h-[100dvh] md:h-[100dvh] md:max-h-[100dvh] text-slate-800 flex flex-col justify-between overflow-x-hidden md:overflow-hidden">
@@ -1994,7 +2024,7 @@
 
     <!-- MODAL: SOUBOJOVÝ ÚKOL V ARÉNĚ (ČTENÍ / MATEMATIKA) -->
     <div id="arena-task-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-4">
-      <div class="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 border-4 border-amber-400 shadow-2xl text-center">
+      <div class="bg-white rounded-3xl max-w-xl w-full p-4 sm:p-6 border-4 border-amber-400 shadow-2xl text-center">
         <div class="flex items-center justify-between mb-2">
           <span id="arena-modal-difficulty-badge" class="text-xs font-black uppercase px-3 py-1 rounded-full bg-sky-500 text-white">Lehký útok</span>
           <button onclick="closeArenaTaskModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-black">✕</button>
@@ -2258,6 +2288,10 @@
           <button onclick="switchAdminTab('reading')" id="admin-tab-btn-reading" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left">
             <span class="text-base">📖</span>
             <span>Čtení & Hláskování</span>
+          </button>
+          <button onclick="switchAdminTab('word_db')" id="admin-tab-btn-word_db" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-teal-800 hover:bg-teal-100 flex items-center gap-2 text-left">
+            <span class="text-base">📚</span>
+            <span>Databáze slov & vět</span>
           </button>
           <button onclick="switchAdminTab('traceability')" id="admin-tab-btn-traceability" class="w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-emerald-800 hover:bg-emerald-100 flex items-center gap-2 text-left">
             <span class="text-base">📊</span>
@@ -2859,6 +2893,141 @@
                 </div>
               </div>
               <div id="alphabet-grid-container" class="grid grid-cols-6 sm:grid-cols-9 md:grid-cols-11 gap-1 p-2 bg-slate-50 rounded-xl border border-slate-200 max-h-48 overflow-y-auto"></div>
+            </div>
+          </div>
+
+          <!-- ZÁLOŽKA: DATABÁZE SLOV & VĚT (EDITOR SLABIKÁŘE) -->
+          <div id="admin-tab-content-word_db" class="hidden space-y-3.5">
+            <!-- Horní uvítací hlavička -->
+            <div class="bg-gradient-to-r from-teal-600 via-emerald-600 to-sky-600 text-white rounded-2xl p-3.5 sm:p-4 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-2xl">📚</span>
+                  <h4 class="font-black text-base sm:text-lg font-baloo leading-tight">Editor Databáze Slov & Vět (Slabikář)</h4>
+                </div>
+                <p class="text-[11px] sm:text-xs font-bold text-teal-50 mt-0.5 leading-snug">
+                  Přidávej slabiky, slova a věty ze slabikáře nebo upravuj stávající. Ve čtení se vždy generují jen ty položky, pro které má syn povolená všechna písmenka.
+                </p>
+              </div>
+              <div class="flex items-center gap-1.5 flex-wrap flex-shrink-0">
+                <button type="button" onclick="switchAdminTab('reading')" class="game-button bg-white/20 hover:bg-white/30 text-white border border-white/40 font-black px-2.5 py-1.5 rounded-xl text-[11px] flex items-center gap-1 whitespace-nowrap">
+                  <span>🔤</span> Povolená písmena (<span id="word-db-active-letters-count">0</span>)
+                </button>
+                <button type="button" onclick="exportWordDbFile()" title="Stáhnout zálohu upravené databáze slov" class="game-button bg-white text-teal-800 hover:bg-teal-50 font-black px-2.5 py-1.5 rounded-xl text-[11px] shadow-sm flex items-center gap-1 whitespace-nowrap">
+                  <span>📥</span> Export zálohy
+                </button>
+              </div>
+            </div>
+
+            <!-- 1. Výběr kategorie (8 karet podle úrovní čtení) -->
+            <div id="word-db-category-tabs" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+              <!-- Dynamicky vykresleno z app.js -->
+            </div>
+
+            <!-- 2. Přidávací / Tvořicí box (blbuvzdorný, s živou kontrolou písmenek) -->
+            <div class="bg-gradient-to-b from-emerald-50/90 to-white border-2 border-emerald-300 rounded-2xl p-3 sm:p-4 shadow-sm space-y-2.5">
+              <div class="flex flex-wrap items-center justify-between gap-2">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-lg" id="word-db-add-cat-icon">🌟</span>
+                  <h5 class="font-black text-emerald-950 text-xs sm:text-sm" id="word-db-add-cat-title">Přidat novou položku</h5>
+                </div>
+                <div class="inline-flex bg-emerald-100 p-0.5 rounded-xl border border-emerald-300 gap-0.5">
+                  <button type="button" id="word-db-mode-single-btn" onclick="setWordDbAddMode('single')" class="px-2.5 py-1 rounded-lg text-[11px] font-black transition-all bg-emerald-600 text-white shadow-sm">
+                    ✏️ Jedna položka
+                  </button>
+                  <button type="button" id="word-db-mode-bulk-btn" onclick="setWordDbAddMode('bulk')" class="px-2.5 py-1 rounded-lg text-[11px] font-black transition-all text-emerald-900 hover:bg-emerald-200">
+                    📋 Více řádků ze slabikáře
+                  </button>
+                </div>
+              </div>
+
+              <!-- Režim A: Přidání jedné položky -->
+              <div id="word-db-single-add-panel" class="space-y-2.5">
+                <div class="flex flex-col sm:flex-row gap-2">
+                  <div class="flex-1">
+                    <label class="block text-[10px] font-black uppercase text-slate-500 mb-0.5" id="word-db-add-input-label">Text (slovo nebo věta):</label>
+                    <input type="text" id="word-db-add-text" oninput="updateWordDbLivePreview()" onkeydown="if(event.key==='Enter'){event.preventDefault();submitWordDbSingleAdd();}" placeholder="Např. EMA MÁ MÍSU." autocomplete="off" class="w-full px-3 py-2 rounded-xl border-2 border-emerald-300 focus:border-emerald-600 focus:outline-none bg-white text-slate-900 font-black text-sm sm:text-base shadow-inner">
+                  </div>
+                  <div id="word-db-add-emoji-wrap" class="w-full sm:w-24 flex-shrink-0">
+                    <label class="block text-[10px] font-black uppercase text-slate-500 mb-0.5">Obrázek:</label>
+                    <input type="text" id="word-db-add-emoji" oninput="updateWordDbLivePreview()" placeholder="✨" maxlength="8" class="w-full px-2 py-2 rounded-xl border-2 border-emerald-300 focus:border-emerald-600 focus:outline-none bg-white text-center text-base shadow-inner">
+                  </div>
+                  <div class="flex items-end">
+                    <button type="button" onclick="submitWordDbSingleAdd()" class="game-button w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-2 rounded-xl border-b-4 border-emerald-700 text-xs sm:text-sm shadow-sm whitespace-nowrap flex items-center justify-center gap-1.5 h-[42px]">
+                      <span>➕</span> <span>PŘIDAT</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Rychlý výběr obrázků (emoji) -->
+                <div id="word-db-emoji-picker-row" class="flex items-center gap-1 flex-wrap bg-white/80 p-1.5 rounded-xl border border-emerald-200">
+                  <span class="text-[10px] font-black text-slate-500 mr-1">Obrázky:</span>
+                  <!-- Vyplněno z app.js -->
+                </div>
+
+                <!-- Pomocník pro skládání vět (zobrazí se automaticky jen v kategorii Celé věty) -->
+                <div id="word-db-sentence-builder" class="hidden bg-indigo-50/80 border-2 border-indigo-200 rounded-xl p-2.5 space-y-1.5">
+                  <div class="flex items-center justify-between gap-2 flex-wrap">
+                    <span class="text-[11px] font-black text-indigo-900">✨ Pomocník pro skládání věty (klikni na slova z povolených písmen):</span>
+                    <div class="flex items-center gap-1">
+                      <button type="button" onclick="appendSentencePunctuation('.')" class="px-2 py-0.5 rounded-lg bg-white border border-indigo-300 text-indigo-900 font-black text-xs hover:bg-indigo-100">.</button>
+                      <button type="button" onclick="appendSentencePunctuation('!')" class="px-2 py-0.5 rounded-lg bg-white border border-indigo-300 text-indigo-900 font-black text-xs hover:bg-indigo-100">!</button>
+                      <button type="button" onclick="appendSentencePunctuation('?')" class="px-2 py-0.5 rounded-lg bg-white border border-indigo-300 text-indigo-900 font-black text-xs hover:bg-indigo-100">?</button>
+                      <button type="button" onclick="refreshSentenceBuilderChips()" class="px-2 py-0.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-black text-[10px]">🔄 Jiná slova</button>
+                    </div>
+                  </div>
+                  <div id="word-db-sentence-chips" class="flex flex-wrap gap-1"></div>
+                </div>
+
+                <!-- Živá kontrola písmenek a duplicit -->
+                <div id="word-db-add-preview" class="text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2">
+                  <span>Napiš slovo nebo větu a hned uvidíš, jestli jsou všechna písmenka povolená.</span>
+                </div>
+              </div>
+
+              <!-- Režim B: Hromadné přidání ze slabikáře -->
+              <div id="word-db-bulk-add-panel" class="hidden space-y-2">
+                <p class="text-[11px] font-bold text-slate-600">
+                  Napiš nebo vlož více položek najednou (<strong>každý řádek = jedno slovo nebo jedna věta</strong>). Můžeš přidat i emoji za středník, např. <code class="bg-slate-100 px-1 rounded">MÁMA MÁ MÍSU. ; 👩🥣</code>
+                </p>
+                <textarea id="word-db-bulk-text" rows="4" oninput="updateWordDbBulkPreview()" placeholder="EMA MÁ MÍSU.&#10;TÁTA MÁ PILU.&#10;PES SPÍ U LESA." class="w-full px-3 py-2 rounded-xl border-2 border-emerald-300 focus:border-emerald-600 focus:outline-none bg-white text-slate-900 font-bold text-xs sm:text-sm shadow-inner"></textarea>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <span id="word-db-bulk-preview" class="text-xs font-black text-slate-600">Zadej alespoň jeden řádek.</span>
+                  <button type="button" onclick="submitWordDbBulkAdd()" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-2 rounded-xl border-b-4 border-emerald-700 text-xs shadow-sm flex items-center gap-1.5">
+                    <span>📋</span> <span>PŘIDAT VŠE DO DATABÁZE</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 3. Vyhledávání, filtry a statistika -->
+            <div class="bg-slate-50 border-2 border-slate-200 rounded-2xl p-2.5 sm:p-3 space-y-2">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div class="relative flex-1">
+                  <span class="absolute left-3 top-1/2 -translate-y-1/2 text-sm pointer-events-none">🔍</span>
+                  <input type="text" id="word-db-search-input" oninput="onWordDbSearchInput(this.value)" placeholder="Hledat slovo, slabiku nebo větu..." class="w-full pl-8 pr-8 py-1.5 rounded-xl border-2 border-slate-300 focus:border-teal-500 focus:outline-none bg-white text-slate-900 font-bold text-xs sm:text-sm">
+                  <button type="button" id="word-db-search-clear-btn" onclick="clearWordDbSearch()" class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 font-black text-xs px-1">✕</button>
+                </div>
+                <button type="button" id="word-db-reset-cat-btn" onclick="resetWordDbCategoryDefaults()" class="game-button bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-300 font-black px-3 py-1.5 rounded-xl text-[11px] whitespace-nowrap flex items-center justify-center gap-1">
+                  <span>♻️</span> <span id="word-db-reset-cat-label">Obnovit výchozí v kategorii</span>
+                </button>
+              </div>
+
+              <div id="word-db-filter-bar" class="flex flex-wrap items-center gap-1.5">
+                <!-- Dynamicky vykresleno z app.js -->
+              </div>
+            </div>
+
+            <!-- 4. Seznam položek v databázi (karty s inline editací) -->
+            <div id="word-db-items-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <!-- Dynamicky vykresleno z app.js -->
+            </div>
+
+            <!-- Tlačítko pro načtení dalších položek u velkých databází (např. 2100+ vět) -->
+            <div id="word-db-pagination-bar" class="hidden text-center pt-1">
+              <button type="button" onclick="loadMoreWordDbItems()" class="game-button bg-slate-200 hover:bg-slate-300 text-slate-800 font-black px-5 py-2 rounded-xl text-xs border-b-3 border-slate-400">
+                Zobrazit další položky ⬇️
+              </button>
             </div>
           </div>
 

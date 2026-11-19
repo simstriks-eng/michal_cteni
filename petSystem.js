@@ -1458,36 +1458,40 @@ function triggerArenaAttackModal(attackType) {
   }`;
 
   if (task.subject === 'reading') {
+    if (typeof clearActiveMathKeypad === 'function') clearActiveMathKeypad();
     renderArenaReadingTaskBody();
   } else {
     const promptMarkup = task.mathKind === 'story'
-      ? `<p class="text-base sm:text-xl font-black text-slate-800 leading-relaxed mb-3">${task.storyText}</p>`
-      : `<div class="text-4xl sm:text-5xl font-black text-indigo-950 font-baloo mb-3">${task.questionHtml}</div>`;
+      ? `<p class="text-sm sm:text-lg font-black text-slate-800 leading-snug mb-2.5">${task.storyText}</p>`
+      : `<div class="text-3xl sm:text-4xl font-black text-indigo-950 font-baloo mb-2.5">${task.questionHtml}</div>`;
+
+    const keypadHtml = (typeof renderMathKeypadHtml === 'function')
+      ? renderMathKeypadHtml('arena', { compact: true })
+      : '';
 
     body.innerHTML = `
-      <div class="bg-amber-50/70 border-3 border-amber-300 rounded-3xl p-5 my-2">
-        ${promptMarkup}
-        <div class="flex items-center justify-center gap-2 mt-2">
-          <input type="number" id="arena-math-answer-input" inputmode="numeric" placeholder="?" class="w-24 h-14 text-center text-3xl font-black rounded-2xl border-3 border-amber-400 bg-white text-indigo-950 focus:outline-none shadow-inner">
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3 my-2">
+        <div class="flex-1 w-full bg-amber-50/70 border-3 border-amber-300 rounded-3xl p-4 flex flex-col items-center justify-center">
+          ${promptMarkup}
+          <div class="flex items-center justify-center gap-2 mt-1">
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="if(typeof selectMathKeypadInput==='function') selectMathKeypadInput('arena-math-answer-input', 'arena')" id="arena-math-answer-input" placeholder="?" class="math-keypad-input w-24 h-14 text-center text-3xl font-black rounded-2xl border-3 border-amber-400 bg-white text-indigo-950 focus:outline-none shadow-inner">
+          </div>
+        </div>
+        <div class="w-full max-w-[230px] sm:w-[215px] flex-shrink-0">
+          ${keypadHtml}
         </div>
       </div>
-      <div class="flex gap-3 w-full mt-4">
-        <button onclick="closeArenaTaskModal()" class="w-1/3 py-3 rounded-2xl bg-slate-200 text-slate-700 font-black text-xs sm:text-sm">Zrušit</button>
-        <button onclick="submitArenaMathTask()" class="game-button w-2/3 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl border-b-4 border-emerald-700 text-sm sm:text-base">
+      <div class="flex gap-3 w-full mt-3">
+        <button type="button" onclick="closeArenaTaskModal()" class="w-1/3 py-3 rounded-2xl bg-slate-200 text-slate-700 font-black text-xs sm:text-sm">Zrušit</button>
+        <button type="button" onclick="submitArenaMathTask()" class="game-button w-2/3 bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl border-b-4 border-emerald-700 text-sm sm:text-base">
           ⚔️ ZAÚTOČIT!
         </button>
       </div>
     `;
 
-    setTimeout(() => {
-      const inp = document.getElementById('arena-math-answer-input');
-      if (inp) {
-        inp.focus();
-        inp.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') submitArenaMathTask();
-        });
-      }
-    }, 60);
+    if (typeof selectMathKeypadInput === 'function') {
+      selectMathKeypadInput('arena-math-answer-input', 'arena');
+    }
   }
 
   modal.classList.remove('hidden');
@@ -1543,6 +1547,7 @@ function toggleArenaSyllableArcs() {
 function closeArenaTaskModal() {
   const modal = document.getElementById('arena-task-modal');
   if (modal) modal.classList.add('hidden');
+  if (typeof clearActiveMathKeypad === 'function') clearActiveMathKeypad();
 }
 
 function submitArenaMathTask() {

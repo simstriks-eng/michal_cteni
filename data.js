@@ -817,7 +817,7 @@ const RAW_LEVEL_4_WORDS = [
   { t: 'MALÁ', e: '👧' },
   { t: 'MALÉ', e: '🐣' },
   { t: 'MILÁ', e: '😊' },
-  { t: 'MILÉ', e: '💛' },
+  { t: 'MILÉ', e: '������' },
   { t: 'MILÍ', e: '👫' },
   { t: 'SAMI', e: '👬' },
   { t: 'SALÁM', e: '🥩' },

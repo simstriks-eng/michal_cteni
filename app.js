@@ -281,7 +281,12 @@ let state = {
   streakTodayCompleted: false,
   streakClaimedDay7: false,
   customizations: JSON.parse(JSON.stringify(DEFAULT_UNLOCKED_CUSTOMIZATIONS)),
-  itemPrices: {}
+  itemPrices: {},
+  customReadingDb: {
+    added: { syllables: [], lvl3: [], lvl4: [], lvl5_shluky: [], lvl5_ou: [], lvl6: [], lvl7: [], spelling: [] },
+    edited: { syllables: {}, lvl3: {}, lvl4: {}, lvl5_shluky: {}, lvl5_ou: {}, lvl6: {}, lvl7: {}, spelling: {} },
+    hidden: { syllables: [], lvl3: [], lvl4: [], lvl5_shluky: [], lvl5_ou: [], lvl6: [], lvl7: [], spelling: [] }
+  }
 };
 
 const INITIAL_CLEAN_STATE_JSON = JSON.stringify(state);
@@ -557,18 +562,21 @@ function buildReverseSpellingWordPool() {
     });
   };
 
-  SPELLING_WORDS_DATABASE.forEach(item => addCandidate(item.w, item.e, item.svg, item.syllables));
-  if (typeof RAW_LEVEL_3_WORDS !== 'undefined') {
-    RAW_LEVEL_3_WORDS.forEach(item => addCandidate(item.t, item.e, null, 1));
+  const spellingBase = (typeof ACTIVE_SPELLING_WORDS_DATABASE !== 'undefined' && Array.isArray(ACTIVE_SPELLING_WORDS_DATABASE))
+    ? ACTIVE_SPELLING_WORDS_DATABASE
+    : SPELLING_WORDS_DATABASE;
+  spellingBase.forEach(item => addCandidate(item.w, item.e, item.svg, item.syllables));
+  if (typeof LEVEL_3_CVC_WORDS !== 'undefined' && Array.isArray(LEVEL_3_CVC_WORDS)) {
+    LEVEL_3_CVC_WORDS.forEach(item => addCandidate(item.text, item.emoji, null, 1));
   }
-  if (typeof RAW_LEVEL_4_WORDS !== 'undefined') {
-    RAW_LEVEL_4_WORDS.forEach(item => addCandidate(item.t, item.e, null, null));
+  if (typeof LEVEL_4_TWO_SYLLABLE_WORDS !== 'undefined' && Array.isArray(LEVEL_4_TWO_SYLLABLE_WORDS)) {
+    LEVEL_4_TWO_SYLLABLE_WORDS.forEach(item => addCandidate(item.text, item.emoji, null, null));
   }
-  if (typeof RAW_LEVEL_5_WORDS !== 'undefined') {
-    RAW_LEVEL_5_WORDS.forEach(item => addCandidate(item.t, item.e, null, null));
+  if (typeof LEVEL_5_CLUSTERS !== 'undefined' && Array.isArray(LEVEL_5_CLUSTERS)) {
+    LEVEL_5_CLUSTERS.forEach(item => addCandidate(item.text, item.emoji, null, null));
   }
-  if (typeof RAW_LEVEL_6_WORDS !== 'undefined') {
-    RAW_LEVEL_6_WORDS.forEach(item => addCandidate(item.t, item.e, null, null));
+  if (typeof LEVEL_6_SOFT !== 'undefined' && Array.isArray(LEVEL_6_SOFT)) {
+    LEVEL_6_SOFT.forEach(item => addCandidate(item.text, item.emoji, null, null));
   }
 
   return candidates;
@@ -635,7 +643,10 @@ function initSpellingWord() {
   }
 
   if (!spellingState.unseenDeck || spellingState.unseenDeck.length === 0) {
-    spellingState.unseenDeck = shuffleArray([...SPELLING_WORDS_DATABASE]);
+    const spellingSrc = (typeof ACTIVE_SPELLING_WORDS_DATABASE !== 'undefined' && ACTIVE_SPELLING_WORDS_DATABASE.length)
+      ? ACTIVE_SPELLING_WORDS_DATABASE
+      : SPELLING_WORDS_DATABASE;
+    spellingState.unseenDeck = shuffleArray([...spellingSrc]);
   }
 
   const wordObj = spellingState.unseenDeck.pop();
@@ -887,15 +898,19 @@ function computeStateProgressScore(s) {
 
 function isPollutedTestStateForRealAccount(s) {
   if (!s || typeof s !== 'object') return false;
-  return (Number(s.goldDiamonds) || 0) > 2000;
+  const dia = Number(s.goldDiamonds) || 0;
+  const streak = Number(s.streakDays) || 0;
+  // Pokud stav obsahuje přes 2000 diamantů (testovací účet), nebo víc než 50 diamantů bez streak dnů
+  if (dia > 2000) return true;
+  if (dia > 50 && streak === 0) return true;
+  return false;
 }
 
 function mergeLocalAndCloudStates(localObj, cloudObj, preferCloud = false) {
   if (!isValidGameStateObject(cloudObj)) return localObj;
   if (!isValidGameStateObject(localObj)) return JSON.parse(JSON.stringify(cloudObj));
 
-  // Pokud lokální paměť (např. na PC z dřívějšího testování v AI Studiu) obsahuje testovací miliony diamantů (> 2000),
-  // zatímco v cloudu jsou reálná data z iPadu, vždy použijeme čistý stav z cloudu!
+  // Pokud lokální paměť obsahuje testovací stav s falešnými diamanty, zatímco v cloudu jsou reálná data, vždy použijeme čistý stav z cloudu!
   if (isPollutedTestStateForRealAccount(localObj) && !isPollutedTestStateForRealAccount(cloudObj)) {
     return JSON.parse(JSON.stringify(cloudObj));
   }
@@ -921,6 +936,14 @@ function mergeLocalAndCloudStates(localObj, cloudObj, preferCloud = false) {
   }
 
   const merged = JSON.parse(JSON.stringify(primary));
+
+  // Vždy zachováme maximální dosaženou denní řadu (streak)
+  merged.streakDays = Math.max(Number(primary.streakDays) || 0, Number(secondary.streakDays) || 0);
+
+  // Pokud secondary má podezřele hodně diamantů bez řady, ale primary má reálný streak a reálné diamanty z cloudu, držíme diamanty z primary
+  if (isPollutedTestStateForRealAccount(secondary) && !isPollutedTestStateForRealAccount(primary)) {
+    merged.goldDiamonds = primary.goldDiamonds;
+  }
 
   if (Array.isArray(primary.history) || Array.isArray(secondary.history)) {
     const map = new Map();
@@ -968,10 +991,52 @@ function mergeLocalAndCloudStates(localObj, cloudObj, preferCloud = false) {
     });
   }
 
+  // Spojení stavu mazlíčků (petSystem): sloučí odemčené pety a zachová nejvyšší level a XP (např. Mewtwo)
+  if (primary.petSystem || secondary.petSystem) {
+    const pPs = primary.petSystem || {};
+    const sPs = secondary.petSystem || {};
+    merged.petSystem = {
+      ...sPs,
+      ...pPs,
+      pets: {
+        ...(sPs.pets || {}),
+        ...(pPs.pets || {})
+      }
+    };
+    Object.keys(merged.petSystem.pets || {}).forEach(petId => {
+      const pPet = (pPs.pets && pPs.pets[petId]) || {};
+      const sPet = (sPs.pets && sPs.pets[petId]) || {};
+      merged.petSystem.pets[petId] = {
+        ...sPet,
+        ...pPet,
+        unlocked: Boolean(pPet.unlocked || sPet.unlocked),
+        level: Math.max(Number(pPet.level) || 1, Number(sPet.level) || 1),
+        xp: Math.max(Number(pPet.xp) || 0, Number(sPet.xp) || 0),
+        wins: Math.max(Number(pPet.wins) || 0, Number(sPet.wins) || 0),
+        currentStage: Math.max(Number(pPet.currentStage) || 1, Number(sPet.currentStage) || 1),
+        highestStage: Math.max(Number(pPet.highestStage) || 1, Number(sPet.highestStage) || 1)
+      };
+    });
+    if (pPs.activePetId && pPs.activePetId !== 'pikachu') {
+      merged.petSystem.activePetId = pPs.activePetId;
+    } else if (sPs.activePetId && sPs.activePetId !== 'pikachu') {
+      merged.petSystem.activePetId = sPs.activePetId;
+    } else {
+      merged.petSystem.activePetId = pPs.activePetId || sPs.activePetId || 'mewtwo';
+    }
+  }
+
   if (primary.petState && secondary.petState) {
     const pOwned = Array.isArray(primary.petState.ownedPets) ? primary.petState.ownedPets : [];
     const sOwned = Array.isArray(secondary.petState.ownedPets) ? secondary.petState.ownedPets : [];
+    if (!merged.petState) merged.petState = {};
     merged.petState.ownedPets = Array.from(new Set([...pOwned, ...sOwned]));
+  }
+
+  // Zachovat vlastní úpravy databáze slov a vět
+  if (primary.customReadingDb || secondary.customReadingDb) {
+    const baseDb = primary.customReadingDb || secondary.customReadingDb;
+    merged.customReadingDb = JSON.parse(JSON.stringify(baseDb));
   }
 
   merged.lastSavedAt = preferCloud ? (cloudTime || Date.now()) : Math.max(localTime, cloudTime, Date.now());
@@ -1368,6 +1433,13 @@ function applyParsedStateToRuntime(parsed) {
     if (state.dailyChestConfig.ticketAmount === undefined) state.dailyChestConfig.ticketAmount = 1;
   }
 
+  if (typeof ensureCustomReadingDb === 'function') {
+    ensureCustomReadingDb(state);
+  }
+  if (typeof rebuildReadingDatabasePools === 'function') {
+    rebuildReadingDatabasePools();
+  }
+
   if (currentLoggedInUser && currentLoggedInUser.isTestAccount) {
     applyTestAccountPerks(state);
   }
@@ -1422,6 +1494,10 @@ function loadState() {
       } catch (e) {
         console.error('Chyba při načítání stavu:', e);
       }
+    }
+
+    if (typeof rebuildReadingDatabasePools === 'function') {
+      rebuildReadingDatabasePools(true);
     }
 
     checkAndHandleDailyResets();
@@ -2186,14 +2262,13 @@ function isItemFormedByActive(lettersArray) {
   return lettersArray.every(l => state.activeLetters.includes(l));
 }
 
-function generatePedagogicalOpenSyllables() {
+function generateBasePedagogicalSyllablesForLetters(lettersList) {
   const syllables = [];
   const SOFT_CONSONANTS = ['Ž', 'Š', 'Č', 'Ř', 'C', 'J', 'Ď', 'Ť', 'Ň'];
-  const HARD_CONSONANTS = ['H', 'CH', 'K', 'R', 'D', 'T', 'N'];
   const SYLLABLE_VOWELS = ['A', 'Á', 'E', 'É', 'I', 'Í', 'O', 'Ó', 'U', 'Ú', 'Y', 'Ý'];
 
-  const activeConsonants = NATURAL_CONSONANTS.filter(c => state.activeLetters.includes(c));
-  const activeVowels = SYLLABLE_VOWELS.filter(v => state.activeLetters.includes(v));
+  const activeConsonants = NATURAL_CONSONANTS.filter(c => lettersList.includes(c));
+  const activeVowels = SYLLABLE_VOWELS.filter(v => lettersList.includes(v));
 
   activeConsonants.forEach(c => {
     activeVowels.forEach(v => {
@@ -2202,12 +2277,12 @@ function generatePedagogicalOpenSyllables() {
       if (['Ď', 'Ť', 'Ň'].includes(c) && ['I', 'Í', 'E', 'É'].includes(v)) return;
 
       const syllableText = c + v;
-      if (state.activeLetters.includes(c) && state.activeLetters.includes(v)) {
+      if (lettersList.includes(c) && lettersList.includes(v)) {
         syllables.push({ text: syllableText, emoji: '', letters: [c, v] });
       }
     });
 
-    if (state.activeLetters.includes('Ě')) {
+    if (lettersList.includes('Ě')) {
       if (['D', 'T', 'N', 'B', 'P', 'V', 'M'].includes(c)) {
         syllables.push({ text: c + 'Ě', emoji: '', letters: [c, 'Ě'] });
       }
@@ -2215,6 +2290,40 @@ function generatePedagogicalOpenSyllables() {
   });
 
   return syllables;
+}
+
+function generatePedagogicalOpenSyllables() {
+  const db = (typeof ensureCustomReadingDb === 'function') ? ensureCustomReadingDb(state) : null;
+  const hiddenSet = new Set(db ? (db.hidden.syllables || []) : []);
+  const editedMap = db ? (db.edited.syllables || {}) : {};
+  const addedList = db ? (db.added.syllables || []) : [];
+
+  const baseList = generateBasePedagogicalSyllablesForLetters(state.activeLetters || []);
+  const result = [];
+  const seen = new Set();
+
+  baseList.forEach(item => {
+    const origKey = item.text.toUpperCase();
+    if (hiddenSet.has(origKey)) return;
+    const edited = editedMap[origKey];
+    const finalText = (edited && edited.t ? edited.t : item.text).trim().toUpperCase();
+    const finalLetters = extractUniqueLetters(finalText);
+    if (!finalText || seen.has(finalText)) return;
+    if (!isItemFormedByActive(finalLetters)) return;
+    seen.add(finalText);
+    result.push({ text: finalText, emoji: (edited && edited.e) ? edited.e : '', letters: finalLetters });
+  });
+
+  addedList.forEach(entry => {
+    const cleanText = (entry && entry.t ? String(entry.t) : '').trim().toUpperCase();
+    if (!cleanText || seen.has(cleanText)) return;
+    const letters = extractUniqueLetters(cleanText);
+    if (!isItemFormedByActive(letters)) return;
+    seen.add(cleanText);
+    result.push({ text: cleanText, emoji: entry.e || '', letters, isCustom: true });
+  });
+
+  return result;
 }
 
 function formatMinutes(val) {
@@ -2327,16 +2436,100 @@ function isWordAllowedByAdminLetters(word, activeLetters = state.activeLetters) 
   return tokens.every(tk => activeSet.has(tk));
 }
 
-function buildStrictLevel5Pools() {
+const WORD_DB_CATEGORIES = ['syllables', 'lvl3', 'lvl4', 'lvl5_shluky', 'lvl5_ou', 'lvl6', 'lvl7', 'spelling'];
+
+function createEmptyCustomReadingDb() {
+  const added = {};
+  const edited = {};
+  const hidden = {};
+  WORD_DB_CATEGORIES.forEach(cat => {
+    added[cat] = [];
+    edited[cat] = {};
+    hidden[cat] = [];
+  });
+  return { added, edited, hidden };
+}
+
+function ensureCustomReadingDb(targetState = state) {
+  if (!targetState) return createEmptyCustomReadingDb();
+  if (!targetState.customReadingDb || typeof targetState.customReadingDb !== 'object') {
+    targetState.customReadingDb = createEmptyCustomReadingDb();
+  }
+  const db = targetState.customReadingDb;
+  if (!db.added || typeof db.added !== 'object') db.added = {};
+  if (!db.edited || typeof db.edited !== 'object') db.edited = {};
+  if (!db.hidden || typeof db.hidden !== 'object') db.hidden = {};
+  WORD_DB_CATEGORIES.forEach(cat => {
+    if (!Array.isArray(db.added[cat])) db.added[cat] = [];
+    if (!db.edited[cat] || typeof db.edited[cat] !== 'object') db.edited[cat] = {};
+    if (!Array.isArray(db.hidden[cat])) db.hidden[cat] = [];
+  });
+  return db;
+}
+
+function applyCustomDeltaToRawList(rawList, catKey, isSpelling = false) {
+  const db = ensureCustomReadingDb(state);
+  const hiddenSet = new Set(db.hidden[catKey] || []);
+  const editedMap = db.edited[catKey] || {};
+  const addedList = db.added[catKey] || [];
+
+  const out = [];
+  const seen = new Set();
+
+  (rawList || []).forEach(entry => {
+    const rawText = isSpelling ? (entry && entry.w ? entry.w : '') : (entry && entry.t ? entry.t : '');
+    const origKey = String(rawText).trim().toUpperCase();
+    if (!origKey || hiddenSet.has(origKey)) return;
+
+    const ed = editedMap[origKey];
+    const finalText = (ed && ed.t ? String(ed.t) : origKey).trim().toUpperCase();
+    if (!finalText || seen.has(finalText)) return;
+    seen.add(finalText);
+
+    const finalEmoji = (ed && ed.e !== undefined) ? ed.e : (entry.e || '');
+    if (isSpelling) {
+      out.push({
+        w: finalText,
+        e: finalEmoji || (entry.svg ? '' : '✨'),
+        svg: ed ? null : (entry.svg || null),
+        syllables: (ed && ed.syllables) ? ed.syllables : (entry.syllables || splitCzechWordIntoSyllables(finalText).length),
+        isEdited: Boolean(ed)
+      });
+    } else {
+      out.push({ t: finalText, e: finalEmoji, isEdited: Boolean(ed) });
+    }
+  });
+
+  addedList.forEach(entry => {
+    const cleanText = (entry && entry.t ? String(entry.t) : '').trim().toUpperCase();
+    if (!cleanText || seen.has(cleanText)) return;
+    seen.add(cleanText);
+    if (isSpelling) {
+      out.push({
+        w: cleanText,
+        e: entry.e || '✨',
+        svg: null,
+        syllables: entry.syllables || splitCzechWordIntoSyllables(cleanText).length,
+        isCustom: true
+      });
+    } else {
+      out.push({ t: cleanText, e: entry.e || '', isCustom: true });
+    }
+  });
+
+  return out;
+}
+
+function buildStrictLevel5Pools(customShlukyRaw, customOuRaw, lvl4Raw, lvl6Raw, spellingRaw) {
+  const shlukyCustomSet = new Set((customShlukyRaw || []).filter(x => x.isCustom || x.isEdited).map(x => x.t));
+  const ouCustomSet = new Set((customOuRaw || []).filter(x => x.isCustom || x.isEdited).map(x => x.t));
+
   const allCandidateSources = [
-    ...(typeof RAW_LEVEL_5_SHLUKY_WORDS !== 'undefined' ? RAW_LEVEL_5_SHLUKY_WORDS : []),
-    ...(typeof RAW_LEVEL_5_OU_WORDS !== 'undefined' ? RAW_LEVEL_5_OU_WORDS : []),
-    ...(typeof RAW_LEVEL_5_WORDS !== 'undefined' ? RAW_LEVEL_5_WORDS : []),
-    ...(typeof RAW_LEVEL_4_WORDS !== 'undefined' ? RAW_LEVEL_4_WORDS : []),
-    ...(typeof RAW_LEVEL_6_WORDS !== 'undefined' ? RAW_LEVEL_6_WORDS : []),
-    ...(typeof SPELLING_WORDS_DATABASE !== 'undefined'
-      ? SPELLING_WORDS_DATABASE.map(item => ({ t: item.w, e: item.e }))
-      : [])
+    ...(customShlukyRaw || []),
+    ...(customOuRaw || []),
+    ...(lvl4Raw || []),
+    ...(lvl6Raw || []),
+    ...(spellingRaw || []).map(item => ({ t: item.w, e: item.e }))
   ];
 
   const seenWords = new Set();
@@ -2346,12 +2539,15 @@ function buildStrictLevel5Pools() {
     const cleanText = (entry && entry.t ? String(entry.t) : '').trim().toUpperCase();
     if (!cleanText || cleanText.includes(' ') || seenWords.has(cleanText)) return;
     seenWords.add(cleanText);
+    const isCustomShluk = shlukyCustomSet.has(cleanText);
+    const isCustomOu = ouCustomSet.has(cleanText);
     uniqueEntries.push({
       text: cleanText,
       emoji: entry.e || '',
       letters: extractUniqueLetters(cleanText),
-      isShluk: hasConsonantCluster(cleanText),
-      isOU: hasDiphthongOU(cleanText)
+      isShluk: hasConsonantCluster(cleanText) || isCustomShluk,
+      isOU: hasDiphthongOU(cleanText) || isCustomOu,
+      isCustom: Boolean(isCustomShluk || isCustomOu)
     });
   });
 
@@ -2362,33 +2558,60 @@ function buildStrictLevel5Pools() {
   return { shlukyWords, ouWords, combinedWords };
 }
 
-const LEVEL_3_CVC_WORDS = RAW_LEVEL_3_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
-const LEVEL_4_TWO_SYLLABLE_WORDS = RAW_LEVEL_4_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
-const STRICT_LEVEL_5_POOLS = buildStrictLevel5Pools();
-const LEVEL_5_SHLUKY_WORDS = STRICT_LEVEL_5_POOLS.shlukyWords;
-const LEVEL_5_OU_WORDS = STRICT_LEVEL_5_POOLS.ouWords;
-const LEVEL_5_CLUSTERS = STRICT_LEVEL_5_POOLS.combinedWords;
-const LEVEL_6_SOFT = RAW_LEVEL_6_WORDS.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t) }));
-const LEVEL_7_SENTENCES = RAW_LEVEL_7_SENTENCES.map(s => ({ text: s.t, emoji: s.e, letters: extractUniqueLetters(s.t) }));
+let LEVEL_3_CVC_WORDS = [];
+let LEVEL_4_TWO_SYLLABLE_WORDS = [];
+let LEVEL_5_SHLUKY_WORDS = [];
+let LEVEL_5_OU_WORDS = [];
+let LEVEL_5_CLUSTERS = [];
+let LEVEL_6_SOFT = [];
+let LEVEL_7_SENTENCES = [];
+let ACTIVE_SPELLING_WORDS_DATABASE = [];
+
+function rebuildReadingDatabasePools(resetDecks = false) {
+  const effLvl3 = applyCustomDeltaToRawList(typeof RAW_LEVEL_3_WORDS !== 'undefined' ? RAW_LEVEL_3_WORDS : [], 'lvl3');
+  const effLvl4 = applyCustomDeltaToRawList(typeof RAW_LEVEL_4_WORDS !== 'undefined' ? RAW_LEVEL_4_WORDS : [], 'lvl4');
+  const effLvl5Shluky = applyCustomDeltaToRawList(typeof RAW_LEVEL_5_SHLUKY_WORDS !== 'undefined' ? RAW_LEVEL_5_SHLUKY_WORDS : [], 'lvl5_shluky');
+  const effLvl5Ou = applyCustomDeltaToRawList(typeof RAW_LEVEL_5_OU_WORDS !== 'undefined' ? RAW_LEVEL_5_OU_WORDS : [], 'lvl5_ou');
+  const effLvl6 = applyCustomDeltaToRawList(typeof RAW_LEVEL_6_WORDS !== 'undefined' ? RAW_LEVEL_6_WORDS : [], 'lvl6');
+  const effLvl7 = applyCustomDeltaToRawList(typeof RAW_LEVEL_7_SENTENCES !== 'undefined' ? RAW_LEVEL_7_SENTENCES : [], 'lvl7');
+  const effSpelling = applyCustomDeltaToRawList(typeof SPELLING_WORDS_DATABASE !== 'undefined' ? SPELLING_WORDS_DATABASE : [], 'spelling', true);
+
+  LEVEL_3_CVC_WORDS = effLvl3.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t), isCustom: Boolean(w.isCustom) }));
+  LEVEL_4_TWO_SYLLABLE_WORDS = effLvl4.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t), isCustom: Boolean(w.isCustom) }));
+  const strict5 = buildStrictLevel5Pools(effLvl5Shluky, effLvl5Ou, effLvl4, effLvl6, effSpelling);
+  LEVEL_5_SHLUKY_WORDS = strict5.shlukyWords;
+  LEVEL_5_OU_WORDS = strict5.ouWords;
+  LEVEL_5_CLUSTERS = strict5.combinedWords;
+  LEVEL_6_SOFT = effLvl6.map(w => ({ text: w.t, emoji: w.e, letters: extractUniqueLetters(w.t), isCustom: Boolean(w.isCustom) }));
+  LEVEL_7_SENTENCES = effLvl7.map(s => ({ text: s.t, emoji: s.e, letters: extractUniqueLetters(s.t), isCustom: Boolean(s.isCustom) }));
+  ACTIVE_SPELLING_WORDS_DATABASE = effSpelling;
+
+  if (resetDecks && typeof spellingState !== 'undefined') {
+    spellingState.unseenDeck = [];
+    spellingState.reverseDeck = [];
+  }
+}
+
+rebuildReadingDatabasePools(false);
 
 function getFilteredLevel5Pool(subMode = state.level5SubMode || 'shluky', activeLetters = state.activeLetters) {
   const normalizedMode = (subMode === 'ou' || subMode === 'all') ? subMode : 'shluky';
   if (normalizedMode === 'shluky') {
     return LEVEL_5_SHLUKY_WORDS.filter(w =>
-      hasConsonantCluster(w.text) &&
+      (w.isCustom || hasConsonantCluster(w.text)) &&
       isWordAllowedByAdminLetters(w.text, activeLetters) &&
       isItemFormedByActive(w.letters)
     );
   }
   if (normalizedMode === 'ou') {
     return LEVEL_5_OU_WORDS.filter(w =>
-      hasDiphthongOU(w.text) &&
+      (w.isCustom || hasDiphthongOU(w.text)) &&
       isWordAllowedByAdminLetters(w.text, activeLetters) &&
       isItemFormedByActive(w.letters)
     );
   }
   return LEVEL_5_CLUSTERS.filter(w =>
-    (hasConsonantCluster(w.text) || hasDiphthongOU(w.text)) &&
+    (w.isCustom || hasConsonantCluster(w.text) || hasDiphthongOU(w.text)) &&
     isWordAllowedByAdminLetters(w.text, activeLetters) &&
     isItemFormedByActive(w.letters)
   );
@@ -3378,11 +3601,272 @@ function selectColoringSegment(idx) {
   playTone(480, 0.08, 'sine', 0.15);
 }
 
+/* ============================================================
+   VLASTNÍ NUMERICKÁ KLÁVESNICE PRO MATEMATIKU (0-9)
+   Zabraňuje vyskakování systémové klávesnice na mobilu/tabletu
+   ============================================================ */
+
+window.activeMathInputId = null;
+window.activeMathKeypadContext = null;
+
+function isMathInputElementVisible(el) {
+  if (!el || !document.body.contains(el)) return false;
+  return el.offsetParent !== null;
+}
+
+function clearActiveMathKeypad() {
+  window.activeMathInputId = null;
+  window.activeMathKeypadContext = null;
+  document.querySelectorAll('.math-keypad-input.math-input-active').forEach(el => {
+    el.classList.remove('math-input-active');
+  });
+  document.querySelectorAll('.math-row-card.math-card-active').forEach(el => {
+    el.classList.remove('math-card-active');
+  });
+}
+
+function selectMathKeypadInput(inputId, contextType) {
+  const target = document.getElementById(inputId);
+  if (!target) return;
+
+  window.activeMathInputId = inputId;
+  if (contextType) {
+    window.activeMathKeypadContext = contextType;
+  } else if (inputId.startsWith('math-input-')) {
+    window.activeMathKeypadContext = 'learn';
+  } else if (inputId === 'coloring-inline-input') {
+    window.activeMathKeypadContext = 'coloring';
+  } else if (inputId === 'test-math-input') {
+    window.activeMathKeypadContext = 'test';
+  } else if (inputId === 'arena-math-answer-input') {
+    window.activeMathKeypadContext = 'arena';
+  }
+
+  document.querySelectorAll('.math-keypad-input.math-input-active').forEach(el => {
+    el.classList.remove('math-input-active');
+  });
+  document.querySelectorAll('.math-row-card.math-card-active').forEach(el => {
+    el.classList.remove('math-card-active');
+  });
+
+  target.classList.add('math-input-active');
+  const parentCard = target.closest('.math-row-card');
+  if (parentCard) parentCard.classList.add('math-card-active');
+}
+
+function getVisibleLearnMathInputs() {
+  const grid = document.getElementById('content-grid-view');
+  if (!grid) return [];
+  return Array.from(grid.querySelectorAll('input.math-keypad-input')).filter(isMathInputElementVisible);
+}
+
+function moveMathKeypadFocus(delta) {
+  const inputs = getVisibleLearnMathInputs();
+  if (!inputs.length) return;
+  const currentIdx = inputs.findIndex(inp => inp.id === window.activeMathInputId);
+  let nextIdx = currentIdx === -1 ? 0 : (currentIdx + delta + inputs.length) % inputs.length;
+  selectMathKeypadInput(inputs[nextIdx].id, 'learn');
+}
+
+function resolveActiveMathInputForContext(contextHint) {
+  const ctx = contextHint || window.activeMathKeypadContext;
+  let inp = window.activeMathInputId ? document.getElementById(window.activeMathInputId) : null;
+
+  if (inp && isMathInputElementVisible(inp)) {
+    if (!contextHint ||
+      (contextHint === 'learn' && inp.id.startsWith('math-input-')) ||
+      (contextHint === 'coloring' && inp.id === 'coloring-inline-input') ||
+      (contextHint === 'test' && inp.id === 'test-math-input') ||
+      (contextHint === 'arena' && inp.id === 'arena-math-answer-input')) {
+      return { inp, ctx: ctx || contextHint };
+    }
+  }
+
+  // Fallback podle kontextu
+  if (contextHint === 'arena') {
+    const el = document.getElementById('arena-math-answer-input');
+    if (isMathInputElementVisible(el)) { selectMathKeypadInput(el.id, 'arena'); return { inp: el, ctx: 'arena' }; }
+  }
+  if (contextHint === 'test') {
+    const el = document.getElementById('test-math-input');
+    if (isMathInputElementVisible(el)) { selectMathKeypadInput(el.id, 'test'); return { inp: el, ctx: 'test' }; }
+  }
+  if (contextHint === 'coloring') {
+    const el = document.getElementById('coloring-inline-input');
+    if (isMathInputElementVisible(el)) { selectMathKeypadInput(el.id, 'coloring'); return { inp: el, ctx: 'coloring' }; }
+  }
+  if (contextHint === 'learn') {
+    const list = getVisibleLearnMathInputs();
+    if (list.length) { selectMathKeypadInput(list[0].id, 'learn'); return { inp: list[0], ctx: 'learn' }; }
+  }
+
+  return { inp: null, ctx: null };
+}
+
+function clearLearnCardErrorState(inp) {
+  if (!inp || !inp.id || !inp.id.startsWith('math-input-')) return;
+  const idx = inp.id.replace('math-input-', '');
+  const feedbackEl = document.getElementById(`math-feedback-${idx}`);
+  const cardEl = document.getElementById(`math-card-${idx}`);
+  if (feedbackEl && feedbackEl.textContent === '❌') {
+    feedbackEl.textContent = '';
+  }
+  if (cardEl && cardEl.classList.contains('border-rose-400')) {
+    cardEl.classList.remove('border-rose-400', 'bg-rose-50/40');
+    cardEl.classList.add('border-amber-300');
+  }
+}
+
+function handleMathKeypadPress(key, contextHint) {
+  const { inp, ctx } = resolveActiveMathInputForContext(contextHint);
+  if (!inp) return;
+
+  if (key === 'BACKSPACE') {
+    if (typeof playTone === 'function') playTone(320, 0.05, 'sine', 0.12);
+    inp.value = String(inp.value || '').slice(0, -1);
+    clearLearnCardErrorState(inp);
+    return;
+  }
+
+  if (key === 'CLEAR') {
+    if (typeof playTone === 'function') playTone(280, 0.05, 'sine', 0.12);
+    inp.value = '';
+    clearLearnCardErrorState(inp);
+    return;
+  }
+
+  if (key === 'ENTER') {
+    if (ctx === 'coloring') {
+      submitColoringInput();
+      return;
+    }
+    if (ctx === 'test') {
+      submitTestMathAnswer();
+      return;
+    }
+    if (ctx === 'arena') {
+      if (typeof submitArenaMathTask === 'function') submitArenaMathTask();
+      return;
+    }
+    if (ctx === 'learn') {
+      const inputs = getVisibleLearnMathInputs();
+      const curIdx = inputs.findIndex(el => el.id === inp.id);
+      // Pokud je další prázdný příklad za aktuálním, skoč na něj
+      for (let i = curIdx + 1; i < inputs.length; i++) {
+        if (inputs[i].value.trim() === '') {
+          if (typeof playTone === 'function') playTone(520, 0.05, 'sine', 0.12);
+          selectMathKeypadInput(inputs[i].id, 'learn');
+          return;
+        }
+      }
+      // Jinak zkus najít jakýkoliv prázdný příklad
+      const firstEmpty = inputs.find(el => el.value.trim() === '');
+      if (firstEmpty && firstEmpty.id !== inp.id) {
+        if (typeof playTone === 'function') playTone(520, 0.05, 'sine', 0.12);
+        selectMathKeypadInput(firstEmpty.id, 'learn');
+        return;
+      }
+      // Všechny vyplněny (nebo zbývá jen aktuální) -> vyhodnoť
+      evaluateMathTasks();
+      return;
+    }
+    return;
+  }
+
+  // Číslice 0-9
+  if (/^[0-9]$/.test(String(key))) {
+    if (typeof playTone === 'function') playTone(460 + Number(key) * 18, 0.045, 'sine', 0.12);
+    const curVal = String(inp.value || '');
+    if (curVal.length >= 3) return;
+    if (curVal === '0') {
+      inp.value = String(key);
+    } else {
+      inp.value = curVal + String(key);
+    }
+    clearLearnCardErrorState(inp);
+  }
+}
+
+function renderMathKeypadHtml(contextType, options = {}) {
+  const compact = !!options.compact;
+  const ctxArg = `'${contextType}'`;
+  const btnHeight = compact ? 'h-10 sm:h-11 text-xl sm:text-2xl' : 'h-11 sm:h-12 text-xl sm:text-2xl';
+  const padClass = compact ? 'p-2 gap-1.5' : 'p-2.5 gap-1.5 sm:gap-2';
+  const enterLabel = contextType === 'learn' ? '⏎' : '✓';
+  const enterTitle = contextType === 'learn' ? 'Další příklad / Zkontrolovat' : 'Potvrdit výsledek';
+
+  const digitBtn = (d) => `
+    <button type="button" onclick="handleMathKeypadPress('${d}', ${ctxArg})" class="math-numpad-btn game-button ${btnHeight} w-full bg-white hover:bg-indigo-50 active:bg-indigo-100 text-indigo-950 font-baloo font-black rounded-2xl border-2 border-amber-300 border-b-4 border-b-amber-400 shadow-sm flex items-center justify-center leading-none">
+      ${d}
+    </button>
+  `;
+
+  return `
+    <div class="math-numpad-card w-full bg-gradient-to-b from-white/95 to-amber-50/95 border-3 border-amber-300 rounded-3xl ${padClass} shadow-game-card select-none">
+      <div class="grid grid-cols-3 ${compact ? 'gap-1.5' : 'gap-1.5 sm:gap-2'}">
+        ${digitBtn('1')}${digitBtn('2')}${digitBtn('3')}
+        ${digitBtn('4')}${digitBtn('5')}${digitBtn('6')}
+        ${digitBtn('7')}${digitBtn('8')}${digitBtn('9')}
+        <button type="button" onclick="handleMathKeypadPress('BACKSPACE', ${ctxArg})" title="Smazat poslední číslici" class="math-numpad-btn game-button ${btnHeight} w-full bg-rose-100 hover:bg-rose-200 active:bg-rose-300 text-rose-700 font-black rounded-2xl border-2 border-rose-300 border-b-4 border-b-rose-400 shadow-sm flex items-center justify-center leading-none">
+          ⌫
+        </button>
+        ${digitBtn('0')}
+        <button type="button" onclick="handleMathKeypadPress('ENTER', ${ctxArg})" title="${enterTitle}" class="math-numpad-btn game-button ${btnHeight} w-full bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-white font-black rounded-2xl border-2 border-emerald-600 border-b-4 border-b-emerald-700 shadow-sm flex items-center justify-center leading-none">
+          ${enterLabel}
+        </button>
+      </div>
+    </div>
+  `;
+}
+
+// Podpora fyzické klávesnice na počítači (i když mají pole readonly kvůli zákazu mobilní klávesnice)
+if (!window.__mathKeypadKeydownBound) {
+  window.__mathKeypadKeydownBound = true;
+  document.addEventListener('keydown', (e) => {
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {
+      if (!activeEl.classList.contains('math-keypad-input')) {
+        return; // Nezasahovat do běžných formulářů (přihlášení, PIN, admin panel)
+      }
+    }
+
+    if (!window.activeMathInputId) return;
+    const target = document.getElementById(window.activeMathInputId);
+    if (!isMathInputElementVisible(target)) return;
+
+    if (e.key >= '0' && e.key <= '9' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      e.preventDefault();
+      handleMathKeypadPress(e.key, window.activeMathKeypadContext);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      handleMathKeypadPress('BACKSPACE', window.activeMathKeypadContext);
+    } else if (e.key === 'Delete') {
+      e.preventDefault();
+      handleMathKeypadPress('CLEAR', window.activeMathKeypadContext);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      handleMathKeypadPress('ENTER', window.activeMathKeypadContext);
+    } else if (window.activeMathKeypadContext === 'learn' && (e.key === 'ArrowDown' || e.key === 'ArrowRight' || (e.key === 'Tab' && !e.shiftKey))) {
+      e.preventDefault();
+      moveMathKeypadFocus(1);
+    } else if (window.activeMathKeypadContext === 'learn' && (e.key === 'ArrowUp' || e.key === 'ArrowLeft' || (e.key === 'Tab' && e.shiftKey))) {
+      e.preventDefault();
+      moveMathKeypadFocus(-1);
+    }
+  });
+}
+
+window.selectMathKeypadInput = selectMathKeypadInput;
+window.clearActiveMathKeypad = clearActiveMathKeypad;
+window.renderMathKeypadHtml = renderMathKeypadHtml;
+window.handleMathKeypadPress = handleMathKeypadPress;
+
 function renderColoringWidget(task) {
   const container = document.getElementById('coloring-widget-container');
   container.innerHTML = '';
 
   if (task.kind === 'compare') {
+    clearActiveMathKeypad();
     const card = document.createElement('div');
     card.className = 'w-full max-w-xl bg-white border-4 border-amber-300 rounded-3xl p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3';
     card.innerHTML = `
@@ -3402,84 +3886,90 @@ function renderColoringWidget(task) {
   }
 
   if (task.kind === 'sequence') {
-    const card = document.createElement('div');
-    card.className = 'w-full max-w-xl bg-white border-4 border-amber-300 rounded-3xl p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3';
+    const wrapper = document.createElement('div');
+    wrapper.className = 'w-full flex flex-col items-center gap-2';
     const seqHtml = task.seq.map((num, i) => {
       if (i === task.missingIdx) {
-        return `<span class="inline-flex items-center justify-center w-11 h-11 bg-amber-100 text-amber-900 font-black rounded-2xl border-3 border-dashed border-amber-400 text-2xl">?</span>`;
+        return `<span class="inline-flex items-center justify-center w-10 h-10 bg-amber-100 text-amber-900 font-black rounded-2xl border-3 border-dashed border-amber-400 text-xl sm:text-2xl">?</span>`;
       }
-      return `<span class="text-3xl sm:text-4xl font-black text-sky-900 font-baloo">${num}</span>`;
-    }).join(' <span class="text-slate-300 font-black text-2xl mx-1">,</span> ');
+      return `<span class="text-2xl sm:text-3xl font-black text-sky-900 font-baloo">${num}</span>`;
+    }).join(' <span class="text-slate-300 font-black text-xl mx-0.5">,</span> ');
 
-    card.innerHTML = `
-      <div class="flex items-center gap-2 select-none pl-2 sm:pl-4 overflow-x-auto">${seqHtml}</div>
-      <div class="flex items-center gap-2 pr-1 sm:pr-2">
-        <input type="number" id="coloring-inline-input" placeholder="?" class="w-16 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-950 shadow-inner">
-        <button onclick="submitColoringInput()" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm">Vybarvit 🎨</button>
+    wrapper.innerHTML = `
+      <div class="w-full bg-white border-3 border-amber-300 rounded-2xl p-2.5 sm:p-3 shadow-sm flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 select-none pl-1 overflow-x-auto">${seqHtml}</div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('coloring-inline-input', 'coloring')" id="coloring-inline-input" placeholder="?" class="math-keypad-input w-14 h-11 text-center text-2xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:outline-none text-indigo-950 shadow-inner">
+          <button type="button" onclick="submitColoringInput()" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-2.5 rounded-xl border-b-4 border-emerald-700 text-xs sm:text-sm whitespace-nowrap">Vybarvit 🎨</button>
+        </div>
+      </div>
+      <div class="w-full max-w-[240px]">
+        ${renderMathKeypadHtml('coloring', { compact: true })}
       </div>
     `;
-    container.appendChild(card);
-    setTimeout(() => {
-      const inp = document.getElementById('coloring-inline-input');
-      if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitColoringInput(); }); }
-    }, 50);
+    container.appendChild(wrapper);
+    selectMathKeypadInput('coloring-inline-input', 'coloring');
     return;
   }
 
   if (task.kind === 'decomposition') {
-    const card = document.createElement('div');
-    card.className = 'w-full max-w-sm bg-white border-4 border-amber-300 rounded-3xl p-4 shadow-sm flex flex-col items-center justify-center';
-    card.innerHTML = `
-      <div class="w-16 h-16 rounded-2xl border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-3xl font-black text-slate-800 shadow-sm font-baloo">
-        ${task.topNum}
+    const wrapper = document.createElement('div');
+    wrapper.className = 'w-full flex flex-col sm:flex-row items-center justify-center gap-3';
+    wrapper.innerHTML = `
+      <div class="bg-white border-3 border-amber-300 rounded-3xl p-3 shadow-sm flex flex-col items-center justify-center flex-shrink-0">
+        <div class="w-14 h-14 rounded-2xl border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-2xl sm:text-3xl font-black text-slate-800 shadow-sm font-baloo">
+          ${task.topNum}
+        </div>
+        <svg class="w-24 h-7" viewBox="0 0 100 30">
+          <line x1="50" y1="0" x2="20" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+          <line x1="50" y1="0" x2="80" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+        </svg>
+        <div class="flex items-center gap-4 mt-0.5">
+          ${task.missingSide === 'left' ? `
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('coloring-inline-input', 'coloring')" id="coloring-inline-input" placeholder="?" class="math-keypad-input w-14 h-14 text-center text-2xl font-black rounded-2xl border-4 border-dashed border-amber-400 bg-amber-50 text-indigo-900 focus:outline-none">
+          ` : `
+            <div class="w-14 h-14 rounded-2xl border-4 border-slate-700 bg-white flex items-center justify-center text-2xl font-black text-slate-800 font-baloo">${task.leftNum}</div>
+          `}
+          ${task.missingSide === 'right' ? `
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('coloring-inline-input', 'coloring')" id="coloring-inline-input" placeholder="?" class="math-keypad-input w-14 h-14 text-center text-2xl font-black rounded-2xl border-4 border-dashed border-amber-400 bg-amber-50 text-indigo-900 focus:outline-none">
+          ` : `
+            <div class="w-14 h-14 rounded-2xl border-4 border-slate-700 bg-white flex items-center justify-center text-2xl font-black text-slate-800 font-baloo">${task.rightNum}</div>
+          `}
+        </div>
+        <button type="button" onclick="submitColoringInput()" class="game-button mt-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-2 rounded-xl border-b-4 border-emerald-700 text-xs">
+          Vybarvit dílek 🎨
+        </button>
       </div>
-      <svg class="w-28 h-8" viewBox="0 0 100 30">
-        <line x1="50" y1="0" x2="20" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-        <line x1="50" y1="0" x2="80" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-      </svg>
-      <div class="flex items-center gap-5 mt-0.5">
-        ${task.missingSide === 'left' ? `
-          <input type="number" id="coloring-inline-input" placeholder="?" class="w-14 h-14 text-center text-2xl font-black rounded-2xl border-4 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
-        ` : `
-          <div class="w-14 h-14 rounded-2xl border-4 border-slate-700 bg-white flex items-center justify-center text-2xl font-black text-slate-800 font-baloo">${task.leftNum}</div>
-        `}
-        ${task.missingSide === 'right' ? `
-          <input type="number" id="coloring-inline-input" placeholder="?" class="w-14 h-14 text-center text-2xl font-black rounded-2xl border-4 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
-        ` : `
-          <div class="w-14 h-14 rounded-2xl border-4 border-slate-700 bg-white flex items-center justify-center text-2xl font-black text-slate-800 font-baloo">${task.rightNum}</div>
-        `}
+      <div class="w-full max-w-[215px]">
+        ${renderMathKeypadHtml('coloring', { compact: true })}
       </div>
-      <button onclick="submitColoringInput()" class="game-button mt-3.5 bg-emerald-500 hover:bg-emerald-600 text-white font-black px-6 py-2.5 rounded-2xl border-b-4 border-emerald-700 text-sm">
-        Vybarvit dílek 🎨
-      </button>
     `;
-    container.appendChild(card);
-    setTimeout(() => {
-      const inp = document.getElementById('coloring-inline-input');
-      if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitColoringInput(); }); }
-    }, 50);
+    container.appendChild(wrapper);
+    selectMathKeypadInput('coloring-inline-input', 'coloring');
     return;
   }
 
-  const card = document.createElement('div');
-  card.className = 'w-full max-w-xl bg-white border-4 border-amber-300 rounded-3xl p-3 sm:p-4 shadow-sm flex items-center justify-between gap-3';
-  card.innerHTML = `
-    <div class="flex items-center text-3xl sm:text-4xl font-black text-sky-900 font-baloo select-none pl-2 sm:pl-4">
-      <span>${task.a}</span>
-      <span class="mx-2 ${task.op === '+' ? 'text-amber-500' : 'text-rose-500'}">${task.op}</span>
-      <span>${task.b}</span>
-      <span class="mx-2 text-slate-400">=</span>
+  const wrapper = document.createElement('div');
+  wrapper.className = 'w-full flex flex-col items-center gap-2';
+  wrapper.innerHTML = `
+    <div class="w-full bg-white border-3 border-amber-300 rounded-2xl p-2.5 sm:p-3 shadow-sm flex items-center justify-between gap-2">
+      <div class="flex items-center text-2xl sm:text-4xl font-black text-sky-900 font-baloo select-none pl-2">
+        <span>${task.a}</span>
+        <span class="mx-2 ${task.op === '+' ? 'text-amber-500' : 'text-rose-500'}">${task.op}</span>
+        <span>${task.b}</span>
+        <span class="mx-2 text-slate-400">=</span>
+      </div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('coloring-inline-input', 'coloring')" id="coloring-inline-input" placeholder="?" class="math-keypad-input w-14 h-11 text-center text-2xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:outline-none text-indigo-950 shadow-inner">
+        <button type="button" onclick="submitColoringInput()" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-2.5 rounded-xl border-b-4 border-emerald-700 text-xs sm:text-sm whitespace-nowrap">Vybarvit 🎨</button>
+      </div>
     </div>
-    <div class="flex items-center gap-2 pr-1 sm:pr-2">
-      <input type="number" id="coloring-inline-input" placeholder="?" class="w-16 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-950 shadow-inner">
-      <button onclick="submitColoringInput()" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-4 py-3 rounded-2xl border-b-4 border-emerald-700 text-sm">Vybarvit 🎨</button>
+    <div class="w-full max-w-[240px]">
+      ${renderMathKeypadHtml('coloring', { compact: true })}
     </div>
   `;
-  container.appendChild(card);
-  setTimeout(() => {
-    const inp = document.getElementById('coloring-inline-input');
-    if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitColoringInput(); }); }
-  }, 50);
+  container.appendChild(wrapper);
+  selectMathKeypadInput('coloring-inline-input', 'coloring');
 }
 
 function submitColoringChoice(choice) { evaluateColoringAnswer(choice); }
@@ -3496,6 +3986,7 @@ function evaluateColoringAnswer(answer) {
   if (answer === seg.task.correctAnswer) {
     seg.colored = true;
     coloringState.selectedSegmentIndex = null;
+    clearActiveMathKeypad();
     playTone(660, 0.12, 'triangle', 0.25);
     renderPokemonSvg();
     updateColoringUI();
@@ -3513,7 +4004,10 @@ function evaluateColoringAnswer(answer) {
     const promptMsg = document.getElementById('coloring-prompt-message');
     promptMsg.textContent = '❌ Zkus to znovu!';
     const inp = document.getElementById('coloring-inline-input');
-    if (inp) { inp.value = ''; inp.focus(); }
+    if (inp) {
+      inp.value = '';
+      selectMathKeypadInput('coloring-inline-input', 'coloring');
+    }
   }
 }
 
@@ -4280,9 +4774,21 @@ function renderCurrentContent() {
   gridContainer.innerHTML = '';
 
   if (isMath) {
-    if (state.currentMathLevel === 5) {
-      gridContainer.className = 'w-full grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-4xl mx-auto py-0.5';
+    const hasNumericInputs = state.currentItems.some(it => it.type !== 'compare');
+
+    let itemsContainer = gridContainer;
+    if (hasNumericInputs) {
+      gridContainer.className = 'w-full max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-center gap-3 sm:gap-4 py-0.5';
+      const leftCol = document.createElement('div');
+      if (state.currentMathLevel === 5) {
+        leftCol.className = 'w-full md:flex-1 min-w-0 grid grid-cols-2 gap-2 sm:gap-2.5';
+      } else {
+        leftCol.className = 'w-full md:flex-1 min-w-0 flex flex-col gap-1.5 sm:gap-2';
+      }
+      gridContainer.appendChild(leftCol);
+      itemsContainer = leftCol;
     } else {
+      clearActiveMathKeypad();
       gridContainer.className = 'w-full flex flex-col gap-1.5 sm:gap-2 max-w-3xl mx-auto';
     }
 
@@ -4291,28 +4797,29 @@ function renderCurrentContent() {
       card.id = `math-card-${index}`;
 
       if (item.type === 'decomposition') {
-        card.className = 'math-row-card bg-white rounded-2xl sm:rounded-3xl p-2.5 sm:p-3.5 border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center';
+        card.className = 'math-row-card cursor-pointer bg-white rounded-2xl sm:rounded-3xl p-2 sm:p-3 border-3 border-amber-300 shadow-game-card flex flex-col items-center justify-center';
+        card.addEventListener('click', () => selectMathKeypadInput(`math-input-${index}`, 'learn'));
         card.innerHTML = `
-          <div class="w-12 sm:w-14 h-12 sm:h-14 rounded-2xl border-3 sm:border-4 border-slate-700 bg-amber-50 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-800 shadow-sm font-baloo">
+          <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-2xl border-3 border-slate-700 bg-amber-50 flex items-center justify-center text-xl sm:text-2xl font-black text-slate-800 shadow-sm font-baloo">
             ${item.topNum}
           </div>
-          <svg class="w-20 sm:w-24 h-6 sm:h-7" viewBox="0 0 100 30">
+          <svg class="w-20 sm:w-24 h-5 sm:h-6" viewBox="0 0 100 30">
             <line x1="50" y1="0" x2="20" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
             <line x1="50" y1="0" x2="80" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
           </svg>
           <div class="flex items-center gap-3 sm:gap-5 mt-0.5">
             ${item.missingSide === 'left' ? `
-              <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-11 sm:w-12 h-11 sm:h-12 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
+              <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="event.stopPropagation(); selectMathKeypadInput('math-input-${index}', 'learn')" id="math-input-${index}" placeholder="?" class="math-keypad-input w-11 sm:w-12 h-10 sm:h-11 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-dashed border-amber-400 bg-amber-50 text-indigo-900 focus:outline-none">
             ` : `
-              <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-xl border-3 border-slate-700 bg-white flex items-center justify-center text-lg sm:text-xl font-black text-slate-800">${item.leftNum}</div>
+              <div class="w-11 sm:w-12 h-10 sm:h-11 rounded-xl border-3 border-slate-700 bg-white flex items-center justify-center text-lg sm:text-xl font-black text-slate-800">${item.leftNum}</div>
             `}
             ${item.missingSide === 'right' ? `
-              <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-11 sm:w-12 h-11 sm:h-12 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none">
+              <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="event.stopPropagation(); selectMathKeypadInput('math-input-${index}', 'learn')" id="math-input-${index}" placeholder="?" class="math-keypad-input w-11 sm:w-12 h-10 sm:h-11 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-dashed border-amber-400 bg-amber-50 text-indigo-900 focus:outline-none">
             ` : `
-              <div class="w-11 sm:w-12 h-11 sm:h-12 rounded-xl border-3 border-slate-700 bg-white flex items-center justify-center text-lg sm:text-xl font-black text-slate-800">${item.rightNum}</div>
+              <div class="w-11 sm:w-12 h-10 sm:h-11 rounded-xl border-3 border-slate-700 bg-white flex items-center justify-center text-lg sm:text-xl font-black text-slate-800">${item.rightNum}</div>
             `}
           </div>
-          <span id="math-feedback-${index}" class="text-lg mt-1 h-4"></span>
+          <span id="math-feedback-${index}" class="text-base mt-0.5 h-4 leading-none"></span>
         `;
       } else if (item.type === 'compare') {
         card.className = 'math-row-card bg-white rounded-2xl py-2 px-3 sm:py-2.5 sm:px-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2 overflow-x-auto';
@@ -4329,7 +4836,11 @@ function renderCurrentContent() {
       } else if (item.isWordProblem) {
         const formulaText = item.formula || `${item.a} ${item.op} ${item.b} = ?`;
 
-        card.className = 'math-row-card bg-white rounded-2xl py-2.5 px-3 sm:py-3 sm:px-4 border-3 border-amber-400 shadow-game-card flex flex-col items-center justify-center text-center gap-1.5 w-full';
+        card.className = 'math-row-card cursor-pointer bg-white rounded-2xl py-2 px-3 sm:py-2.5 sm:px-4 border-3 border-amber-400 shadow-game-card flex flex-col items-center justify-center text-center gap-1.5 w-full';
+        card.addEventListener('click', (e) => {
+          if (e.target && e.target.closest('button')) return;
+          selectMathKeypadInput(`math-input-${index}`, 'learn');
+        });
         card.innerHTML = `
           <div class="flex items-center justify-center gap-2 flex-wrap">
             <span class="text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full">Slovní Úloha</span>
@@ -4343,24 +4854,39 @@ function renderCurrentContent() {
           </div>
           <div class="flex items-center justify-center gap-2 mt-0.5">
             <span class="text-xs font-black text-slate-600">Výsledek:</span>
-            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-14 sm:w-16 h-9 sm:h-10 text-center text-xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="event.stopPropagation(); selectMathKeypadInput('math-input-${index}', 'learn')" id="math-input-${index}" placeholder="?" class="math-keypad-input w-14 sm:w-16 h-9 sm:h-10 text-center text-xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:outline-none text-indigo-900 shadow-inner">
             <span id="math-feedback-${index}" class="text-lg ml-1 w-5 text-center"></span>
           </div>
         `;
       } else {
-        card.className = 'math-row-card bg-white rounded-2xl py-2 px-3 sm:py-2.5 sm:px-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2 overflow-x-auto';
+        card.className = 'math-row-card cursor-pointer bg-white rounded-2xl py-2 px-3 sm:py-2.5 sm:px-4 border-3 border-amber-300 shadow-game-card flex flex-nowrap items-center justify-between gap-2 overflow-x-auto';
+        card.addEventListener('click', () => selectMathKeypadInput(`math-input-${index}`, 'learn'));
         card.innerHTML = `
           <div class="flex items-center whitespace-nowrap select-none overflow-x-auto font-baloo text-2xl sm:text-3xl">${item.htmlRow}</div>
           <div class="flex items-center gap-1.5 whitespace-nowrap ml-auto">
-            <input type="number" id="math-input-${index}" inputmode="numeric" placeholder="?" class="w-13 sm:w-15 h-9 sm:h-11 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="event.stopPropagation(); selectMathKeypadInput('math-input-${index}', 'learn')" id="math-input-${index}" placeholder="?" class="math-keypad-input w-14 sm:w-16 h-9 sm:h-11 text-center text-lg sm:text-xl font-black rounded-xl border-3 border-amber-400 bg-amber-50 focus:outline-none text-indigo-900 shadow-inner">
             <span id="math-feedback-${index}" class="text-lg ml-1 w-5 text-center"></span>
           </div>
         `;
       }
-      gridContainer.appendChild(card);
+      itemsContainer.appendChild(card);
     });
 
+    if (hasNumericInputs) {
+      const rightCol = document.createElement('div');
+      rightCol.className = 'w-full max-w-[260px] md:w-[228px] lg:w-[244px] flex-shrink-0 flex flex-col items-center justify-center';
+      rightCol.innerHTML = renderMathKeypadHtml('learn');
+      gridContainer.appendChild(rightCol);
+
+      // Automaticky vyber první numerické políčko
+      const firstInput = document.getElementById('math-input-0');
+      if (firstInput && firstInput.classList.contains('math-keypad-input')) {
+        selectMathKeypadInput('math-input-0', 'learn');
+      }
+    }
+
   } else {
+    clearActiveMathKeypad();
     const isSentence = state.currentLevel === 7;
     if (isSentence) {
       gridContainer.className = 'w-full grid grid-cols-1 md:grid-cols-2 gap-2.5 py-0.5';
@@ -4511,11 +5037,14 @@ function evaluateMathTasks() {
   const statusEl = document.getElementById('math-eval-status');
   if (!allFilled) {
     statusEl.innerHTML = '<span class="text-amber-600 font-bold">Vyplň nejdříve všechny příklady!</span>';
+    const firstEmpty = getVisibleLearnMathInputs().find(el => el.value.trim() === '');
+    if (firstEmpty) selectMathKeypadInput(firstEmpty.id, 'learn');
     soundShuffle();
     return;
   }
 
   if (allCorrect) {
+    clearActiveMathKeypad();
     statusEl.innerHTML = '<span class="text-emerald-600 font-black">Všechno správně! Skvělá práce! 🎉</span>';
     const lvl = state.currentMathLevel;
     const reward = getLevelReward('math', lvl);
@@ -4538,6 +5067,13 @@ function evaluateMathTasks() {
     setTimeout(() => { generateLessonItems(); }, 1600);
   } else {
     statusEl.innerHTML = `<span class="text-rose-600 font-bold">Správně máš ${correctCount} z ${state.currentItems.length}. Zkus opravit chyby!</span>`;
+    const firstWrongIdx = state.currentItems.findIndex((item, idx) => {
+      const el = document.getElementById(`math-input-${idx}`);
+      return el && el.classList.contains('math-keypad-input') && el.value.trim() !== item.correctAnswer;
+    });
+    if (firstWrongIdx !== -1) {
+      selectMathKeypadInput(`math-input-${firstWrongIdx}`, 'learn');
+    }
     soundError();
   }
 }
@@ -6476,6 +7012,7 @@ function renderCurrentTestTask() {
 
   if (cur.category === 'reading') {
     readingEvalBar.classList.remove('hidden');
+    clearActiveMathKeypad();
     mathEvalBar.classList.add('hidden');
 
     const arcsActive = !!state.showSyllableArcs;
@@ -6504,6 +7041,7 @@ function renderCurrentTestTask() {
     mathEvalBar.classList.remove('hidden');
 
     if (cur.renderType === 'compare') {
+      clearActiveMathKeypad();
       const card = document.createElement('div');
       card.className = 'flex flex-col items-center justify-center gap-3';
       card.innerHTML = `
@@ -6521,67 +7059,73 @@ function renderCurrentTestTask() {
       `;
       area.appendChild(card);
     } else if (cur.renderType === 'decomposition') {
-      const card = document.createElement('div');
-      card.className = 'flex flex-col items-center justify-center';
-      card.innerHTML = `
-        <div class="w-14 h-14 rounded-2xl border-3 border-slate-700 bg-amber-50 flex items-center justify-center text-2xl font-black text-slate-800 shadow-sm font-baloo">
-          ${cur.topNum}
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-full flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6';
+      wrapper.innerHTML = `
+        <div class="flex-1 flex flex-col items-center justify-center">
+          <div class="w-14 h-14 rounded-2xl border-3 border-slate-700 bg-amber-50 flex items-center justify-center text-2xl font-black text-slate-800 shadow-sm font-baloo">
+            ${cur.topNum}
+          </div>
+          <svg class="w-24 h-7" viewBox="0 0 100 30">
+            <line x1="50" y1="0" x2="20" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+            <line x1="50" y1="0" x2="80" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+          <div class="flex items-center gap-4 mt-0.5">
+            ${cur.missingSide === 'left' ? `
+              <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('test-math-input', 'test')" id="test-math-input" placeholder="?" class="math-keypad-input w-14 h-14 text-center text-2xl font-black rounded-2xl border-3 border-dashed border-amber-400 bg-amber-50 text-indigo-900 focus:outline-none shadow-inner">
+            ` : `
+              <div class="w-14 h-14 rounded-2xl border-3 border-slate-700 bg-white flex items-center justify-center text-xl font-black text-slate-800">${cur.leftNum}</div>
+            `}
+            ${cur.missingSide === 'right' ? `
+              <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('test-math-input', 'test')" id="test-math-input" placeholder="?" class="math-keypad-input w-14 h-14 text-center text-2xl font-black rounded-2xl border-3 border-dashed border-amber-400 bg-amber-50 text-indigo-900 focus:outline-none shadow-inner">
+            ` : `
+              <div class="w-14 h-14 rounded-2xl border-3 border-slate-700 bg-white flex items-center justify-center text-xl font-black text-slate-800">${cur.rightNum}</div>
+            `}
+          </div>
         </div>
-        <svg class="w-24 h-7" viewBox="0 0 100 30">
-          <line x1="50" y1="0" x2="20" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-          <line x1="50" y1="0" x2="80" y2="30" stroke="#334155" stroke-width="4" stroke-linecap="round"/>
-        </svg>
-        <div class="flex items-center gap-4 mt-0.5">
-          ${cur.missingSide === 'left' ? `
-            <input type="number" id="test-math-input" placeholder="?" class="w-14 h-14 text-center text-2xl font-black rounded-2xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none shadow-inner">
-          ` : `
-            <div class="w-14 h-14 rounded-2xl border-3 border-slate-700 bg-white flex items-center justify-center text-xl font-black text-slate-800">${cur.leftNum}</div>
-          `}
-          ${cur.missingSide === 'right' ? `
-            <input type="number" id="test-math-input" placeholder="?" class="w-14 h-14 text-center text-2xl font-black rounded-2xl border-3 border-dashed border-amber-400 bg-amber-50 focus:bg-white text-indigo-900 focus:outline-none shadow-inner">
-          ` : `
-            <div class="w-14 h-14 rounded-2xl border-3 border-slate-700 bg-white flex items-center justify-center text-xl font-black text-slate-800">${cur.rightNum}</div>
-          `}
+        <div class="w-full max-w-[230px] flex-shrink-0">
+          ${renderMathKeypadHtml('test', { compact: true })}
         </div>
       `;
-      area.appendChild(card);
-      setTimeout(() => {
-        const inp = document.getElementById('test-math-input');
-        if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
-      }, 50);
+      area.appendChild(wrapper);
+      selectMathKeypadInput('test-math-input', 'test');
     } else if (cur.renderType === 'story') {
-      const card = document.createElement('div');
-      card.className = 'flex flex-col items-center justify-center text-center max-w-xl mx-auto gap-4 py-2 w-full';
-      card.innerHTML = `
-        <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-3 py-1 rounded-full">Slovní Úloha v Testu</span>
-        <p class="text-base sm:text-2xl font-black text-indigo-950 leading-relaxed font-nunito px-2">${cur.story}</p>
-        <div class="flex items-center justify-center gap-2.5 mt-2">
-          <span class="text-xs sm:text-sm font-black text-slate-600">Výsledek:</span>
-          <input type="number" id="test-math-input" placeholder="?" class="w-20 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-full flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-5';
+      wrapper.innerHTML = `
+        <div class="flex-1 flex flex-col items-center justify-center text-center gap-3 py-1 w-full">
+          <span class="text-xs font-black uppercase tracking-wider bg-purple-100 text-purple-900 px-3 py-1 rounded-full">Slovní Úloha v Testu</span>
+          <p class="text-base sm:text-xl font-black text-indigo-950 leading-relaxed font-nunito px-1">${cur.story}</p>
+          <div class="flex items-center justify-center gap-2.5 mt-1">
+            <span class="text-xs sm:text-sm font-black text-slate-600">Výsledek:</span>
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('test-math-input', 'test')" id="test-math-input" placeholder="?" class="math-keypad-input w-20 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:outline-none text-indigo-900 shadow-inner">
+          </div>
+        </div>
+        <div class="w-full max-w-[230px] flex-shrink-0">
+          ${renderMathKeypadHtml('test', { compact: true })}
         </div>
       `;
-      area.appendChild(card);
-      setTimeout(() => {
-        const inp = document.getElementById('test-math-input');
-        if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
-      }, 50);
+      area.appendChild(wrapper);
+      selectMathKeypadInput('test-math-input', 'test');
     } else {
-      const card = document.createElement('div');
-      card.className = 'flex flex-col items-center justify-center max-w-lg';
-      card.innerHTML = `
-        <div class="flex items-center whitespace-nowrap overflow-x-auto select-none font-baloo mb-3 text-2xl sm:text-3xl">
-          ${cur.htmlContent}
+      const wrapper = document.createElement('div');
+      wrapper.className = 'w-full flex flex-col md:flex-row items-center justify-center gap-4 sm:gap-6';
+      wrapper.innerHTML = `
+        <div class="flex-1 flex flex-col items-center justify-center min-w-0">
+          <div class="flex items-center whitespace-nowrap overflow-x-auto select-none font-baloo mb-3 text-2xl sm:text-3xl max-w-full">
+            ${cur.htmlContent}
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-black text-slate-500">Výsledek:</span>
+            <input type="text" inputmode="none" readonly onfocus="this.blur()" onclick="selectMathKeypadInput('test-math-input', 'test')" id="test-math-input" placeholder="?" class="math-keypad-input w-20 h-12 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:outline-none text-indigo-900 shadow-inner">
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <span class="text-xs font-black text-slate-500">Výsledek:</span>
-          <input type="number" id="test-math-input" placeholder="?" class="w-16 h-11 text-center text-2xl font-black rounded-2xl border-3 border-amber-400 bg-amber-50 focus:bg-white focus:outline-none text-indigo-900 shadow-inner">
+        <div class="w-full max-w-[230px] flex-shrink-0">
+          ${renderMathKeypadHtml('test', { compact: true })}
         </div>
       `;
-      area.appendChild(card);
-      setTimeout(() => {
-        const inp = document.getElementById('test-math-input');
-        if (inp) { inp.focus(); inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitTestMathAnswer(); }); }
-      }, 50);
+      area.appendChild(wrapper);
+      selectMathKeypadInput('test-math-input', 'test');
     }
   }
 }
@@ -7650,6 +8194,7 @@ function switchAdminTab(tabKey) {
   const btnLegend = document.getElementById('admin-tab-btn-legendary');
   const btnMath = document.getElementById('admin-tab-btn-math');
   const btnReading = document.getElementById('admin-tab-btn-reading');
+  const btnWordDb = document.getElementById('admin-tab-btn-word_db');
 
   const contentGeneral = document.getElementById('admin-tab-content-general');
   const contentTrace = document.getElementById('admin-tab-content-traceability');
@@ -7660,8 +8205,9 @@ function switchAdminTab(tabKey) {
   const contentLegend = document.getElementById('admin-tab-content-legendary');
   const contentMath = document.getElementById('admin-tab-content-math');
   const contentReading = document.getElementById('admin-tab-content-reading');
+  const contentWordDb = document.getElementById('admin-tab-content-word_db');
 
-  [btnGeneral, btnTrace, btnAccounts, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading].forEach(b => {
+  [btnGeneral, btnTrace, btnAccounts, btnSkins, btnPets, btnTest, btnLegend, btnMath, btnReading, btnWordDb].forEach(b => {
     if (b) b.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all text-slate-700 hover:bg-slate-200 flex items-center gap-2 text-left';
   });
 
@@ -7674,6 +8220,7 @@ function switchAdminTab(tabKey) {
   if (contentLegend) contentLegend.classList.add('hidden');
   if (contentMath) contentMath.classList.add('hidden');
   if (contentReading) contentReading.classList.add('hidden');
+  if (contentWordDb) contentWordDb.classList.add('hidden');
 
   if (tabKey === 'traceability') {
     if (btnTrace) btnTrace.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-emerald-600 text-white shadow-sm flex items-center gap-2 text-left';
@@ -7705,6 +8252,10 @@ function switchAdminTab(tabKey) {
   } else if (tabKey === 'reading') {
     if (btnReading) btnReading.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-sky-500 text-white shadow-sm flex items-center gap-2 text-left';
     if (contentReading) contentReading.classList.remove('hidden');
+  } else if (tabKey === 'word_db') {
+    if (btnWordDb) btnWordDb.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-teal-600 text-white shadow-sm flex items-center gap-2 text-left';
+    if (contentWordDb) contentWordDb.classList.remove('hidden');
+    if (typeof renderAdminWordDbUI === 'function') renderAdminWordDbUI();
   } else {
     if (btnGeneral) btnGeneral.className = 'w-full py-2.5 px-3 rounded-2xl font-black text-xs sm:text-sm transition-all bg-indigo-600 text-white shadow-sm flex items-center gap-2 text-left';
     if (contentGeneral) contentGeneral.classList.remove('hidden');
@@ -9100,3 +9651,921 @@ if (document.readyState === 'loading') {
 } else {
   initSkolackaMiseApp();
 }
+
+/* ============================================================
+   ADMIN EDITOR DATABÁZE SLOV, SLABIK A VĚT (SLABIKÁŘ)
+   Graficky přívětivý, blbuvzdorný editor napojený na data.js
+   ============================================================ */
+
+const WORD_DB_META = [
+  { key: 'syllables',   icon: '🧩', title: 'Slabiky',        sub: '2. záložka',   placeholder: 'Např. MA, LÁ, PŮ, STR...',    isSentence: false, noEmoji: true },
+  { key: 'lvl3',        icon: '📦', title: 'Jednoslabičná',  sub: '3. záložka',   placeholder: 'Např. LES, PES, MÍČ...',      isSentence: false, noEmoji: false },
+  { key: 'lvl4',        icon: '📖', title: 'Dvouslabičná',   sub: '4. záložka',   placeholder: 'Např. MÁMA, TÁTA, KOZA...',   isSentence: false, noEmoji: false },
+  { key: 'lvl5_shluky', icon: '✨', title: 'Shluky',         sub: '5. záložka',   placeholder: 'Např. STROM, VLAK, DRAK...',  isSentence: false, noEmoji: false },
+  { key: 'lvl5_ou',     icon: '🔊', title: 'Slova s OU',     sub: '5. záložka',   placeholder: 'Např. LOUKA, HOUBA, BOUDA...',isSentence: false, noEmoji: false },
+  { key: 'lvl6',        icon: '🎯', title: 'DĚ / TĚ / NĚ',   sub: '6. záložka',   placeholder: 'Např. DĚDA, ŠTĚNĚ, KONĚ...',  isSentence: false, noEmoji: false },
+  { key: 'lvl7',        icon: '🌟', title: 'Celé věty',      sub: '7. záložka',   placeholder: 'Např. EMA MÁ MÍSU.',          isSentence: true,  noEmoji: false },
+  { key: 'spelling',    icon: '🗣️', title: 'Hláskování',     sub: '8. záložka',   placeholder: 'Např. JAHODA, SLUNÍČKO...',   isSentence: false, noEmoji: false }
+];
+
+const WORD_DB_QUICK_EMOJIS = [
+  '👧', '👦', '👩', '👨', '🐶', '🐱', '🐴', '🐮', '🐷', '🐸',
+  '🐝', '🐟', '🦊', '🦉', '🍎', '🍓', '🧀', '🍰', '🚗', '🚂',
+  '🏠', '🌳', '🌸', '☀️', '⭐', '⚽', '🎒', '📖', '🎁', '✨'
+];
+
+let wordDbUiState = {
+  category: 'lvl7',
+  filter: 'all',
+  search: '',
+  addMode: 'single',
+  pageSize: 60,
+  editingKey: null,
+  resetConfirmArmed: false,
+  resetConfirmTimer: null
+};
+
+function escapeWordDbHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getWordDbCategoryMeta(catKey) {
+  return WORD_DB_META.find(m => m.key === catKey) || WORD_DB_META[0];
+}
+
+function normalizeWordDbText(rawText, catKey) {
+  let clean = String(rawText || '').replace(/\s+/g, ' ').trim().toUpperCase();
+  if (!clean) return '';
+  if (catKey === 'lvl7') {
+    if (!/[.!?]$/.test(clean)) {
+      clean = clean + '.';
+    }
+  } else {
+    // Pro slabiky a jednotlivá slova odstraníme náhodné tečky na konci
+    clean = clean.replace(/[.!?]+$/g, '').trim();
+  }
+  return clean;
+}
+
+function getMissingLettersForWordDbText(text) {
+  const activeSet = new Set((state.activeLetters || []).map(l => String(l).trim().toUpperCase()));
+  const letters = extractUniqueLetters(text);
+  return letters.filter(l => !activeSet.has(l));
+}
+
+function getBaseRawEntriesForCategory(catKey) {
+  if (catKey === 'syllables') {
+    return generateBasePedagogicalSyllablesForLetters(FULL_CZECH_ALPHABET).map(s => ({ t: s.text, e: '' }));
+  }
+  if (catKey === 'lvl3') return (typeof RAW_LEVEL_3_WORDS !== 'undefined' ? RAW_LEVEL_3_WORDS : []);
+  if (catKey === 'lvl4') return (typeof RAW_LEVEL_4_WORDS !== 'undefined' ? RAW_LEVEL_4_WORDS : []);
+  if (catKey === 'lvl5_shluky') return (typeof RAW_LEVEL_5_SHLUKY_WORDS !== 'undefined' ? RAW_LEVEL_5_SHLUKY_WORDS : []);
+  if (catKey === 'lvl5_ou') return (typeof RAW_LEVEL_5_OU_WORDS !== 'undefined' ? RAW_LEVEL_5_OU_WORDS : []);
+  if (catKey === 'lvl6') return (typeof RAW_LEVEL_6_WORDS !== 'undefined' ? RAW_LEVEL_6_WORDS : []);
+  if (catKey === 'lvl7') return (typeof RAW_LEVEL_7_SENTENCES !== 'undefined' ? RAW_LEVEL_7_SENTENCES : []);
+  if (catKey === 'spelling') {
+    return (typeof SPELLING_WORDS_DATABASE !== 'undefined' ? SPELLING_WORDS_DATABASE : []).map(item => ({
+      t: item.w,
+      e: item.e || '',
+      svg: item.svg || null,
+      syllables: item.syllables
+    }));
+  }
+  return [];
+}
+
+function buildCategoryEditorDataset(catKey) {
+  const db = ensureCustomReadingDb(state);
+  const rawBase = getBaseRawEntriesForCategory(catKey);
+  const hiddenSet = new Set(db.hidden[catKey] || []);
+  const editedMap = db.edited[catKey] || {};
+  const addedList = db.added[catKey] || [];
+
+  const items = [];
+  const hiddenItems = [];
+  const seenTexts = new Set();
+
+  // Nejprve vlastní přidané položky (nahoře, aby rodič své nové položky hned viděl!)
+  addedList.forEach((entry, idx) => {
+    const text = String(entry && entry.t ? entry.t : '').trim().toUpperCase();
+    if (!text) return;
+    seenTexts.add(text);
+    const missing = getMissingLettersForWordDbText(text);
+    items.push({
+      idKey: `custom::${idx}::${text}`,
+      origKey: text,
+      customIndex: idx,
+      text,
+      emoji: entry.e || '',
+      source: 'custom',
+      isActive: missing.length === 0 && extractUniqueLetters(text).length > 0,
+      missingLetters: missing
+    });
+  });
+
+  // Pak výchozí položky z data.js (s aplikovanými úpravami nebo označením jako skryté)
+  rawBase.forEach(entry => {
+    const origKey = String(entry && entry.t ? entry.t : '').trim().toUpperCase();
+    if (!origKey) return;
+
+    if (hiddenSet.has(origKey)) {
+      const missing = getMissingLettersForWordDbText(origKey);
+      hiddenItems.push({
+        idKey: `hidden::${origKey}`,
+        origKey,
+        text: origKey,
+        emoji: entry.e || '',
+        source: 'hidden',
+        isActive: missing.length === 0,
+        missingLetters: missing
+      });
+      return;
+    }
+
+    const ed = editedMap[origKey];
+    const finalText = (ed && ed.t ? String(ed.t) : origKey).trim().toUpperCase();
+    const finalEmoji = (ed && ed.e !== undefined) ? ed.e : (entry.e || '');
+    if (!finalText || seenTexts.has(finalText)) return;
+    seenTexts.add(finalText);
+    const missing = getMissingLettersForWordDbText(finalText);
+    items.push({
+      idKey: `builtin::${origKey}`,
+      origKey,
+      text: finalText,
+      emoji: finalEmoji,
+      source: ed ? 'edited' : 'builtin',
+      isActive: missing.length === 0 && extractUniqueLetters(finalText).length > 0,
+      missingLetters: missing
+    });
+  });
+
+  return { items, hiddenItems, existingSet: seenTexts };
+}
+
+function renderAdminWordDbUI() {
+  ensureCustomReadingDb(state);
+
+  const lettersCountEl = document.getElementById('word-db-active-letters-count');
+  if (lettersCountEl) lettersCountEl.textContent = String((state.activeLetters || []).length);
+
+  renderWordDbCategoryTabs();
+  renderWordDbCreatorBox();
+  renderWordDbFilterAndList();
+}
+
+function renderWordDbCategoryTabs() {
+  const container = document.getElementById('word-db-category-tabs');
+  if (!container) return;
+
+  container.innerHTML = WORD_DB_META.map(meta => {
+    const isSelected = wordDbUiState.category === meta.key;
+    const ds = buildCategoryEditorDataset(meta.key);
+    const activeCount = ds.items.filter(x => x.isActive).length;
+    const totalCount = ds.items.length;
+    const customCount = ds.items.filter(x => x.source === 'custom' || x.source === 'edited').length;
+
+    return `
+      <button type="button" onclick="selectWordDbCategory('${meta.key}')" class="p-2 rounded-2xl border-2 text-left transition-all flex flex-col justify-between gap-1 ${
+        isSelected
+          ? 'bg-teal-600 text-white border-teal-700 shadow-md scale-[1.01]'
+          : 'bg-white hover:bg-teal-50 text-slate-800 border-slate-200 hover:border-teal-300'
+      }">
+        <div class="flex items-center justify-between gap-1 w-full">
+          <span class="text-xs font-black truncate flex items-center gap-1">
+            <span>${meta.icon}</span>
+            <span>${meta.title}</span>
+          </span>
+          ${customCount > 0 ? `<span class="text-[9px] font-black px-1.5 py-0.5 rounded-full ${isSelected ? 'bg-amber-300 text-teal-950' : 'bg-amber-100 text-amber-800'}">+${customCount}</span>` : ''}
+        </div>
+        <div class="flex items-center justify-between text-[10px] font-bold ${isSelected ? 'text-teal-100' : 'text-slate-500'}">
+          <span>✅ ${activeCount} / ${totalCount}</span>
+          <span class="opacity-75">${meta.sub}</span>
+        </div>
+      </button>
+    `;
+  }).join('');
+}
+
+function renderWordDbCreatorBox() {
+  const meta = getWordDbCategoryMeta(wordDbUiState.category);
+
+  const iconEl = document.getElementById('word-db-add-cat-icon');
+  const titleEl = document.getElementById('word-db-add-cat-title');
+  const labelEl = document.getElementById('word-db-add-input-label');
+  const textInp = document.getElementById('word-db-add-text');
+  const emojiWrap = document.getElementById('word-db-add-emoji-wrap');
+  const emojiPicker = document.getElementById('word-db-emoji-picker-row');
+  const sentenceBuilder = document.getElementById('word-db-sentence-builder');
+
+  if (iconEl) iconEl.textContent = meta.icon;
+  if (titleEl) titleEl.textContent = `Přidat do kategorie: ${meta.title}`;
+  if (labelEl) labelEl.textContent = meta.isSentence ? 'Nová věta (ze slabikáře nebo vlastní):' : (meta.key === 'syllables' ? 'Nová slabika:' : 'Nové slovo:');
+  if (textInp) textInp.placeholder = meta.placeholder;
+
+  if (emojiWrap) emojiWrap.classList.toggle('hidden', meta.noEmoji);
+  if (emojiPicker) {
+    emojiPicker.classList.toggle('hidden', meta.noEmoji);
+    if (!meta.noEmoji) {
+      emojiPicker.innerHTML = `
+        <span class="text-[10px] font-black text-slate-500 mr-1">Obrázky:</span>
+        ${WORD_DB_QUICK_EMOJIS.map(em => `
+          <button type="button" onclick="pickWordDbEmoji('${em}')" class="w-7 h-7 rounded-lg bg-slate-50 hover:bg-emerald-100 border border-slate-200 hover:border-emerald-400 text-sm flex items-center justify-center transition-transform active:scale-90">${em}</button>
+        `).join('')}
+        <button type="button" onclick="pickWordDbEmoji('')" title="Bez obrázku" class="px-1.5 h-7 rounded-lg bg-slate-100 hover:bg-rose-100 text-slate-500 hover:text-rose-700 text-[10px] font-black border border-slate-200">✕</button>
+      `;
+    }
+  }
+
+  if (sentenceBuilder) {
+    sentenceBuilder.classList.toggle('hidden', !meta.isSentence);
+    if (meta.isSentence) refreshSentenceBuilderChips();
+  }
+
+  setWordDbAddMode(wordDbUiState.addMode, true);
+  updateWordDbLivePreview();
+}
+
+function setWordDbAddMode(mode, silent = false) {
+  wordDbUiState.addMode = (mode === 'bulk') ? 'bulk' : 'single';
+  const singleBtn = document.getElementById('word-db-mode-single-btn');
+  const bulkBtn = document.getElementById('word-db-mode-bulk-btn');
+  const singlePanel = document.getElementById('word-db-single-add-panel');
+  const bulkPanel = document.getElementById('word-db-bulk-add-panel');
+
+  if (singleBtn && bulkBtn) {
+    if (wordDbUiState.addMode === 'single') {
+      singleBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-black transition-all bg-emerald-600 text-white shadow-sm';
+      bulkBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-black transition-all text-emerald-900 hover:bg-emerald-200';
+    } else {
+      bulkBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-black transition-all bg-emerald-600 text-white shadow-sm';
+      singleBtn.className = 'px-2.5 py-1 rounded-lg text-[11px] font-black transition-all text-emerald-900 hover:bg-emerald-200';
+    }
+  }
+  if (singlePanel) singlePanel.classList.toggle('hidden', wordDbUiState.addMode !== 'single');
+  if (bulkPanel) bulkPanel.classList.toggle('hidden', wordDbUiState.addMode !== 'bulk');
+  if (wordDbUiState.addMode === 'bulk') updateWordDbBulkPreview();
+  if (!silent && typeof playTone === 'function') playTone(500, 0.05, 'sine', 0.1);
+}
+
+function selectWordDbCategory(catKey) {
+  if (!WORD_DB_CATEGORIES.includes(catKey)) return;
+  wordDbUiState.category = catKey;
+  wordDbUiState.pageSize = 60;
+  wordDbUiState.editingKey = null;
+  wordDbUiState.resetConfirmArmed = false;
+  if (wordDbUiState.resetConfirmTimer) clearTimeout(wordDbUiState.resetConfirmTimer);
+  const resetLabelEl = document.getElementById('word-db-reset-cat-label');
+  const resetBtnEl = document.getElementById('word-db-reset-cat-btn');
+  if (resetLabelEl) resetLabelEl.textContent = 'Obnovit výchozí v kategorii';
+  if (resetBtnEl) resetBtnEl.className = 'game-button bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-300 font-black px-3 py-1.5 rounded-xl text-[11px] whitespace-nowrap flex items-center justify-center gap-1';
+
+  const addText = document.getElementById('word-db-add-text');
+  const addEmoji = document.getElementById('word-db-add-emoji');
+  if (addText) addText.value = '';
+  if (addEmoji) addEmoji.value = '';
+
+  renderAdminWordDbUI();
+  if (typeof playTone === 'function') playTone(520, 0.06, 'sine', 0.1);
+}
+
+function pickWordDbEmoji(emoji) {
+  const inp = document.getElementById('word-db-add-emoji');
+  if (inp) {
+    inp.value = emoji;
+    updateWordDbLivePreview();
+  }
+  if (typeof playTone === 'function') playTone(580, 0.04, 'sine', 0.1);
+}
+
+function refreshSentenceBuilderChips() {
+  const chipsContainer = document.getElementById('word-db-sentence-chips');
+  if (!chipsContainer) return;
+
+  // Sesbíráme aktivní slova z úrovní 3, 4 a 6 + základní spojky/slovesa ze slabikáře
+  const helperWords = ['MÁMA', 'TÁTA', 'EMA', 'PEPA', 'MÍLA', 'PES', 'MÁ', 'JE', 'U', 'NA', 'A', 'SE', 'SPÍ', 'VIDÍ', 'NESE', 'VOLÁ'];
+  const activePool = [];
+  const seen = new Set();
+
+  helperWords.forEach(w => {
+    if (getMissingLettersForWordDbText(w).length === 0 && !seen.has(w)) {
+      seen.add(w);
+      activePool.push(w);
+    }
+  });
+
+  const extraWords = shuffleArray([
+    ...LEVEL_3_CVC_WORDS,
+    ...LEVEL_4_TWO_SYLLABLE_WORDS
+  ]).filter(w => isItemFormedByActive(w.letters));
+
+  for (let i = 0; i < extraWords.length && activePool.length < 22; i++) {
+    const txt = extraWords[i].text;
+    if (txt && !seen.has(txt)) {
+      seen.add(txt);
+      activePool.push(txt);
+    }
+  }
+
+  if (!activePool.length) {
+    chipsContainer.innerHTML = '<span class="text-[11px] font-bold text-indigo-700">Povol více písmenek v záložce Čtení & Hláskování pro návrhy slov.</span>';
+    return;
+  }
+
+  chipsContainer.innerHTML = activePool.map(word => `
+    <button type="button" onclick="appendWordToSentenceBuilder('${escapeWordDbHtml(word)}')" class="px-2 py-0.5 rounded-lg bg-white hover:bg-indigo-600 hover:text-white text-indigo-950 border border-indigo-200 font-black text-[11px] transition-colors shadow-sm">
+      + ${escapeWordDbHtml(word)}
+    </button>
+  `).join('');
+}
+
+function appendWordToSentenceBuilder(word) {
+  const inp = document.getElementById('word-db-add-text');
+  if (!inp) return;
+  let cur = inp.value.trim().replace(/[.!?]+$/, '').trim();
+  inp.value = cur ? `${cur} ${word}` : word;
+  inp.focus();
+  updateWordDbLivePreview();
+  if (typeof playTone === 'function') playTone(560, 0.04, 'sine', 0.1);
+}
+
+function appendSentencePunctuation(punct) {
+  const inp = document.getElementById('word-db-add-text');
+  if (!inp) return;
+  let cur = inp.value.trim().replace(/[.!?]+$/, '').trim();
+  if (!cur) return;
+  inp.value = cur + punct;
+  updateWordDbLivePreview();
+}
+
+function updateWordDbLivePreview() {
+  const preview = document.getElementById('word-db-add-preview');
+  const textInp = document.getElementById('word-db-add-text');
+  if (!preview || !textInp) return;
+
+  const raw = textInp.value;
+  const catKey = wordDbUiState.category;
+  const normalized = normalizeWordDbText(raw, catKey);
+
+  if (!normalized) {
+    preview.className = 'text-xs font-bold text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2';
+    preview.innerHTML = '<span>Napiš slovo nebo větu a hned uvidíš, jestli jsou všechna písmenka povolená.</span>';
+    return;
+  }
+
+  const letters = extractUniqueLetters(normalized);
+  if (letters.length === 0) {
+    preview.className = 'text-xs font-black text-rose-700 bg-rose-50 border border-rose-300 rounded-xl px-3 py-2';
+    preview.innerHTML = '<span>⚠️ Zadej alespoň jedno české písmeno.</span>';
+    return;
+  }
+
+  const ds = buildCategoryEditorDataset(catKey);
+  if (ds.existingSet.has(normalized)) {
+    preview.className = 'text-xs font-black text-rose-800 bg-rose-50 border border-rose-300 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2';
+    preview.innerHTML = `<span>⚠️ Položka <strong>„${escapeWordDbHtml(normalized)}“</strong> už v této kategorii existuje!</span>`;
+    return;
+  }
+
+  const missing = getMissingLettersForWordDbText(normalized);
+  let extraHint = '';
+  if (catKey === 'lvl5_ou' && !hasDiphthongOU(normalized)) {
+    extraHint = ' <span class="text-indigo-700">(Tip: neobsahuje OU, ale můžeš jej uložit)</span>';
+  }
+
+  if (missing.length === 0) {
+    preview.className = 'text-xs font-black text-emerald-800 bg-emerald-50 border border-emerald-300 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2';
+    preview.innerHTML = `<span>✅ <strong>„${escapeWordDbHtml(normalized)}“</strong> — všechna písmenka jsou povolena, hned se objeví ve čtení!${extraHint}</span>`;
+  } else {
+    const csv = encodeURIComponent(missing.join(','));
+    preview.className = 'text-xs font-bold text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2 flex flex-wrap items-center justify-between gap-2';
+    preview.innerHTML = `
+      <span>🔒 <strong>„${escapeWordDbHtml(normalized)}“</strong> — čeká na povolení písmen: <strong class="text-rose-700">${missing.join(', ')}</strong> (můžeš uložit už teď).</span>
+      <button type="button" onclick="allowMissingLettersFromWordDb('${csv}')" class="game-button bg-amber-500 hover:bg-amber-600 text-white font-black px-2.5 py-1 rounded-lg text-[11px] whitespace-nowrap shadow-sm">
+        ➕ Povolit ${missing.join(', ')}
+      </button>
+    `;
+  }
+}
+
+function allowMissingLettersFromWordDb(encodedCsv) {
+  const letters = decodeURIComponent(encodedCsv || '').split(',').map(s => s.trim()).filter(Boolean);
+  if (!letters.length) return;
+  let changed = false;
+  letters.forEach(l => {
+    if (FULL_CZECH_ALPHABET.includes(l) && !state.activeLetters.includes(l)) {
+      state.activeLetters.push(l);
+      changed = true;
+    }
+  });
+  if (changed) {
+    if (typeof renderAlphabetGrid === 'function') renderAlphabetGrid();
+    saveState();
+    if (state.subject === 'reading') generateLessonItems();
+    renderAdminWordDbUI();
+    alertUserFeedback(`✅ Povolena písmena: ${letters.join(', ')}`);
+    if (typeof playTone === 'function') playTone(660, 0.1, 'triangle', 0.18);
+  }
+}
+
+function submitWordDbSingleAdd() {
+  const textInp = document.getElementById('word-db-add-text');
+  const emojiInp = document.getElementById('word-db-add-emoji');
+  if (!textInp) return;
+
+  const catKey = wordDbUiState.category;
+  const meta = getWordDbCategoryMeta(catKey);
+  const normalized = normalizeWordDbText(textInp.value, catKey);
+  const emoji = (!meta.noEmoji && emojiInp) ? emojiInp.value.trim() : '';
+
+  if (!normalized || extractUniqueLetters(normalized).length === 0) {
+    soundError();
+    alertUserFeedback('Napiš prosím platné slovo, slabiku nebo větu!');
+    return;
+  }
+
+  const ds = buildCategoryEditorDataset(catKey);
+  if (ds.existingSet.has(normalized)) {
+    soundShuffle();
+    alertUserFeedback(`„${normalized}“ už v kategorii ${meta.title} existuje.`);
+    return;
+  }
+
+  const db = ensureCustomReadingDb(state);
+  // Pokud byla tato položka dříve skryta mezi výchozími, jen ji obnovíme místo duplikace
+  const hiddenIdx = db.hidden[catKey].indexOf(normalized);
+  if (hiddenIdx !== -1) {
+    db.hidden[catKey].splice(hiddenIdx, 1);
+  } else {
+    const newEntry = { t: normalized, e: emoji };
+    if (catKey === 'spelling') {
+      newEntry.syllables = splitCzechWordIntoSyllables(normalized).length;
+    }
+    db.added[catKey].unshift(newEntry);
+  }
+
+  rebuildReadingDatabasePools(true);
+  saveState();
+  if (state.subject === 'reading') generateLessonItems();
+
+  textInp.value = '';
+  if (emojiInp) emojiInp.value = '';
+  wordDbUiState.editingKey = null;
+
+  renderAdminWordDbUI();
+  const missing = getMissingLettersForWordDbText(normalized);
+  if (missing.length === 0) {
+    alertUserFeedback(`✅ Přidáno: „${normalized}“ (ihned aktivní ve čtení!)`);
+  } else {
+    alertUserFeedback(`✅ Uloženo: „${normalized}“ (odemkne se po povolení: ${missing.join(', ')})`);
+  }
+  if (typeof playTone === 'function') playTone(680, 0.1, 'triangle', 0.18);
+}
+
+function parseBulkWordDbLines(rawText, catKey) {
+  const meta = getWordDbCategoryMeta(catKey);
+  const ds = buildCategoryEditorDataset(catKey);
+  const existing = new Set(ds.existingSet);
+  const toAdd = [];
+  let duplicates = 0;
+
+  String(rawText || '').split(/\r?\n/).forEach(line => {
+    const trimmed = line.trim();
+    if (!trimmed) return;
+    const parts = trimmed.split(';');
+    const normalized = normalizeWordDbText(parts[0], catKey);
+    const emoji = (!meta.noEmoji && parts[1]) ? parts[1].trim() : '';
+    if (!normalized || extractUniqueLetters(normalized).length === 0) return;
+    if (existing.has(normalized)) {
+      duplicates++;
+      return;
+    }
+    existing.add(normalized);
+    const missing = getMissingLettersForWordDbText(normalized);
+    toAdd.push({ t: normalized, e: emoji, isActive: missing.length === 0 });
+  });
+
+  return { toAdd, duplicates };
+}
+
+function updateWordDbBulkPreview() {
+  const ta = document.getElementById('word-db-bulk-text');
+  const preview = document.getElementById('word-db-bulk-preview');
+  if (!ta || !preview) return;
+
+  const { toAdd, duplicates } = parseBulkWordDbLines(ta.value, wordDbUiState.category);
+  if (toAdd.length === 0 && duplicates === 0) {
+    preview.textContent = 'Zadej alespoň jeden řádek.';
+    preview.className = 'text-xs font-bold text-slate-500';
+    return;
+  }
+  const activeNow = toAdd.filter(x => x.isActive).length;
+  preview.className = 'text-xs font-black text-emerald-800';
+  preview.textContent = `Připraveno ${toAdd.length} nových položek (✅ ${activeNow} aktivních ihned${duplicates > 0 ? `, přeskočeno ${duplicates} duplicit` : ''}).`;
+}
+
+function submitWordDbBulkAdd() {
+  const ta = document.getElementById('word-db-bulk-text');
+  if (!ta) return;
+
+  const catKey = wordDbUiState.category;
+  const { toAdd, duplicates } = parseBulkWordDbLines(ta.value, catKey);
+  if (toAdd.length === 0) {
+    soundShuffle();
+    alertUserFeedback(duplicates > 0 ? 'Všechny zadané položky už v databázi existují!' : 'Napiš alespoň jednu položku.');
+    return;
+  }
+
+  const db = ensureCustomReadingDb(state);
+  toAdd.reverse().forEach(item => {
+    const hiddenIdx = db.hidden[catKey].indexOf(item.t);
+    if (hiddenIdx !== -1) {
+      db.hidden[catKey].splice(hiddenIdx, 1);
+    } else {
+      const entry = { t: item.t, e: item.e };
+      if (catKey === 'spelling') entry.syllables = splitCzechWordIntoSyllables(item.t).length;
+      db.added[catKey].unshift(entry);
+    }
+  });
+
+  rebuildReadingDatabasePools(true);
+  saveState();
+  if (state.subject === 'reading') generateLessonItems();
+
+  ta.value = '';
+  renderAdminWordDbUI();
+  alertUserFeedback(`✅ Hromadně přidáno ${toAdd.length} položek do databáze!`);
+  if (typeof playTone === 'function') playTone(720, 0.12, 'triangle', 0.2);
+}
+
+function setWordDbFilter(filterKey) {
+  wordDbUiState.filter = filterKey;
+  wordDbUiState.pageSize = 60;
+  wordDbUiState.editingKey = null;
+  renderWordDbFilterAndList();
+}
+
+function onWordDbSearchInput(val) {
+  wordDbUiState.search = String(val || '');
+  wordDbUiState.pageSize = 60;
+  const clearBtn = document.getElementById('word-db-search-clear-btn');
+  if (clearBtn) clearBtn.classList.toggle('hidden', !wordDbUiState.search.trim());
+  renderWordDbFilterAndList();
+}
+
+function clearWordDbSearch() {
+  const inp = document.getElementById('word-db-search-input');
+  if (inp) inp.value = '';
+  onWordDbSearchInput('');
+}
+
+function loadMoreWordDbItems() {
+  wordDbUiState.pageSize += 80;
+  renderWordDbFilterAndList();
+}
+
+function renderWordDbFilterAndList() {
+  const catKey = wordDbUiState.category;
+  const meta = getWordDbCategoryMeta(catKey);
+  const ds = buildCategoryEditorDataset(catKey);
+  const searchNorm = wordDbUiState.search.trim().toUpperCase();
+
+  const matchesSearch = (item) => !searchNorm || item.text.includes(searchNorm);
+  const allSearched = ds.items.filter(matchesSearch);
+  const activeCount = allSearched.filter(x => x.isActive).length;
+  const lockedCount = allSearched.filter(x => !x.isActive).length;
+  const customCount = allSearched.filter(x => x.source === 'custom' || x.source === 'edited').length;
+  const hiddenSearched = ds.hiddenItems.filter(matchesSearch);
+
+  const filterBar = document.getElementById('word-db-filter-bar');
+  if (filterBar) {
+    const filters = [
+      { key: 'all',    label: `Vše (${allSearched.length})` },
+      { key: 'active', label: `✅ Aktivní teď (${activeCount})` },
+      { key: 'locked', label: `🔒 Čeká na písmena (${lockedCount})` },
+      { key: 'custom', label: `⭐ Moje úpravy (${customCount})` },
+      { key: 'hidden', label: `🗑️ Skryté (${hiddenSearched.length})` }
+    ];
+    filterBar.innerHTML = filters.map(f => {
+      const isAct = wordDbUiState.filter === f.key;
+      return `
+        <button type="button" onclick="setWordDbFilter('${f.key}')" class="px-2.5 py-1 rounded-xl text-[11px] font-black transition-all border ${
+          isAct
+            ? 'bg-teal-600 text-white border-teal-700 shadow-sm'
+            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
+        }">${f.label}</button>
+      `;
+    }).join('');
+  }
+
+  let visibleList = [];
+  if (wordDbUiState.filter === 'hidden') {
+    visibleList = hiddenSearched;
+  } else if (wordDbUiState.filter === 'active') {
+    visibleList = allSearched.filter(x => x.isActive);
+  } else if (wordDbUiState.filter === 'locked') {
+    visibleList = allSearched.filter(x => !x.isActive);
+  } else if (wordDbUiState.filter === 'custom') {
+    visibleList = allSearched.filter(x => x.source === 'custom' || x.source === 'edited');
+  } else {
+    visibleList = allSearched;
+  }
+
+  const listEl = document.getElementById('word-db-items-list');
+  const pagBar = document.getElementById('word-db-pagination-bar');
+  if (!listEl) return;
+
+  listEl.className = meta.isSentence
+    ? 'grid grid-cols-1 gap-2'
+    : 'grid grid-cols-1 sm:grid-cols-2 gap-2';
+
+  if (visibleList.length === 0) {
+    listEl.innerHTML = `
+      <div class="col-span-full bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center">
+        <span class="text-3xl block mb-1">📭</span>
+        <p class="text-xs sm:text-sm font-black text-slate-600">V tomto filtru zatím nejsou žádné položky.</p>
+        <p class="text-[11px] font-bold text-slate-400 mt-0.5">Přidej vlastní položku výše nebo přepni filtr na „Vše“.</p>
+      </div>
+    `;
+    if (pagBar) pagBar.classList.add('hidden');
+    return;
+  }
+
+  const sliced = visibleList.slice(0, wordDbUiState.pageSize);
+  listEl.innerHTML = sliced.map(item => {
+    const encKey = encodeURIComponent(item.idKey);
+
+    if (wordDbUiState.editingKey === item.idKey) {
+      return `
+        <div class="bg-indigo-50 border-2 border-indigo-400 rounded-2xl p-2.5 shadow-sm flex flex-col gap-2">
+          <div class="flex items-center gap-1.5">
+            <input type="text" id="word-db-inline-edit-text" value="${escapeWordDbHtml(item.text)}" onkeydown="if(event.key==='Enter'){event.preventDefault();saveWordDbInlineEdit('${encKey}');}" class="flex-1 px-2.5 py-1.5 rounded-xl border-2 border-indigo-300 focus:border-indigo-600 focus:outline-none bg-white text-slate-900 font-black text-sm">
+            ${!meta.noEmoji ? `<input type="text" id="word-db-inline-edit-emoji" value="${escapeWordDbHtml(item.emoji)}" maxlength="8" placeholder="✨" class="w-14 px-1.5 py-1.5 rounded-xl border-2 border-indigo-300 focus:border-indigo-600 focus:outline-none bg-white text-center text-sm">` : ''}
+          </div>
+          <div class="flex items-center justify-end gap-1.5">
+            <button type="button" onclick="cancelWordDbInlineEdit()" class="px-3 py-1 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-black text-xs">Zrušit</button>
+            <button type="button" onclick="saveWordDbInlineEdit('${encKey}')" class="game-button px-3.5 py-1 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs border-b-2 border-emerald-700">💾 Uložit</button>
+          </div>
+        </div>
+      `;
+    }
+
+    const statusBadge = item.isActive
+      ? `<span class="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 rounded-lg whitespace-nowrap">✅ Aktivní</span>`
+      : `<span class="text-[10px] font-black bg-amber-50 text-amber-800 border border-amber-200 px-1.5 py-0.5 rounded-lg whitespace-nowrap" title="Chybí povolit tato písmena">🔒 Chybí: ${escapeWordDbHtml(item.missingLetters.slice(0, 6).join(', '))}${item.missingLetters.length > 6 ? '…' : ''}</span>`;
+
+    const originBadge = item.source === 'custom'
+      ? `<span class="text-[9px] font-black bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded-md">⭐ Vlastní</span>`
+      : (item.source === 'edited'
+        ? `<span class="text-[9px] font-black bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded-md">✏️ Upraveno</span>`
+        : '');
+
+    if (item.source === 'hidden') {
+      return `
+        <div class="bg-slate-50 border-2 border-dashed border-slate-300 rounded-2xl px-3 py-2 flex items-center justify-between gap-2 opacity-85">
+          <div class="flex items-center gap-2 min-w-0">
+            ${item.emoji ? `<span class="text-lg flex-shrink-0">${escapeWordDbHtml(item.emoji)}</span>` : ''}
+            <span class="font-black text-slate-500 line-through text-sm truncate">${escapeWordDbHtml(item.text)}</span>
+          </div>
+          <button type="button" onclick="restoreHiddenWordDbItem('${encodeURIComponent(item.origKey)}')" class="game-button bg-emerald-500 hover:bg-emerald-600 text-white font-black px-2.5 py-1 rounded-xl text-[11px] whitespace-nowrap shadow-sm">
+            ♻️ Obnovit
+          </button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="bg-white hover:bg-slate-50/80 border-2 ${item.source === 'custom' ? 'border-purple-200' : (item.isActive ? 'border-emerald-200' : 'border-slate-200')} rounded-2xl px-3 py-2 flex items-center justify-between gap-2 shadow-sm transition-colors">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center gap-1.5 flex-wrap">
+            ${item.emoji ? `<span class="text-base leading-none flex-shrink-0">${escapeWordDbHtml(item.emoji)}</span>` : ''}
+            <span class="font-black text-slate-800 ${meta.isSentence ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'} break-words">${escapeWordDbHtml(item.text)}</span>
+            ${originBadge}
+          </div>
+          <div class="mt-1 flex items-center gap-1 flex-wrap">
+            ${statusBadge}
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          <button type="button" onclick="startWordDbInlineEdit('${encKey}')" title="Upravit" class="w-8 h-8 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-black text-xs flex items-center justify-center">✏️</button>
+          <button type="button" onclick="deleteOrHideWordDbItem('${encKey}')" title="${item.source === 'custom' ? 'Smazat vlastní položku' : 'Skrýt z databáze'}" class="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-black text-xs flex items-center justify-center">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (pagBar) {
+    if (visibleList.length > sliced.length) {
+      pagBar.classList.remove('hidden');
+      const remaining = visibleList.length - sliced.length;
+      const btn = pagBar.querySelector('button');
+      if (btn) btn.textContent = `Zobrazit dalších ${Math.min(80, remaining)} položek (zbývá ${remaining}) ⬇️`;
+    } else {
+      pagBar.classList.add('hidden');
+    }
+  }
+}
+
+function startWordDbInlineEdit(encodedKey) {
+  wordDbUiState.editingKey = decodeURIComponent(encodedKey || '');
+  renderWordDbFilterAndList();
+  setTimeout(() => {
+    const inp = document.getElementById('word-db-inline-edit-text');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 30);
+}
+
+function cancelWordDbInlineEdit() {
+  wordDbUiState.editingKey = null;
+  renderWordDbFilterAndList();
+}
+
+function saveWordDbInlineEdit(encodedKey) {
+  const idKey = decodeURIComponent(encodedKey || '');
+  const textInp = document.getElementById('word-db-inline-edit-text');
+  const emojiInp = document.getElementById('word-db-inline-edit-emoji');
+  if (!textInp) return;
+
+  const catKey = wordDbUiState.category;
+  const meta = getWordDbCategoryMeta(catKey);
+  const newText = normalizeWordDbText(textInp.value, catKey);
+  const newEmoji = (!meta.noEmoji && emojiInp) ? emojiInp.value.trim() : '';
+
+  if (!newText || extractUniqueLetters(newText).length === 0) {
+    soundError();
+    alertUserFeedback('Text nesmí být prázdný!');
+    return;
+  }
+
+  const db = ensureCustomReadingDb(state);
+  const ds = buildCategoryEditorDataset(catKey);
+  const currentItem = ds.items.find(it => it.idKey === idKey);
+  if (currentItem && newText !== currentItem.text && ds.existingSet.has(newText)) {
+    soundShuffle();
+    alertUserFeedback(`„${newText}“ už v kategorii ${meta.title} existuje!`);
+    return;
+  }
+
+  if (idKey.startsWith('custom::')) {
+    const parts = idKey.split('::');
+    const idx = parseInt(parts[1], 10);
+    if (!isNaN(idx) && db.added[catKey][idx]) {
+      db.added[catKey][idx].t = newText;
+      db.added[catKey][idx].e = newEmoji;
+      if (catKey === 'spelling') {
+        db.added[catKey][idx].syllables = splitCzechWordIntoSyllables(newText).length;
+      }
+    }
+  } else if (idKey.startsWith('builtin::')) {
+    const origKey = idKey.slice('builtin::'.length);
+    const editObj = { t: newText, e: newEmoji };
+    if (catKey === 'spelling') {
+      editObj.syllables = splitCzechWordIntoSyllables(newText).length;
+    }
+    db.edited[catKey][origKey] = editObj;
+  }
+
+  wordDbUiState.editingKey = null;
+  rebuildReadingDatabasePools(true);
+  saveState();
+  if (state.subject === 'reading') generateLessonItems();
+  renderAdminWordDbUI();
+  alertUserFeedback(`💾 Uloženo: „${newText}“`);
+  if (typeof playTone === 'function') playTone(640, 0.08, 'triangle', 0.16);
+}
+
+function deleteOrHideWordDbItem(encodedKey) {
+  const idKey = decodeURIComponent(encodedKey || '');
+  const catKey = wordDbUiState.category;
+  const db = ensureCustomReadingDb(state);
+
+  if (idKey.startsWith('custom::')) {
+    const parts = idKey.split('::');
+    const idx = parseInt(parts[1], 10);
+    if (!isNaN(idx) && db.added[catKey][idx]) {
+      const removed = db.added[catKey].splice(idx, 1)[0];
+      alertUserFeedback(`🗑️ Smazána vlastní položka „${removed.t}“.`);
+    }
+  } else if (idKey.startsWith('builtin::')) {
+    const origKey = idKey.slice('builtin::'.length);
+    if (!db.hidden[catKey].includes(origKey)) {
+      db.hidden[catKey].push(origKey);
+    }
+    delete db.edited[catKey][origKey];
+    alertUserFeedback(`🗑️ Položka „${origKey}“ skryta (kdykoliv ji obnovíš v záložce Skryté).`);
+  }
+
+  wordDbUiState.editingKey = null;
+  rebuildReadingDatabasePools(true);
+  saveState();
+  if (state.subject === 'reading') generateLessonItems();
+  renderAdminWordDbUI();
+  if (typeof playTone === 'function') playTone(360, 0.08, 'sine', 0.14);
+}
+
+function restoreHiddenWordDbItem(encodedOrigKey) {
+  const origKey = decodeURIComponent(encodedOrigKey || '');
+  const catKey = wordDbUiState.category;
+  const db = ensureCustomReadingDb(state);
+
+  db.hidden[catKey] = (db.hidden[catKey] || []).filter(k => k !== origKey);
+  rebuildReadingDatabasePools(true);
+  saveState();
+  if (state.subject === 'reading') generateLessonItems();
+  renderAdminWordDbUI();
+  alertUserFeedback(`♻️ Položka „${origKey}“ byla obnovena!`);
+  if (typeof playTone === 'function') playTone(620, 0.08, 'triangle', 0.15);
+}
+
+function resetWordDbCategoryDefaults() {
+  const catKey = wordDbUiState.category;
+  const meta = getWordDbCategoryMeta(catKey);
+  const labelEl = document.getElementById('word-db-reset-cat-label');
+  const btnEl = document.getElementById('word-db-reset-cat-btn');
+
+  if (!wordDbUiState.resetConfirmArmed) {
+    wordDbUiState.resetConfirmArmed = true;
+    if (labelEl) labelEl.textContent = `Klikni ještě jednou pro reset „${meta.title}“`;
+    if (btnEl) btnEl.className = 'game-button bg-rose-600 hover:bg-rose-700 text-white border border-rose-700 font-black px-3 py-1.5 rounded-xl text-[11px] whitespace-nowrap flex items-center justify-center gap-1';
+    if (wordDbUiState.resetConfirmTimer) clearTimeout(wordDbUiState.resetConfirmTimer);
+    wordDbUiState.resetConfirmTimer = setTimeout(() => {
+      wordDbUiState.resetConfirmArmed = false;
+      if (labelEl) labelEl.textContent = 'Obnovit výchozí v kategorii';
+      if (btnEl) btnEl.className = 'game-button bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-300 font-black px-3 py-1.5 rounded-xl text-[11px] whitespace-nowrap flex items-center justify-center gap-1';
+    }, 4500);
+    return;
+  }
+
+  wordDbUiState.resetConfirmArmed = false;
+  if (wordDbUiState.resetConfirmTimer) clearTimeout(wordDbUiState.resetConfirmTimer);
+  if (labelEl) labelEl.textContent = 'Obnovit výchozí v kategorii';
+  if (btnEl) btnEl.className = 'game-button bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-700 border border-slate-300 font-black px-3 py-1.5 rounded-xl text-[11px] whitespace-nowrap flex items-center justify-center gap-1';
+
+  const db = ensureCustomReadingDb(state);
+  db.added[catKey] = [];
+  db.edited[catKey] = {};
+  db.hidden[catKey] = [];
+
+  rebuildReadingDatabasePools(true);
+  saveState();
+  if (state.subject === 'reading') generateLessonItems();
+  renderAdminWordDbUI();
+  alertUserFeedback(`♻️ Kategorie „${meta.title}“ byla vrácena do výchozího stavu z data.js.`);
+}
+
+function exportWordDbFile() {
+  const db = ensureCustomReadingDb(state);
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    account: currentLoggedInUser ? currentLoggedInUser.username : 'unknown',
+    customReadingDb: db,
+    effectiveCounts: {
+      lvl3: LEVEL_3_CVC_WORDS.length,
+      lvl4: LEVEL_4_TWO_SYLLABLE_WORDS.length,
+      lvl5_shluky: LEVEL_5_SHLUKY_WORDS.length,
+      lvl5_ou: LEVEL_5_OU_WORDS.length,
+      lvl6: LEVEL_6_SOFT.length,
+      lvl7: LEVEL_7_SENTENCES.length,
+      spelling: ACTIVE_SPELLING_WORDS_DATABASE.length
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `databaze_slov_zaloha_${getTodayDateString()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  alertUserFeedback('📥 Záloha upravené databáze slov byla stažena!');
+}
+
+window.renderAdminWordDbUI = renderAdminWordDbUI;
+window.selectWordDbCategory = selectWordDbCategory;
+window.setWordDbAddMode = setWordDbAddMode;
+window.pickWordDbEmoji = pickWordDbEmoji;
+window.refreshSentenceBuilderChips = refreshSentenceBuilderChips;
+window.appendWordToSentenceBuilder = appendWordToSentenceBuilder;
+window.appendSentencePunctuation = appendSentencePunctuation;
+window.updateWordDbLivePreview = updateWordDbLivePreview;
+window.allowMissingLettersFromWordDb = allowMissingLettersFromWordDb;
+window.submitWordDbSingleAdd = submitWordDbSingleAdd;
+window.updateWordDbBulkPreview = updateWordDbBulkPreview;
+window.submitWordDbBulkAdd = submitWordDbBulkAdd;
+window.setWordDbFilter = setWordDbFilter;
+window.onWordDbSearchInput = onWordDbSearchInput;
+window.clearWordDbSearch = clearWordDbSearch;
+window.loadMoreWordDbItems = loadMoreWordDbItems;
+window.startWordDbInlineEdit = startWordDbInlineEdit;
+window.cancelWordDbInlineEdit = cancelWordDbInlineEdit;
+window.saveWordDbInlineEdit = saveWordDbInlineEdit;
+window.deleteOrHideWordDbItem = deleteOrHideWordDbItem;
+window.restoreHiddenWordDbItem = restoreHiddenWordDbItem;
+window.resetWordDbCategoryDefaults = resetWordDbCategoryDefaults;
+window.exportWordDbFile = exportWordDbFile;
